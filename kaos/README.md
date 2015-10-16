@@ -2,7 +2,7 @@
 A Linux userspace application that performs the functions of a Kinetic Device, which is a network attached storage device that communicates using an object interface (using commands such as put, get, and delete). The Kinetic protocol was created by Seagate and is now an open source collaborative project managed through the Linux Foundation.
 
 ##Make Options
-* make kaos - will build the object storage application
+* make kaos - will build the Kinetic object storage application
 * make proto - will create protocol buffer source files from the proto config files
 * make check - will run google lint to check for suspicious software usage
 * make conform - will run cstyle and covert the code to adhere to the chosen style conventions

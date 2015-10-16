@@ -1,0 +1,11 @@
+import "Kinetic.proto";
+
+package kaos;
+
+message Entry {
+  required bytes key                                             = 1;
+  required bytes value                                           = 2;
+  required bytes version                                         = 3;
+  required bytes tag                                             = 4;
+  optional com.seagate.kinetic.proto.Command.Algorithm algorithm = 5;
+}

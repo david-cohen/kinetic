@@ -1,0 +1,38 @@
+package kaos;
+
+message Settings {
+    optional int64 clusterVersion = 1;
+    optional bytes lockPin        = 2;
+    optional bytes erasePin       = 3;
+    repeated ACL   acl            = 4;
+
+    message ACL {
+        optional int64         identity      = 1;
+        optional bytes         hmacKey       = 2;
+        optional HmacAlgorithm hmacAlgorithm = 3;
+        repeated Scope         scope         = 4;
+
+        enum HmacAlgorithm {
+            HMAC_INVALID = -1;
+            HMAC_SHA1 = 1;
+        }
+
+        message Scope {
+            optional bool       tlsRequired        = 1;
+            optional bytes      keySubstring       = 2;
+            optional int64      keySubstringOffset = 3;
+            repeated Operation  operation          = 4;
+        }
+
+        enum Operation {
+            READ     = 0;
+            WRITE    = 1;
+            DELETE   = 2;
+            RANGE    = 3;
+            SETUP    = 4;
+            P2POP    = 5;
+            GETLOG   = 7;
+            SECURITY = 8;
+        }
+    }
+}

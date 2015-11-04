@@ -66,11 +66,7 @@ TransportManager::wait() {
         transport->wait();
 }
 
-/**
-    Wait
-*/
-
-bool
+uint32_t
 TransportManager::connectionCount() {
 
     uint32_t connectionCount = 0;
@@ -78,4 +74,14 @@ TransportManager::connectionCount() {
         connectionCount += transport->connectionCount();
 
     return connectionCount;
+}
+
+uint32_t
+TransportManager::batchCount() {
+
+    uint32_t batchCount = 0;
+    for (auto transport : m_transportList)
+        batchCount += transport->batchCount();
+
+    return batchCount;
 }

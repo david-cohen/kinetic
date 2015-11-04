@@ -96,6 +96,12 @@ MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Header& h
         std::cout << "        Timeout: " << header.timeout() << std::endl;
     if (header.has_earlyexit())
         std::cout << "        Early Exit: " << Translator::toString(header.earlyexit()) << std::endl;
+    if (header.has_priority())
+        std::cout << "        Priority: " << header.priority() << std::endl;
+    if (header.has_timequanta())
+        std::cout << "        Time Quanta: " << header.timequanta() << std::endl;
+    if (header.has_batchid())
+        std::cout << "        Batch ID: " << header.batchid() << std::endl;
 }
 
 /**
@@ -378,6 +384,29 @@ MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOperati
 }
 
 /**
+    Output Batch
+
+    @param  security    the protocol buffer PIN operation message
+*/
+
+void
+MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch& batch) {
+
+    if (batch.has_count())
+        std::cout << "            Count: " << batch.count() << std::endl;
+    if (batch.has_failedsequence())
+        std::cout << "            Failed Sequence: " << batch.failedsequence() << std::endl;
+
+    std::cout << "            Sequence [";
+    for (auto sequenceIndex = 0; sequenceIndex < batch.sequence_size(); sequenceIndex++) {
+        std::cout << batch.sequence(sequenceIndex);
+        if (sequenceIndex < (batch.sequence_size() - 1))
+            std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+}
+
+/**
     Output Body
 
     @param  body    the protocol buffer body message
@@ -415,10 +444,14 @@ MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& body)
         outputSecurity(body.security());
         std::cout << "        }" << std::endl;
     }
-
     if (body.has_pinop()) {
         std::cout << "        PIN Op {" << std::endl;
         outputPinOp(body.pinop());
+        std::cout << "        }" << std::endl;
+    }
+    if (body.has_batch()) {
+        std::cout << "        Batch {" << std::endl;
+        outputBatch(body.batch());
         std::cout << "        }" << std::endl;
     }
 }

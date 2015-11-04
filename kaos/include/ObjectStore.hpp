@@ -16,8 +16,11 @@
 #include <memory>
 #include "Common.hpp"
 #include "leveldb/db.h"
+#include "leveldb/write_batch.h"
 #include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
+
+
 
 /*
     Types taken from the Kinetic message.
@@ -25,6 +28,7 @@
 
 typedef com::seagate::kinetic::proto::Command_Synchronization PersistOption;
 typedef com::seagate::kinetic::proto::Command_Algorithm Algorithm;
+typedef leveldb::WriteBatch BatchDescriptor;
 
 /*
     Return Status
@@ -85,8 +89,16 @@ public:
                              bool endKeyInclusive, int32_t maxKeys, std::list<std::string>& keyList, AccessControlPtr& accessControl);
     ReturnStatus getKeyRangeReversed(const std::string& startKey, bool startKeyInclusive, const std::string& endKey,
                                      bool endKeyInclusive, int32_t maxKeys, std::list<std::string>& keyList, AccessControlPtr& accessControl);
-    ReturnStatus de1ete(const std::string& key, const std::string& version, PersistOption persistOption);
-    ReturnStatus de1eteForced(const std::string& key, PersistOption persistOption);
+    ReturnStatus deleteVersioned(const std::string& key, const std::string& version, PersistOption persistOption);
+    ReturnStatus deleteForced(const std::string& key, PersistOption persistOption);
+    ReturnStatus batchPut(BatchDescriptor& batch, const std::string& key, const std::string& value, const std::string&
+                          newVersion, const std::string& oldVersion, const std::string& tag, Algorithm algorithm);
+    ReturnStatus batchPutForced(BatchDescriptor& batch, const std::string& key, const std::string& value,
+                                const std::string& version, const std::string& tag, Algorithm algorithm);
+    ReturnStatus batchDelete(BatchDescriptor& batch, const std::string& key, const std::string& version);
+    ReturnStatus batchDeleteForced(BatchDescriptor& batch, const std::string& key);
+    ReturnStatus batchCommit(BatchDescriptor& batch);
+    ReturnStatus optimizeMedia();
     std::string  getDatabaseDirectory() {return m_databaseDirectory;}
 
 private:

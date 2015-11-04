@@ -12,7 +12,7 @@
 
 #include <list>
 #include <mutex>
-#include "ConnectionHandler.hpp"
+#include "Connection.hpp"
 
 /*
     Transport Security
@@ -45,22 +45,30 @@ public:
     virtual void wait() = 0;
     Security security() {return m_security;}
 
-    virtual void addConnection(ConnectionHandler* connectionHandler) {
+    virtual void addConnection(Connection* connection) {
         std::unique_lock<std::mutex> scopedLock(m_mutex);
-        m_connectionHandlerList.push_back(connectionHandler);
+        m_connectionList.push_back(connection);
     }
 
-    virtual void removeConnection(ConnectionHandler* connectionHandler) {
+    virtual void removeConnection(Connection* connection) {
         std::unique_lock<std::mutex> scopedLock(m_mutex);
-        m_connectionHandlerList.remove(connectionHandler);
-        delete connectionHandler;
+        m_connectionList.remove(connection);
+        delete connection;
     }
 
     uint32_t connectionCount() {
         std::unique_lock<std::mutex> scopedLock(m_mutex);
-        return m_connectionHandlerList.size();
+        return m_connectionList.size();
     }
 
+    uint32_t batchCount() {
+        uint32_t batchCount = 0;
+        std::unique_lock<std::mutex> scopedLock(m_mutex);
+        for (auto connection : m_connectionList) {
+            batchCount += connection->batchCount();
+        }
+        return batchCount;
+    }
 
 protected:
 
@@ -68,9 +76,9 @@ protected:
         Protected Data Members
     */
 
-    const Security                  m_security;                 //!< Security method to be used
-    std::mutex                      m_mutex;                    //!< Mutex to make class thread safe
-    std::list<ConnectionHandler*>   m_connectionHandlerList;    //!< List of active connections
+    const Security              m_security;         //!< Security method to be used
+    std::mutex                  m_mutex;            //!< Mutex to make class thread safe
+    std::list<Connection*>      m_connectionList;   //!< List of active connections
 };
 
 #endif

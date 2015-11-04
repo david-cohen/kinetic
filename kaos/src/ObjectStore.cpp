@@ -75,6 +75,12 @@ ObjectStore::~ObjectStore() {
 ReturnStatus
 ObjectStore::open() {
 
+    asyncWriteOptions.sync = false;
+    syncWriteOptions.sync = true;
+    flushWriteOptions.sync = true;
+    defaultReadOptions.verify_checksums = false;
+    defaultReadOptions.fill_cache = true;
+
     leveldb::Options options;
     options.create_if_missing = true;
     options.block_cache = leveldb::NewLRUCache(64 * 1048576);
@@ -655,7 +661,7 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
 }
 
 /**
-    Delete
+    Delete Versioned
 
     @param  key             the key of the entry to delete
     @param  version         the version of the entry to delete
@@ -670,7 +676,7 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
 */
 
 ReturnStatus
-ObjectStore::de1ete(const string& key, const string& version, PersistOption persistOption) {
+ObjectStore::deleteVersioned(const string& key, const string& version, PersistOption persistOption) {
 
     /*
         Ensure that the parameters are valid.  If not, fail the operation.
@@ -708,7 +714,6 @@ ObjectStore::de1ete(const string& key, const string& version, PersistOption pers
             return ReturnStatus::VERSION_MISMATCH;
         }
     }
-    serializedEntryData.clear();
 
     status = m_database->Delete(getWriteOptions(persistOption), key);
 
@@ -733,7 +738,7 @@ ObjectStore::de1ete(const string& key, const string& version, PersistOption pers
 */
 
 ReturnStatus
-ObjectStore::de1eteForced(const string& key, PersistOption persistOption) {
+ObjectStore::deleteForced(const string& key, PersistOption persistOption) {
 
     /*
         Ensure that the parameters are valid.  If not, fail the operation.
@@ -756,5 +761,240 @@ ObjectStore::de1eteForced(const string& key, PersistOption persistOption) {
         sync();
 
     return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
+}
+
+/**
+    Batch Put
+
+    @param  batch           the batch to add an operation to
+    @param  key             the key of the entry to be put in the object store
+    @param  value           the value of the entry to be put in the object store
+    @param  newVersion      the new version of the entry to be put in the object store
+    @param  oldVersion      the (optional) old version of the entry in the object store
+    @param  tag             the (optional) tag of the entry to be put in the object store
+    @param  algorithm       the (optional) algorithm of the entry to be put in the object store
+
+    @return the status of adding the operation to the batch job
+*/
+
+ReturnStatus
+ObjectStore::batchPut(BatchDescriptor& batch, const string& key, const string& value, const string& newVersion,
+                      const string& oldVersion, const string& tag, Algorithm algorithm) {
+
+    /*
+        Ensure that the parameters are valid.  If not, fail the operation.
+    */
+
+#ifdef CHECK_ALL
+    if (key.size() < systemConfig.minKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+
+    if (key.size() > systemConfig.maxKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_LARGE;
+
+    if (value.size() > systemConfig.maxValueSize())
+        return ReturnStatus::VALUE_SIZE_TOO_LARGE;
+
+    if (newVersion.size() > systemConfig.maxVersionSize())
+        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
+
+    if (tag.size() > systemConfig.maxTagSize())
+        return ReturnStatus::TAG_SIZE_TOO_LARGE;
+
+#endif
+
+    /*
+        Validating the version includes checking if an entry with the specified key is already in
+        the object store.  If it is, the specified version must be the same.
+    */
+
+    string serializedEntryData;
+    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
+
+    if (status.ok()) {
+        unique_ptr<kaos::Entry> entry(new kaos::Entry());
+        entry->ParseFromString(serializedEntryData);
+        if (entry->version() != oldVersion) {
+            return ReturnStatus::VERSION_MISMATCH;
+        }
+    }
+    else if (!oldVersion.empty()) {
+        return ReturnStatus::VERSION_MISMATCH;
+    }
+
+    /*
+        First, create the metadata for the entry set set the write options, then put the entry in
+        the object store.
+    */
+
+    unique_ptr<kaos::Entry> entry(new kaos::Entry());
+    entry->set_key(key);
+    entry->set_value(value);
+    entry->set_version(newVersion);
+    entry->set_tag(tag);
+    entry->set_algorithm(algorithm);
+
+    string serializedData;
+    entry->SerializeToString(&serializedData);
+    batch.Put(key, serializedData);
+    return ReturnStatus::SUCCESS;
+}
+
+/**
+    Batch Put Forced
+
+    @param  batch           the batch to add an operation to
+    @param  key             the key of the entry to be put in the object store
+    @param  value           the value of the entry to be put in the object store
+    @param  version         the (optional) version of the entry to be put in the object store
+    @param  tag             the (optional) tag of the entry to be put in the object store
+    @param  algorithm       the (optional) algorithm of the entry to be put in the object store
+
+    @return the status of adding the operation to the batch job
+*/
+
+ReturnStatus
+ObjectStore::batchPutForced(BatchDescriptor& batch, const string& key, const string& value,
+                            const string& version, const string& tag, Algorithm algorithm) {
+
+    /*
+        Ensure that the parameters are valid.  If not, fail the operation.
+    */
+
+#ifdef CHECK_ALL
+    if (key.size() < systemConfig.minKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+
+    if (key.size() > systemConfig.maxKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_LARGE;
+
+    if (value.size() > systemConfig.maxValueSize())
+        return ReturnStatus::VALUE_SIZE_TOO_LARGE;
+
+    if (version.size() > systemConfig.maxVersionSize())
+        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
+
+    if (tag.size() > systemConfig.maxTagSize())
+        return ReturnStatus::TAG_SIZE_TOO_LARGE;
+#endif
+
+    unique_ptr<kaos::Entry> entry(new kaos::Entry());
+    entry->set_key(key);
+    entry->set_value(value);
+    entry->set_version(version);
+    entry->set_tag(tag);
+    entry->set_algorithm(algorithm);
+
+    string serializedData;
+    entry->SerializeToString(&serializedData);
+    batch.Put(key, serializedData);
+    return ReturnStatus::SUCCESS;
+}
+
+/**
+    Delete
+
+    @param  batch           the batch to add an operation to
+    @param  key             the key of the entry to delete
+    @param  version         the version of the entry to delete
+
+    @return the status of adding the operation to the batch job
+
+    Batches a delete of the entry that is associated with the key specified.
+*/
+
+ReturnStatus
+ObjectStore::batchDelete(BatchDescriptor& batch, const string& key, const string& version) {
+
+    /*
+        Ensure that the parameters are valid.  If not, fail the operation.
+    */
+
+#ifdef CHECK_ALL
+    if (key.size() < systemConfig.minKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+
+    if (key.size() > systemConfig.maxKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_LARGE;
+
+    if (version.size() > systemConfig.maxVersionSize())
+        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
+#endif
+
+    /*
+        Validating the version includes checking if an entry with the specified key is already in
+        the object store.  If it is, the specified version must be the same.
+    */
+
+    string serializedEntryData;
+    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
+
+    if (!status.ok())
+        return ReturnStatus::ENTRY_NOT_FOUND;
+
+    if (status.ok()) {
+        unique_ptr<kaos::Entry> entry(new kaos::Entry());
+        entry->ParseFromString(serializedEntryData);
+        if (entry->has_version() && (entry->version() != version)) {
+            return ReturnStatus::VERSION_MISMATCH;
+        }
+    }
+
+    batch.Delete(key);
+    return ReturnStatus::SUCCESS;
+}
+
+/**
+    Batch Delete Forced
+
+    @param  batch           the batch to add an operation to
+    @param  key             the key of the entry to delete
+
+    @return the status of adding the operation to the batch job
+
+    Batches a delete of the entry that is associated with the key specified.
+*/
+
+ReturnStatus
+ObjectStore::batchDeleteForced(BatchDescriptor& batch, const string& key) {
+
+    /*
+        Ensure that the parameters are valid.  If not, fail the operation.
+    */
+
+#ifdef CHECK_ALL
+    if (key.size() < systemConfig.minKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+
+    if (key.size() > systemConfig.maxKeySize())
+        return ReturnStatus::KEY_SIZE_TOO_LARGE;
+#endif
+
+    batch.Delete(key);
+    return ReturnStatus::SUCCESS;
+}
+
+/**
+    Batch Commit
+
+    @param  batch   contains the batch operations to perform
+
+    @return the status of the commit operation
+
+    Performs all the batched operations commiting them to the database.
+*/
+
+ReturnStatus
+ObjectStore::batchCommit(BatchDescriptor& batch) {
+
+    leveldb::Status status = m_database->Write(flushWriteOptions, &batch);
+    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
+}
+
+ReturnStatus
+ObjectStore::optimizeMedia() {
+
+    m_database->CompactRange(nullptr, nullptr);
+    return ReturnStatus::SUCCESS;
 }
 

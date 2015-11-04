@@ -36,6 +36,7 @@ public:
     static void outputSetup(const com::seagate::kinetic::proto::Command_Setup& setup);
     static void outputSecurity(const com::seagate::kinetic::proto::Command_Security& security);
     static void outputPinOp(const com::seagate::kinetic::proto::Command_PinOperation& pinop);
+    static void outputBatch(const com::seagate::kinetic::proto::Command_Batch& batch);
     static void outputBody(const com::seagate::kinetic::proto::Command_Body& body);
     static void outputStatus(const com::seagate::kinetic::proto::Command_Status& status);
     static void outputHexBytes(const std::string& data, bool newLine = true);

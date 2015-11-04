@@ -37,8 +37,8 @@ public:
     void start(std::list<TransportInterface*> transportList);
     void stop();
     void wait();
-    bool connectionCount();
-
+    uint32_t connectionCount();
+    uint32_t batchCount();
 
 private:
 

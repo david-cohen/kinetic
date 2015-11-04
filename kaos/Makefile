@@ -1,80 +1,92 @@
-# Common directories
+# Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
 
 BASE_DIR	= $(shell pwd)
-BUILD_DIR	= build
-BUILD_BIN_DIR	= $(BUILD_DIR)/bin
-BUILD_TEST_DIR	= $(BUILD_DIR)/test
-BUILD_PROTO_DIR	= $(BUILD_DIR)/proto
-BUILD_TEST_OBJ_DIR = $(BUILD_DIR)/test_obj
 
-SRC_DIR		= $(BASE_DIR)/src
-INCLUDE_DIR     = $(BASE_DIR)/include
-PROTO_DIR	= $(BASE_DIR)/proto
-TEST_SRC_DIR    = $(BASE_DIR)/test
+# Cross Compile for ARM and native compile for everything else
 
-
-ifdef CROSS_COMPILE
-$(info **** Cross Compiling for ${ARCH} ****)
-TOOLCHAIN_LIB_DIR = /home/shaun/work/Marvel/A370/armv7-marvell-linux-gnueabi-hard_i686_64K_Dev_20131002/arm-marvell-linux-gnueabi/libc/lib
-LEVELDB_DIR  	  = /home/shaun/work/Marvel/leveldb-1.15.0
-LEVELDB_LIBRARY   = $(LEVELDB_DIR)/libleveldb.a
-PROTOBUF_DIR 	  = /home/shaun/work/Marvel/protobuf-2.5.0
-PROTOBUF_LIBRARY  = $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
-GTEST_DIR    	  = /home/shaun/work/Marvel/gtest-1.6.0
-GTEST_LIBRARY     = $(GTEST_DIR)/make/gtest_main.a
-SSL_DIR  	  = /usr
-SSL_LIB_DIR  	  = /home/shaun/work/Marvel/usr/lib/x86_64-linux-gnu
-SSL_LIBRARIES     = $(SSL_LIB_DIR)/libssl.a
-
+ifeq ($(ARM_CROSS_COMPILER),true)
+COMPILER_PREFIX 	= arm-marvell-linux-gnueabi-
+TOOLCHAIN_BIN_DIR   = $(BASE_DIR)/a370-tool-chain/bin
+TOOLCHAIN_LIB_DIR   = $(BASE_DIR)/a370-tool-chain/arm-marvell-linux-gnueabi/libc/lib
 else
-# Local Build
-$(info **** Local Build ****)
-TOOLCHAIN_LIB_DIR = /usr/lib/x86_64-linux-gnu
-BOOST_DIR         = $(BASE_DIR)/../3rdParty/boost
-LINT_DIR          = $(BASE_DIR)/tools
-LEVELDB_DIR    	  = $(BASE_DIR)/../3rdParty/leveldb
-LEVELDB_LIBRARY   = $(LEVELDB_DIR)/libleveldb.a
-PROTOBUF_DIR   	  = $(BASE_DIR)/../3rdParty/protobuf
-PROTOBUF_LIBRARY  = $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
-GTEST_DIR      	  = $(BASE_DIR)/../3rdParty/googletest
-ASTYLE_DIR	  = $(BASE_DIR)/../3rdParty/astyle/build/gcc/bin
-GTEST_LIBRARY     = $(GTEST_DIR)/make/gtest_main.a
-SSL_DIR	       	  = /usr
-SSL_LIB_DIR    	  = /usr/lib/x86_64-linux-gnu
-SSL_LIBRARIES     = -L$(SSL_LIB_DIR) -lssl -lcrypto
-CXX            	  = g++
+COMPILER_PREFIX 	=
+TOOLCHAIN_BIN_DIR   = /usr/bin
+TOOLCHAIN_LIB_DIR   = /usr/lib/x86_64-linux-gnu
 endif
 
-CXXFLAGS       	  = -std=c++0x -g -Wall -Wextra -DLOG_EVENT_LOCATION -DWORK_WITH_JAVA_SMOKE_TEST
-INCLUDES       	  = -I$(BASE_DIR)/include -I$(LEVELDB_DIR)/include -I$(SSL_DIR)/include -I$(PROTOBUF_DIR)/src -I$(BOOST_DIR)
-TEST_INCLUDES  	  = $(INCLUDES) -I$(GTEST_DIR)/include
-LIBRARIES      	  = $(LEVELDB_LIBRARY) $(PROTOBUF_LIBRARY) $(SSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
-TEST_LIBRARIES    = $(GTEST_LIBRARY) $(LIBRARIES)
+# Build Input Directories
+
+APP_SRC_DIR 	= $(BASE_DIR)/src
+INCLUDE_DIR 	= $(BASE_DIR)/include
+PROTO_DIR   	= $(BASE_DIR)/proto
+TEST_SRC_DIR	= $(BASE_DIR)/test
+
+# Build Output Directories
+
+BUILD_DIR   		= $(BASE_DIR)/build
+BUILD_APP_BIN_DIR   = $(BUILD_DIR)/bin/app
+BUILD_APP_OBJ_DIR   = $(BUILD_DIR)/obj/app
+BUILD_PROTO_DIR 	= $(BUILD_DIR)/proto
+BUILD_TEST_BIN_DIR  = $(BUILD_DIR)/bin/test
+BUILD_TEST_OBJ_DIR  = $(BUILD_DIR)/obj/test
+
+# Dependancies Library Directories
+
+DEPENDANCIES_DIR = $(BASE_DIR)/dependancies
+ASTYLE_DIR  	= $(DEPENDANCIES_DIR)/astyle/build/gcc/bin
+BOOST_DIR   	= $(DEPENDANCIES_DIR)/boost
+GOOGLE_TEST_DIR = $(DEPENDANCIES_DIR)/googletest
+LEVELDB_DIR 	= $(DEPENDANCIES_DIR)/leveldb
+LINT_DIR		= $(DEPENDANCIES_DIR)/styleguide/cpplint
+PROTOBUF_DIR	= $(DEPENDANCIES_DIR)/protobuf
+OPENSSL_DIR 	= $(DEPENDANCIES_DIR)/openssl
+CONFIG_DIR		= /etc/kaos
+
+# Dependancies Libraries
+
+GTEST_LIBRARY   	= $(GOOGLE_TEST_DIR)/make/gtest_main.a
+LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
+PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
+OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
+
+# Compiler/Linker Parameters
+
+CC  			= $(COMPILER_PREFIX)gcc
+CXX 			= $(COMPILER_PREFIX)g++
+CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DLOG_EVENT_LOCATION -DWORK_WITH_JAVA_SMOKE_TEST
+CXX_TEST_FLAGS  = $(CXX_APP_FLAGS) -DUNIT_TEST
+APP_INCLUDES	= -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(LEVELDB_DIR)/include -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
+APP_LIBRARIES   = $(LEVELDB_LIBRARY) $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
+TEST_INCLUDES   = $(APP_INCLUDES) -I$(GOOGLE_TEST_DIR)/include
+TEST_LIBRARIES  = $(GTEST_LIBRARY) $(APP_LIBRARIES)
 
 # Build the Kinetic Advanced Object Storage
 
-kaos: 	$(BUILD_BIN_DIR)/kaos
+kaos:   env-check $(BUILD_APP_BIN_DIR)/kaos
 
 # Build the unit tests
 
-test:	$(BUILD_TEST_DIR)/heartbeatProviderUnitTest \
-	$(BUILD_TEST_DIR)/accessControlUnitTest \
-	$(BUILD_TEST_DIR)/accessScopeUnitTest \
-	$(BUILD_TEST_DIR)/hmacUnitTest \
-	$(BUILD_TEST_DIR)/kineticMessageFramingUnitTest \
-	$(BUILD_TEST_DIR)/serverSettingsUnitTest \
-	$(BUILD_TEST_DIR)/translatorUnitTest \
+test: \
+	$(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest \
+	$(BUILD_TEST_BIN_DIR)/accessControlUnitTest \
+	$(BUILD_TEST_BIN_DIR)/accessScopeUnitTest \
+	$(BUILD_TEST_BIN_DIR)/hmacUnitTest \
+	$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest \
+	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest \
+	$(BUILD_TEST_BIN_DIR)/translatorUnitTest \
+	$(BUILD_TEST_BIN_DIR)/objectStoreTest \
 
 # Run the unit tests
 
-runTests:
-	$(BUILD_TEST_DIR)/heartbeatProviderUnitTest
-	$(BUILD_TEST_DIR)/accessControlUnitTest
-	$(BUILD_TEST_DIR)/accessScopeUnitTest
-	$(BUILD_TEST_DIR)/hmacUnitTest
-	$(BUILD_TEST_DIR)/kineticMessageFramingUnitTest
-	$(BUILD_TEST_DIR)/serverSettingsUnitTest
-	$(BUILD_TEST_DIR)/translatorUnitTest
+run-tests:
+	$(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest
+	$(BUILD_TEST_BIN_DIR)/accessControlUnitTest
+	$(BUILD_TEST_BIN_DIR)/accessScopeUnitTest
+	$(BUILD_TEST_BIN_DIR)/hmacUnitTest
+	$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest
+	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest
+	$(BUILD_TEST_BIN_DIR)/translatorUnitTest
+	$(BUILD_TEST_BIN_DIR)/objectStoreTest
 
 # Build source from the protocol buffer files (rename the .cc files to .cpp)
 
@@ -86,100 +98,216 @@ proto:
 	$(BASE_DIR)/tools/cleanProtoFile.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Entry
 	$(BASE_DIR)/tools/cleanProtoFile.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Kinetic
 	$(BASE_DIR)/tools/cleanProtoFile.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Settings
-	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.cpp $(SRC_DIR)/
+	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.cpp $(APP_SRC_DIR)/
 	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.hpp $(INCLUDE_DIR)/
 
+# Check for suspicious coding
+
 check:
-	- $(LINT_DIR)/cpplint.py --extensions=hpp,cpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string,-readability/streams,-whitespace/blank_line,-whitespace/empty_loop_body $(INCLUDE_DIR)/*.hpp
-	- $(LINT_DIR)/cpplint.py --extensions=hpp,cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string,-readability/streams,-whitespace/blank_line,-whitespace/empty_loop_body $(SRC_DIR)/*.cpp
-	- $(LINT_DIR)/cpplint.py --extensions=hpp,cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string,-readability/streams,-whitespace/blank_line,-whitespace/empty_loop_body $(TEST_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string $(INCLUDE_DIR)/*.hpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string $(APP_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string $(TEST_SRC_DIR)/*.cpp
+	- cppcheck $(APP_SRC_DIR) --enable=all --force --includes-file=$(APP_INCLUDES)
+	- cppcheck $(TEST_SRC_DIR) --enable=all --force --includes-file=$(APP_INCLUDES)
+
+# Made the code follow a consistent coding style
 
 conform:
-	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --remove-comment-prefix --indent-switches --keep-one-line-blocks --recursive "$(INCLUDE_DIR)/*.hpp"
-	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --remove-comment-prefix --indent-switches --keep-one-line-blocks --recursive "$(TEST_SRC_DIR)/*.cpp"
-	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --remove-comment-prefix --indent-switches --keep-one-line-blocks --recursive "$(SRC_DIR)/*.cpp"
+	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --remove-comment-prefix	--indent-switches	--keep-one-line-blocks	--recursive	"$(INCLUDE_DIR)/*.hpp"
+	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --remove-comment-prefix	--indent-switches	--keep-one-line-blocks	--recursive	"$(TEST_SRC_DIR)/*.cpp"
+	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --remove-comment-prefix	--indent-switches	--keep-one-line-blocks	--recursive	"$(APP_SRC_DIR)/*.cpp"
 
+# Install the tool chain for the Marvel ARM A370
+
+cross-compiler:
+	wget -P $(BASE_DIR) http://wdscnasbuild01.wdc.com:8081/nexus/service/local/repositories/cross-compiler/content/arm/armv7-marvell-linux-gnueabi/4.6.4/armv7-marvell-linux-gnueabi-4.6.4-hard_i686_64K_Dev_20131002.tbz2
+	tar -xvjf $(BASE_DIR)/armv7-marvell-linux-gnueabi-4.6.4-hard_i686_64K_Dev_20131002.tbz2 -C $(BASE_DIR)
+	rm $(BASE_DIR)/armv7-marvell-linux-gnueabi-4.6.4-hard_i686_64K_Dev_20131002.tbz2
+	mv $(BASE_DIR)/armv7-marvell-linux-gnueabi-hard_i686_64K_Dev_20131002 $(BASE_DIR)/a370-tool-chain
+	echo "export PATH=\$$PATH:$(BASE_DIR)/a370-tool-chain/bin" >> ~/.bashrc
+
+install-cert:
+	sudo mkdir $(CONFIG_DIR)
+	sudo chmod 777 $(CONFIG_DIR)
+	sudo cp cert/cert.pem $(CONFIG_DIR)
+
+# Build the required dependancies
+
+dependancies: env-check dependancies-dir boost leveldb openssl protobuf googletest lint install-cert
+
+dependancies-dir:
+	mkdir -p $(DEPENDANCIES_DIR)
+	chmod 777 $(DEPENDANCIES_DIR)
+
+# Install the Boost C++ headers
+
+boost:
+	wget -P $(DEPENDANCIES_DIR) http://sourceforge.net/projects/boost/files/boost/1.59.0/boost_1_59_0.tar.gz
+	tar -zxf $(DEPENDANCIES_DIR)/boost_1_59_0.tar.gz -C $(DEPENDANCIES_DIR)
+	rm $(DEPENDANCIES_DIR)/boost_1_59_0.tar.gz
+	mv $(DEPENDANCIES_DIR)/boost_1_59_0 $(DEPENDANCIES_DIR)/boost
+	sed -i '71d' $(BOOST_DIR)/boost/property_tree/detail/json_parser/narrow_encoding.hpp
+
+# Build the level DB library
+
+leveldb:
+	wget -P $(DEPENDANCIES_DIR) https://github.com/google/leveldb/archive/v1.18.tar.gz
+	tar -zxf $(DEPENDANCIES_DIR)/v1.18.tar.gz -C $(DEPENDANCIES_DIR)
+	rm $(DEPENDANCIES_DIR)/v1.18.tar.gz
+	mv $(DEPENDANCIES_DIR)/leveldb-1.18 $(DEPENDANCIES_DIR)/leveldb
+	export CC=$(CC) && export CXX=$(CXX) && cd $(LEVELDB_DIR) && \
+	./build_detect_platform config $(LEVELDB_DIR) && make
+
+# Build the Open SSL libraries
+
+openssl: env-check
+	wget -P $(DEPENDANCIES_DIR) https://www.openssl.org/source/openssl-1.0.0s.tar.gz
+	tar -zxf $(DEPENDANCIES_DIR)/openssl-1.0.0s.tar.gz -C $(DEPENDANCIES_DIR)
+	rm $(DEPENDANCIES_DIR)/openssl-1.0.0s.tar.gz
+	mv $(DEPENDANCIES_DIR)/openssl-1.0.0s $(DEPENDANCIES_DIR)/openssl
+	export CC=$(CC) && export CXX=$(CXX) && cd $(OPENSSL_DIR) && \
+	./Configure --openssldir=$(OPENSSL_DIR) no-shared os/compiler:gcc && make
+
+# Build the protocol buffer library
+
+protobuf: env-check
+	wget -P $(DEPENDANCIES_DIR) https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+	tar -zxf $(DEPENDANCIES_DIR)/protobuf-2.6.1.tar.gz -C $(DEPENDANCIES_DIR)
+	mv $(DEPENDANCIES_DIR)/protobuf-2.6.1 $(DEPENDANCIES_DIR)/protobuf
+	rm $(DEPENDANCIES_DIR)/protobuf-2.6.1.tar.gz
+	sed -i '1288s/.*/\ \ \ \ \ \ ) {/' $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "1289i\ \ \ \ \ \ \ \ \ \ static_cast<void>(filename);" $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "1290i\ \ \ \ \ \ \ \ \ \ static_cast<void>(element_name);" $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "1291i\ \ \ \ \ \ \ \ \ \ static_cast<void>(descriptor);" $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "1292i\ \ \ \ \ \ \ \ \ \ static_cast<void>(location);" $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "1293i\ \ \ \ \ \ \ \ \ \ static_cast<void>(message);" $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "1294i\ \ \ \ \ \ }" $(PROTOBUF_DIR)/src/google/protobuf/descriptor.h
+	sed -i "405i\ \ \ \ static_cast<void>(message);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i "406i\ \ \ \ static_cast<void>(oneof_descriptor);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i '398s/}//' $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i "399i\ \ \ \ static_cast<void>(message);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i "400i\ \ \ \ static_cast<void>(oneof_descriptor);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i "401i\ \ }" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i "394i\ \ \ \ static_cast<void>(message);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	sed -i "395i\ \ \ \ static_cast<void>(oneof_descriptor);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
+	cd $(PROTOBUF_DIR) && export CC=gcc && ./configure && make
+	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); sudo make install; fi
+	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then sudo cp $(PROTOBUF_DIR)/src/.libs/protoc /usr/bin; fi
+	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); make distclean; fi
+	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); ./configure --host=arm-linux CC=$(CC) CXX=$(CXX) --with-protoc=/usr/bin/protoc; fi
+	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); export LD_LIBRARY_PATH=/usr/local/lib; make; fi
+
+# Build the Google Test library
+
+googletest: env-check
+	wget -P $(DEPENDANCIES_DIR) https://github.com/google/googletest/archive/release-1.7.0.tar.gz
+	tar -zxf $(DEPENDANCIES_DIR)/release-1.7.0.tar.gz -C $(DEPENDANCIES_DIR)
+	rm $(DEPENDANCIES_DIR)/release-1.7.0.tar.gz
+	mv $(DEPENDANCIES_DIR)/googletest-release-1.7.0 $(DEPENDANCIES_DIR)/googletest
+	cd $(GOOGLE_TEST_DIR)/make && export CC=$(CC) && export CXX=$(CXX) && make
+
+# Install (and customize) the C++ lint script
+
+lint:
+	cd $(DEPENDANCIES_DIR) && git clone https://github.com/google/styleguide.git
+	sed -i 's|filename.rfind|filename.find|g' $(LINT_DIR)/cpplint.py
+	sed -i '2494,2498d' $(LINT_DIR)/cpplint.py
+	sed -i '3928,3933d' $(LINT_DIR)/cpplint.py
+	sed -i '3911,3917d' $(LINT_DIR)/cpplint.py
+	sed -i '3093,3097d' $(LINT_DIR)/cpplint.py
+	sed -i '3072,3075d' $(LINT_DIR)/cpplint.py
+	sed -i '3848,3850d' $(LINT_DIR)/cpplint.py
+	sed -i '4143,4145d' $(LINT_DIR)/cpplint.py
+	sed -i '6151,6152d' $(LINT_DIR)/cpplint.py
+	sed -i '6151i \ \ \ \ pass' $(LINT_DIR)/cpplint.py
+	sed -i '5297,5302d' $(LINT_DIR)/cpplint.py
 
 # Remove any build artifacts
 
 clean:
-	rm -Rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)
 
+# Ensure that that necessary build information has been provided (or terminate the build)
+
+env-check:
+	if test "$(ARM_CROSS_COMPILER)" = "" ; then echo "ARM_CROSS_COMPILER must be specified and set to true or false (as an environment variable or make parameter such as 'make ARM_CROSS_COMPILER=false all'"; exit 1; fi
+
+# Build main application and associated tests
 
 all:	clean kaos test
 
 # Identify the targets that are not files
 
-.PHONY: clean proto runTests beautify all
+.PHONY: all env-check clean lint googletest protobuf openssl leveldb boost dependancies-dir dependancies cross-compiler conform check proto run-tests install-cert
 
-# Build application
+# Build kaos application
 
-$(BUILD_BIN_DIR)/kaos: \
-	$(BUILD_DIR)/AccessControl.o \
-	$(BUILD_DIR)/ClearTextStream.o \
-	$(BUILD_DIR)/ConnectionHandler.o \
-	$(BUILD_DIR)/Entry.pb.o \
-	$(BUILD_DIR)/HeartbeatProvider.o \
-	$(BUILD_DIR)/Hmac.o \
-	$(BUILD_DIR)/KineticLog.o \
-	$(BUILD_DIR)/Kinetic.pb.o \
-	$(BUILD_DIR)/Main.o \
-	$(BUILD_DIR)/MessageHandler.o \
-	$(BUILD_DIR)/MessageTrace.o \
-	$(BUILD_DIR)/ObjectStore.o \
-	$(BUILD_DIR)/ServerSettings.o \
-	$(BUILD_DIR)/Settings.pb.o \
-	$(BUILD_DIR)/SslControl.o \
-	$(BUILD_DIR)/SslStream.o \
-	$(BUILD_DIR)/SystemConfig.o \
-	$(BUILD_DIR)/TcpTransport.o \
-	$(BUILD_DIR)/TransportManager.o \
-	$(BUILD_DIR)/Translator.o
+$(BUILD_APP_BIN_DIR)/kaos: \
+	$(BUILD_APP_OBJ_DIR)/AccessControl.o \
+	$(BUILD_APP_OBJ_DIR)/ClearTextStream.o \
+	$(BUILD_APP_OBJ_DIR)/Connection.o \
+	$(BUILD_APP_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_APP_OBJ_DIR)/HeartbeatProvider.o \
+	$(BUILD_APP_OBJ_DIR)/Hmac.o \
+	$(BUILD_APP_OBJ_DIR)/KineticLog.o \
+	$(BUILD_APP_OBJ_DIR)/Kinetic.pb.o \
+	$(BUILD_APP_OBJ_DIR)/Main.o \
+	$(BUILD_APP_OBJ_DIR)/MessageHandler.o \
+	$(BUILD_APP_OBJ_DIR)/MessageTrace.o \
+	$(BUILD_APP_OBJ_DIR)/ObjectStore.o \
+	$(BUILD_APP_OBJ_DIR)/ServerSettings.o \
+	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \
+	$(BUILD_APP_OBJ_DIR)/SslControl.o \
+	$(BUILD_APP_OBJ_DIR)/SslStream.o \
+	$(BUILD_APP_OBJ_DIR)/SystemConfig.o \
+	$(BUILD_APP_OBJ_DIR)/TcpTransport.o \
+	$(BUILD_APP_OBJ_DIR)/TransportManager.o \
+	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
-	$(CXX) $^ $(LIBRARIES) -o $@
+	$(CXX) $^ $(APP_LIBRARIES) -o $@
 
 # Rule to build application source
 
-$(BUILD_DIR)/%.o: src/%.cpp
+$(BUILD_APP_OBJ_DIR)/%.o: $(APP_SRC_DIR)/%.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $^ -o $@
+	$(CXX) $(CXX_APP_FLAGS) $(APP_INCLUDES) -c $^ -o $@
 
 # Rule to build test source
 
-$(BUILD_TEST_OBJ_DIR)/%.o: test/%.cpp
+$(BUILD_TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -DUNIT_TEST $(TEST_INCLUDES) -c $^ -o $@
+	$(CXX) $(CXX_TEST_FLAGS) $(TEST_INCLUDES) -c $^ -o $@
 
-$(BUILD_TEST_OBJ_DIR)/%.o: src/%.cpp
+$(BUILD_TEST_OBJ_DIR)/%.o: $(APP_SRC_DIR)/%.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -DUNIT_TEST $(INCLUDES) -c $^ -o $@
+	$(CXX) $(CXX_TEST_FLAGS) $(APP_INCLUDES) -c $^ -o $@
 
 # Build the test code
 
-$(BUILD_TEST_DIR)/kineticMessageFramingUnitTest: \
+$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/KineticMessageFramingUnitTest.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/serverSettingsUnitTest: \
+$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettingsUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
-	$(BUILD_DIR)/Translator.o
+	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/translatorUnitTest: \
+$(BUILD_TEST_BIN_DIR)/translatorUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/TranslatorUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/Translator.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/accessScopeUnitTest: \
+$(BUILD_TEST_BIN_DIR)/accessScopeUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/AccessScopeUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
@@ -187,7 +315,7 @@ $(BUILD_TEST_DIR)/accessScopeUnitTest: \
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/accessControlUnitTest: \
+$(BUILD_TEST_BIN_DIR)/accessControlUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/AccessControlUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
@@ -195,13 +323,13 @@ $(BUILD_TEST_DIR)/accessControlUnitTest: \
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/hmacUnitTest: \
+$(BUILD_TEST_BIN_DIR)/hmacUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/HmacUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/Hmac.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/perfTest: \
+$(BUILD_TEST_BIN_DIR)/perfTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/PerformanceTest.o \
 	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
@@ -210,14 +338,30 @@ $(BUILD_TEST_DIR)/perfTest: \
 	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
 	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
 	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
-	$(BUILD_DIR)/Translator.o
+	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
-$(BUILD_TEST_DIR)/heartbeatProviderUnitTest: \
+$(BUILD_TEST_BIN_DIR)/objectStoreTest: \
+	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStoreTest.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
+	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
+	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
+	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
+	$(BUILD_APP_OBJ_DIR)/Translator.o
+	@mkdir -p $(@D)
+	$(CXX) $^ $(TEST_LIBRARIES) -o $@
+
+$(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/HeartbeatProvider.o \
 	$(BUILD_TEST_OBJ_DIR)/HeartbeatProviderUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
+
 

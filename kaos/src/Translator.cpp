@@ -433,6 +433,18 @@ Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageTy
             return "Media Optimize";
         case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_MEDIAOPTIMIZE_RESPONSE:
             return "Media Optimize Response";
+        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_START_BATCH:
+            return "Start Batch";
+        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_START_BATCH_RESPONSE:
+            return "Start Batch Response";
+        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_END_BATCH:
+            return "End Batch";
+        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_END_BATCH_RESPONSE:
+            return "End Batch Response";
+        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_ABORT_BATCH:
+            return "Abort Batch";
+        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_ABORT_BATCH_RESPONSE:
+            return "Abort Batch Response";
         default:
             return "Unsupported Message Type (" + convertToString<uint32_t>(messageType) + ")";
     }

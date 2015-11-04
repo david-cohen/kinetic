@@ -15,12 +15,12 @@
 #include <stdexcept>
 #include "SslStream.hpp"
 #include "SslControl.hpp"
+#include "Connection.hpp"
 #include "TcpTransport.hpp"
 #include "SystemConfig.hpp"
 #include "ClearTextStream.hpp"
 #include "StreamInterface.hpp"
 #include "TransportManager.hpp"
-#include "ConnectionHandler.hpp"
 #include "TransportInterface.hpp"
 
 /**
@@ -36,7 +36,6 @@
 */
 
 class ConnectionFactory {
-
 public:
 
     /**
@@ -64,7 +63,7 @@ public:
                                   ? static_cast<StreamInterface*>(new SslStream(socketFd, SslControl::instance().createConnection(socketFd)))
                                   : static_cast<StreamInterface*>(new ClearTextStream(socketFd));
 
-        transport->addConnection(new ConnectionHandler(transport, stream, serverPort, serverIpAddress, clientPort, clientIpAddress));
+        transport->addConnection(new Connection(transport, stream, serverPort, serverIpAddress, clientPort, clientIpAddress));
     }
 
 private:

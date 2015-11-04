@@ -14,22 +14,28 @@
 #include <list>
 #include <string>
 #include "Common.hpp"
+#include "Connection.hpp"
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
-#include "ConnectionHandler.hpp"
 
 typedef struct {
 
-    inline Operation operation() {return m_operation;}
-    inline bool operationInvolvesKey() {return m_operationInvolvesKey;}
-    inline com::seagate::kinetic::proto::Message_AuthType requiredAuthenticationType() {return m_requiredAuthenticationType;}
-
-    const com::seagate::kinetic::proto::Command_MessageType  requestType;                                       //!< Type of message
-    const com::seagate::kinetic::proto::Command_MessageType  responseType;                                      //!< Associated response type
-    const Operation                                          m_operation;                                       //!< Operation to be performed for this request
-    const com::seagate::kinetic::proto::Message_AuthType     m_requiredAuthenticationType;
+    const com::seagate::kinetic::proto::Command_MessageType  m_requestType;                     //!< Type of message
+    const Operation                                          m_operation;                       //!< Operation to be performed for this request
     const bool                                               m_operationInvolvesKey;
-    void (*perform)(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);                    //!< Function to process message type
+
+    void (*perform)(Transaction& transaction);     //!< Function to process message type
+
+    inline Operation operation() {return m_operation;}
+    inline com::seagate::kinetic::proto::Command_MessageType responseType() {
+        return static_cast<com::seagate::kinetic::proto::Command_MessageType>(m_requestType - 1);
+    }
+    inline bool operationInvolvesKey() {return m_operationInvolvesKey;}
+    inline com::seagate::kinetic::proto::Message_AuthType requiredAuthenticationType() {
+            return m_requestType == com::seagate::kinetic::proto::Command_MessageType_PINOP
+                   ? com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH
+                   : com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH;
+    }
 } OperationInfo;
 
 /**
@@ -40,57 +46,39 @@ class MessageHandler {
 public:
 
     /*
-        Constructor
-    */
-
-    explicit MessageHandler(ConnectionHandler* connectionHandler);
-
-    /*
-        Public Instance Member Functions
-    */
-
-    KineticMessagePtr processRequest(KineticMessagePtr& requestMessage);
-    KineticMessagePtr processError(KineticMessagePtr& requestMessage, ConnectionError error, const std::string& errorMessage);
-
-    /*
         Public Class Member Functions
     */
 
-    static void processPutRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processSetupRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processSecurityRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processGetRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processGetNextRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processGetPreviousRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processGetVersionRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processGetKeyRangeRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processDeleteRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processFlushRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processNoopRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processPinOpRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processP2pPushRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processGetLogRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
-    static void processInvalidRequest(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage);
+    static void processRequest(Transaction& transaction);
+    static void processError(Transaction& transaction);
+    static void processPutRequest(Transaction& transaction);
+    static void processSetupRequest(Transaction& transaction);
+    static void processSecurityRequest(Transaction& transaction);
+    static void processGetRequest(Transaction& transaction);
+    static void processGetNextRequest(Transaction& transaction);
+    static void processGetPreviousRequest(Transaction& transaction);
+    static void processGetVersionRequest(Transaction& transaction);
+    static void processGetKeyRangeRequest(Transaction& transaction);
+    static void processDeleteRequest(Transaction& transaction);
+    static void processFlushRequest(Transaction& transaction);
+    static void processNoopRequest(Transaction& transaction);
+    static void processPinOpRequest(Transaction& transaction);
+    static void processOptimizeMediaRequest(Transaction& transaction);
+    static void processP2pPushRequest(Transaction& transaction);
+    static void processGetLogRequest(Transaction& transaction);
+    static void processStartBatchRequest(Transaction& transaction);
+    static void processEndBatchRequest(Transaction& transaction);
+    static void processAbortBatchRequest(Transaction& transaction);
+    static void processInvalidRequest(Transaction& transaction);
+    static void handleInvalidBatchRequest(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode, const std::string& message);
 
 private:
-
-    /*
-        Private Instance Member Functions
-    */
-
-    OperationInfo& initialMessageProcessing(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage, AccessControlPtr& accessControl);
 
     /*
         Private Inline Member Functions
     */
 
-    inline uint32_t messageTypeToIndex(::com::seagate::kinetic::proto::Command_MessageType messageType) {return static_cast<uint32_t>(messageType) >> 1;}
-
-    /*
-        Private Data Member
-    */
-
-    ConnectionHandler* const m_connectionHandler;    //!< Assoicated connection
+    static inline uint32_t messageTypeToIndex(::com::seagate::kinetic::proto::Command_MessageType messageType) {return static_cast<uint32_t>(messageType) >> 1;}
 
     DISALLOW_COPY_AND_ASSIGN(MessageHandler);
 };

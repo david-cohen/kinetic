@@ -81,7 +81,6 @@ TEST(Translator_Unit_Test, Operation_From_Setting_Format) {
     ASSERT_EQ(Translator::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG), Operation::GETLOG);
     ASSERT_EQ(Translator::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY), Operation::SECURITY);
 //    ASSERT_EQ(Translator::fromSettingsFormat(kaos::Settings_ACL_Operation_Operation_ARRAYSIZE), Operation::INVALID);                                 );
-
 }
 /*
     TEST(Translator_Unit_Test, Operation_To_Setting_Format_Test) {

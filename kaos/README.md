@@ -1,4 +1,4 @@
-# Kinetic Advanced Object Storage
+# Kinetic Advanced Object Storage (KAOS)
 A Linux userspace application that performs the functions of a Kinetic Device, which is a network attached storage device that communicates using an object interface (using commands such as put, get, and delete). The Kinetic protocol was created by Seagate and is now an open source collaborative project managed through the Linux Foundation.
 
 ##Build Instructions

@@ -6,14 +6,14 @@ A Linux userspace application that performs the functions of a Kinetic Device, w
 ###Native Build on a Debian System
 1.  git clone (or copy) koas project on debian system
 2.  change directories into the kaos directory
-3.  run install_packages.sh (to install needed debian packages)
+3.  run tools/install_packages.sh (to install needed debian packages)
 4.  run make CROSS_COMPILER=false dependancies (to download and build needed libraries)
 5.  run make CROSS_COMPILER=false all (to build kaos application and asssoicated unit tests)
 
 ###Cross Compiled Build on a Debian System
 1.  git clone (or copy) koas project on debian system
 2.  change directories into the kaos directory
-3.  run install_packages.sh (to install needed debian packages)
+3.  run tools/install_packages.sh (to install needed debian packages)
 4.  run make cross-compiler (to install the cross compiler tool chain)
 5.  source ~/.bashrc (to use newly added environment variables)
 6.  run make CROSS_COMPILER=true dependancies (to download and build needed libraries)

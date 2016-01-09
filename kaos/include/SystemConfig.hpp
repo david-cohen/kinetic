@@ -64,8 +64,8 @@ public:
     inline const char* vendor() {return m_vendor;}
     inline const char* model() {return m_model;}
     inline const char* version() {return m_version;}
-    inline const char* serialNumber() {return m_serialNumber;}
-    inline const char* worldWideName() {return m_worldWideName;}
+    inline std::string serialNumber() {return m_serialNumber;}
+    inline std::string worldWideName() {return m_worldWideName;}
     inline const char* protocolVersion() {return m_protocolVersion;}
     inline const char* compilationDate() {return m_compilationDate;}
     inline const char* sourceHash() {return m_sourceHash;}
@@ -124,8 +124,8 @@ private:
     const char*          m_vendor;
     const char*          m_model;
     const char*          m_version;
-    const char*          m_serialNumber;
-    const char*          m_worldWideName;
+    std::string          m_serialNumber;
+    std::string          m_worldWideName;
     const char*          m_protocolVersion;
     const char*          m_compilationDate;
     const char*          m_sourceHash;

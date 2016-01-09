@@ -30,16 +30,15 @@ using std::string;
 */
 
 static const char* VENDOR("Western Digital");
-static const char* MODEL("Neon");
-static const char* VERSION("0.0.1");
-static const char* SERIAL_NUMBER("91098");
-static const char* WORLD_WIDE_NAME("2d2ca5d0-c201-48da-b2c2-00803bd2c7c5");
+static const char* MODEL("Wasp");
+static const char* VERSION("0.0.2");
+static const char* WORLD_WIDE_NAME_PREFIX("2d2ca5d0-c201-48da-b2c2-");
 
 /*
     Build/Source Information (updated on every build)
 */
 
-static const char* COMPILATION_DATE("Mon Apr 28 16:27:56 PDT 2014");
+static const char* COMPILATION_DATE("Wed Dec 8 05:59:59 PDT 2015");
 static const char* SOURCE_HASH("2d2ca5d0-c201-48da-b2c2-00803bd2c7c5");
 
 /*
@@ -48,8 +47,8 @@ static const char* SOURCE_HASH("2d2ca5d0-c201-48da-b2c2-00803bd2c7c5");
 
 static const char* PID_FILE_DIR("/var/run");
 static const char* PID_FILE_EXTENSION(".pid");
-static const char* DATABASE_DIRECTORY("/tmp/objectDatabase");
-static const char* SERVER_SETTINGS_FILE("/tmp/serverSettings");
+static const char* DATABASE_DIRECTORY("/export/dfs/objectDatabase");
+static const char* SERVER_SETTINGS_FILE("/export/dfs/serverSettings");
 static const LogFacility KAOS_LOG_FACILITY(LOCAL0);
 
 /*
@@ -84,8 +83,8 @@ static const size_t MAX_VALUE_SIZE(1048576);
 static const size_t MAX_VERSION_SIZE(2048);
 static const size_t MAX_TAG_SIZE(4096);
 static const size_t MAX_CONNECTIONS(32);
-static const size_t MAX_OUTSTANDING_READ_REQUESTS(UNSUPPORTED_LIMIT);
-static const size_t MAX_OUTSTANDING_WRITE_REQUESTS(UNSUPPORTED_LIMIT);
+static const size_t MAX_OUTSTANDING_READ_REQUESTS(8);
+static const size_t MAX_OUTSTANDING_WRITE_REQUESTS(8);
 static const size_t MAX_MESSAGE_SIZE(2097152);
 static const size_t MAX_KEY_RANGE_COUNT(200);
 static const size_t MAX_IDENTITY_COUNT(16);
@@ -138,8 +137,8 @@ SystemConfig::SystemConfig()
       m_vendor(VENDOR),
       m_model(MODEL),
       m_version(VERSION),
-      m_serialNumber(SERIAL_NUMBER),
-      m_worldWideName(WORLD_WIDE_NAME),
+      m_serialNumber(""),
+      m_worldWideName(""),
       m_protocolVersion(PROTOCOL_VERSION),
       m_compilationDate(COMPILATION_DATE),
       m_sourceHash(SOURCE_HASH),
@@ -219,10 +218,26 @@ SystemConfig::SystemConfig()
             if (family == AF_PACKET) {
                 std::stringstream macAddressStream;
                 unsigned char* address = &((struct sockaddr_ll*)interface->ifa_addr)->sll_addr[0];
-                macAddressStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0])
-                                 << ":" << static_cast<int>(address[1]) << ":" << static_cast<int>(address[2]) << ":"
-                                 << static_cast<int>(address[3]) << ":" << static_cast<int>(address[4]) << ":" << static_cast<int>(address[5]);
+                macAddressStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[1]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[2]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[3]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[4]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[5]);
                 macAddress = macAddressStream.str();
+
+                if (m_serialNumber.empty()) {
+                    std::stringstream serialNumberStream;
+                    serialNumberStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0]) 
+                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[1])
+                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[2])
+                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[3])
+                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[4])
+                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[5]);
+                    m_serialNumber = serialNumberStream.str();
+                    m_worldWideName = WORLD_WIDE_NAME_PREFIX + m_serialNumber;
+                }             
+
             }
 
             else if (family == AF_INET) {

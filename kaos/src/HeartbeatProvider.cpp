@@ -8,14 +8,14 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netpacket/packet.h>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <string>
 #include <thread>
+#include <sstream>
 #include <exception>
 #include "Logger.hpp"
 #include "SystemConfig.hpp"
@@ -104,30 +104,30 @@ HeartbeatProvider::openSocket() {
 void
 HeartbeatProvider::sendHeartbeatMessage() {
 
-    boost::property_tree::ptree rootNode;
-    rootNode.add("manufacturer", systemConfig.vendor());
-    rootNode.add("model", systemConfig.model());
-    rootNode.add("firmware_version", systemConfig.version());
-    rootNode.add("serial_number", systemConfig.serialNumber());
-    rootNode.add("world_wide_name", systemConfig.worldWideName());
-    rootNode.add("protocol_version", systemConfig.protocolVersion());
-    rootNode.add("port", systemConfig.tcpPort());
-    rootNode.add("tlsPort", systemConfig.sslPort());
+    std::stringstream stream;
+    stream << "{"
+           << "\"manufacturer\":\"" << systemConfig.vendor() << "\","
+           << "\"model\":\"" << systemConfig.model() << "\","
+           << "\"firmware_version\":\"" << systemConfig.version() << "\","
+           << "\"serial_number\":\"" << systemConfig.serialNumber() << "\","
+           << "\"world_wide_name\":\"" << systemConfig.worldWideName() << "\","
+           << "\"protocol_version\":\"" << systemConfig.protocolVersion() << "\","
+           << "\"port\":" << systemConfig.tcpPort() << ","
+           << "\"tlsPort\":" << systemConfig.sslPort() << ","
+           << "\"network_interfaces\":[";
 
-    boost::property_tree::ptree& interfaceListNode = rootNode.add("network_interfaces", "");
+    auto interfaceCount = systemConfig.networkInterfaceMap().size();
     for (auto networkInterfaceSet : systemConfig.networkInterfaceMap()) {
         auto networkInterface = networkInterfaceSet.second;
-        boost::property_tree::ptree interfaceNode;
-        interfaceNode.add("name", networkInterface->name());
-        interfaceNode.add("ipv4_addr", networkInterface->ipv4());
-        interfaceNode.add("ipv6_addr", networkInterface->ipv6());
-        interfaceNode.add("mac_addr", networkInterface->macAddress());
-        interfaceListNode.push_back(std::make_pair("", interfaceNode));
+        stream << "{\"name\":\"" << networkInterface->name() << "\","
+               << "\"ipv4_addr\":\"" << networkInterface->ipv4() << "\","
+               << "\"ipv6_addr\":\"" << networkInterface->ipv6() << "\","
+               << "\"mac_addr\":\"" << networkInterface->macAddress() << "\"}";
+        if (--interfaceCount > 0)
+            stream << ",";
     }
-
-    std::ostringstream outputStream;
-    boost::property_tree::json_parser::write_json(outputStream, rootNode);
-    string message = outputStream.str();
+    stream << "]}";
+    string message = stream.str();
 
     if (sendto(m_socketFd, message.c_str(), message.length(), 0, (struct sockaddr*) &m_address, sizeof(m_address)) < 0)
         throw std::runtime_error("Failed to send multicast message");

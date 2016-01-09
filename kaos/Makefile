@@ -73,8 +73,7 @@ test: \
 	$(BUILD_TEST_BIN_DIR)/hmacUnitTest \
 	$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest \
 	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest \
-	$(BUILD_TEST_BIN_DIR)/translatorUnitTest \
-	$(BUILD_TEST_BIN_DIR)/objectStoreTest \
+	$(BUILD_TEST_BIN_DIR)/translatorUnitTest
 
 # Run the unit tests
 
@@ -86,7 +85,6 @@ run-tests:
 	$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest
 	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest
 	$(BUILD_TEST_BIN_DIR)/translatorUnitTest
-	$(BUILD_TEST_BIN_DIR)/objectStoreTest
 
 # Build source from the protocol buffer files (rename the .cc files to .cpp)
 

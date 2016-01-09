@@ -87,6 +87,7 @@ using com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_AUTHORIZED;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_FAILURE;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_BATCH;
 using com::seagate::kinetic::proto::Command_Header;
 using com::seagate::kinetic::proto::Command_KeyValue;
 using com::seagate::kinetic::proto::Command_Status;
@@ -99,11 +100,11 @@ using com::seagate::kinetic::proto::Message_AuthType;
 
 static const int DISPATCH_TABLE_SIZE = 24;
 static OperationInfo dispatchTable[DISPATCH_TABLE_SIZE] = {
-    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  false, MessageHandler::processInvalidRequest       },
-    { Command_MessageType_GET,                  Operation::READ,     true,  MessageHandler::processGetRequest           },
-    { Command_MessageType_PUT,                  Operation::WRITE,    true,  MessageHandler::processPutRequest           },
-    { Command_MessageType_DELETE,               Operation::DELETE,   true,  MessageHandler::processDeleteRequest        },
-    { Command_MessageType_GETNEXT,              Operation::READ,     false, MessageHandler::processGetNextRequest       },
+    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  false, MessageHandler::processInvalidRequest       },  // priority in header
+    { Command_MessageType_GET,                  Operation::READ,     true,  MessageHandler::processGetRequest           },  // scope of priority 
+    { Command_MessageType_PUT,                  Operation::WRITE,    true,  MessageHandler::processPutRequest           },  // connection or global
+    { Command_MessageType_DELETE,               Operation::DELETE,   true,  MessageHandler::processDeleteRequest        },  // global priority
+    { Command_MessageType_GETNEXT,              Operation::READ,     false, MessageHandler::processGetNextRequest       },  // 
     { Command_MessageType_GETPREVIOUS,          Operation::READ,     false, MessageHandler::processGetPreviousRequest   },
     { Command_MessageType_GETKEYRANGE,          Operation::RANGE,    false, MessageHandler::processGetKeyRangeRequest   },
     { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  false, MessageHandler::processInvalidRequest       },
@@ -1405,6 +1406,10 @@ MessageHandler::processEndBatchRequest(Transaction& transaction) {
 
     com::seagate::kinetic::proto::Command_Batch* returnBatchInfo(transaction.response->mutable_command()->mutable_body()->mutable_batch());
 
+    returnBatchInfo->set_count(batchList->size());
+    for (auto batchRequest : *batchList)
+        returnBatchInfo->add_sequence(batchRequest->command()->header().sequence());
+
     BatchDescriptor batch;
     for (auto batchRequest : *batchList) {
         const Command_KeyValue& params = batchRequest->command()->body().keyvalue();
@@ -1427,16 +1432,13 @@ MessageHandler::processEndBatchRequest(Transaction& transaction) {
         if (returnStatus != ReturnStatus::SUCCESS) {
             returnBatchInfo->set_failedsequence(batchRequest->command()->header().sequence());
             Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
+            // overwrite the descriptive error with the generic invalid batch
+            transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_INVALID_BATCH);
             return;
         }
     }
 
     objectStore->batchCommit(batch);
-
-    returnBatchInfo->set_count(batchList->size());
-    for (auto batchRequest : *batchList)
-        returnBatchInfo->add_sequence(batchRequest->command()->header().sequence());
-
     transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 

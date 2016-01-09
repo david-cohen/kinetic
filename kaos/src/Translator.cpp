@@ -593,6 +593,8 @@ Translator::toString(com::seagate::kinetic::proto::Command_Status_StatusCode sta
             return "Device Already Unlocked";
         case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_CONNECTION_TERMINATED:
             return "Connection Terminated";
+        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_INVALID_BATCH:
+            return "Invalid Batch";
         default:
             return "Unknown Status Code (" + convertToString<uint32_t>(statusCode) + ")";
     }

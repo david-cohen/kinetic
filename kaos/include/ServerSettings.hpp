@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef SERVER_SETTINGS_HPP
 #define SERVER_SETTINGS_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <sys/stat.h>
 #include <list>
@@ -20,33 +18,30 @@
 #include "Hmac.hpp"
 #include "Common.hpp"
 #include "AccessControl.hpp"
-/**
-    Server Settings
-*/
 
+/**
+ * Server Settings
+ */
 class ServerSettings {
 
 public:
 
     /*
-        Constructor
-    */
-
+     * Constructor
+     */
     explicit ServerSettings(std::string filename);
 
     /*
-        Public Member Functions
-    */
-
+     * Public Member Functions
+     */
     void save();
     void setDefaults();
     AccessControlPtr accessControl(int64_t identity);
     void updateAccessControl(std::list<AccessControlPtr> newAccessControlList);
 
     /*
-        Public Inline Getters amd Setters
-    */
-
+     * Public Inline Getters amd Setters
+     */
     inline int64_t clusterVersion() {return m_clusterVersion;}
     inline std::string lockPin() {return m_lockPin;}
     inline std::string erasePin() {return m_erasePin;}
@@ -58,15 +53,13 @@ public:
 private:
 
     /*
-        Private Member Functions
-    */
-
+     * Private Member Functions
+     */
     bool load();
 
     /*
-        Private Data Members
-    */
-
+     * Private Data Members
+     */
     std::string         m_filename;             //!< Name of the file containing the settings
     int64_t             m_clusterVersion;       //!< Cluster version of object store
     std::string         m_lockPin;              //!< Personal ID Number to lock/unlock drive

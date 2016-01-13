@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef HEARTBEAT_PROVIDER_HPP
 #define HEARTBEAT_PROVIDER_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <netinet/in.h>
 #include <atomic>
 #include <thread>
@@ -17,26 +15,23 @@
 #include "Common.hpp"
 
 /**
-    Heartbeat Provider
-
-    Sends a Kinetic heartbeat message to a UDP multicast address at a regular interval (around 5
-    seconds).
-*/
-
+ * Heartbeat Provider
+ *
+ * Sends a Kinetic heartbeat message to a UDP multicast address at a regular interval (around five
+ * seconds).
+ */
 class HeartbeatProvider {
 
 public:
 
     /*
-        Constructor
-    */
-
+     * Constructor
+     */
     HeartbeatProvider();
 
     /*
-        Public Member Function
-    */
-
+     * Public Member Function
+     */
     bool start();
     void stop();
     void wait();
@@ -44,17 +39,15 @@ public:
 private:
 
     /*
-        Private Member Functions
-    */
-
+     * Private Member Functions
+     */
     void run();
     void openSocket();
     void sendHeartbeatMessage();
 
     /*
-        Private Data Member
-    */
-
+     * Private Data Member
+     */
     std::atomic_bool    m_active;       //!< Indicates if provider is active
     std::thread*        m_thread;       //!< Thread that repeatedly sends heartbeat message
     int32_t             m_socketFd;     //!< Socket used to send heartbeat message

@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <openssl/err.h>
 #include <string>
 #include <exception>
@@ -15,30 +14,27 @@
 #include "SystemConfig.hpp"
 
 /*
-    Data Objects
-*/
-
+ * Data Objects
+ */
 SslControl* SslControl::m_instance(nullptr);
 const int32_t SSL_SUCCESS(1);
 
-/**
-    SSL Control Constructor
-*/
-
+/*
+ * SSL Control Constructor
+ */
 SslControl::SslControl()
     : m_operational(false), m_context(nullptr) {
 
     /*
-        Load the SSL library, the digest algorithms and ciphers, as well as the error messages.
-    */
+     * Load the SSL library, the digest algorithms and ciphers, as well as the error messages.
+     */
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
 
     /*
-        Create a context that supports SSL version 2 and 3 as well as TLS version 1 to 1.2.
-    */
-
+     * Create a context that supports SSL version 2 and 3 as well as TLS version 1 to 1.2.
+     */
     m_context = SSL_CTX_new(SSLv23_server_method());
 
     if (m_context == nullptr) {
@@ -47,9 +43,8 @@ SslControl::SslControl()
     }
 
     /*
-        Load the certificate and the private key and then make sure they are consistent.
-    */
-
+     * Load the certificate and the private key and then make sure they are consistent.
+     */
     if (SSL_CTX_use_certificate_file(m_context, systemConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to Load Certificate" << std::endl;
         return;
@@ -66,9 +61,8 @@ SslControl::SslControl()
 }
 
 /**
-    SSL Control Destructor
-*/
-
+ * SSL Control Destructor
+ */
 SslControl::~SslControl() {
 
     if (m_context != nullptr)
@@ -79,19 +73,19 @@ SslControl::~SslControl() {
 }
 
 /*
-    Create Connection
-
-    @param socketFd     file descriptor of the socket
-*/
-
+ * Create Connection
+ *
+ * @param socketFd     file descriptor of the socket
+ */
 SSL* SslControl::createConnection(int socketFd) {
 
     SSL* ssl = SSL_new(m_context);
 
-    // We want to automatically retry reads and writes when a renegotiation
-    // takes place. This way the only errors we have to handle are real,
-    // permanent ones.
-
+    /*
+     * We want to automatically retry reads and writes when a renegotiation
+     * takes place. This way the only errors we have to handle are real,
+     * permanent ones.
+     */
     if (ssl == nullptr) {
         LOG(ERROR) << "Failed to create new SSL object";
         throw std::runtime_error("failed SSL oobject creation");
@@ -122,11 +116,10 @@ SSL* SslControl::createConnection(int socketFd) {
 }
 
 /**
-    Instance
-
-    @return an instance of the (singleton) SSL control object
-*/
-
+ * Instance
+ *
+ * @return an instance of the (singleton) SSL control object
+ */
 SslControl& SslControl::instance() {
     if (m_instance == nullptr)
         m_instance = new SslControl();

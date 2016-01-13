@@ -1,27 +1,20 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef MESSAGE_TRACE_HPP
 #define MESSAGE_TRACE_HPP
 
 /*
-    Include Files
-*/
-
-/*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <string>
 #include "KineticMessage.hpp"
 #include "KineticMessageFraming.hpp"
 
 /**
-    Message Trace
+ * Message Trace
 */
-
 class MessageTrace {
 public:
     static void outputContents(KineticMessageFraming& messageFraming, KineticMessage* message);

@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <string>
 #include <iomanip>
@@ -13,15 +12,14 @@
 #include "Hmac.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 
 /*
-    Each test checks for the proper HMAC generation and then the Kinetic HMAC generation (which
-    prepends the data size to the data being hashed).
-*/
+ * Each test checks for the proper HMAC generation and then the Kinetic HMAC generation (which
+ * prepends the data size to the data being hashed).
+ */
 
 TEST(HMAC_Unit_Test, Empty_Test) {
 

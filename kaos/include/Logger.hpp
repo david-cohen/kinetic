@@ -1,24 +1,21 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <syslog.h>
 #include <string>
 #include <sstream>
 
 /*
-    Event Log Severity Levels
-*/
-
+ * Event Log Severity Levels
+ */
 enum LogLevel {
     DEBUG   = LOG_DEBUG,
     INFO    = LOG_INFO,
@@ -27,9 +24,8 @@ enum LogLevel {
 };
 
 /*
-    Event Log Facility
-*/
-
+ * Event Log Facility
+ */
 enum LogFacility {
     LOCAL0 = LOG_LOCAL0,
     LOCAL1 = LOG_LOCAL1,
@@ -43,60 +39,55 @@ enum LogFacility {
 
 namespace _InternalUseOnly_ {
 
-/**
-    Log Entry
-
-    Describes a single event log entry.
-*/
-
+/*
+ * Log Entry
+ *
+ * Describes a single event log entry.
+ */
 class LogEntry {
 public:
 
     /**
-        LogEntry Constructor
-
-        @param  level       Severity level of event
-        @param  filename    Name of the file the event was logged from
-        @param  lineNumber  The line number that the event was logged from
-
-        Creates an event log entry and sets the message with its severity level and the filename and
-        line number of where the event was logged from.
-    */
-
-    LogEntry(LogLevel level, const char* filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
+     * LogEntry Constructor
+     *
+     * @param  level       Severity level of event
+     * @param  filename    Name of the file the event was logged from
+     * @param  lineNumber  The line number that the event was logged from
+     *
+     * Creates an event log entry and sets the message with its severity level and the filename and
+     * line number of where the event was logged from.
+     */
+    LogEntry(LogLevel level, std::string filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
         captureLevel(level);
         captureLocation(filename, lineNumber, function);
     }
 
     /**
-        LogEntry Constructor
-
-        @param  level       Severity level of event
-
-        Creates an event log entry and sets the message with its severity level.
-    */
-
+     * LogEntry Constructor
+     *
+     * @param  level       Severity level of event
+     *
+     * Creates an event log entry and sets the message with its severity level.
+     */
     explicit LogEntry(LogLevel level) : m_level(level), m_message(), m_location() {
         captureLevel(level);
     }
 
     /**
-        LogEntry Destructor
-
-        Causes the event to be recorded in the syslog and, optionally, output to standard out.
+     * LogEntry Destructor
+     *
+     * Causes the event to be recorded in the syslog and, optionally, output to standard out.
     */
-
     ~LogEntry() {
         m_message << m_location.str();
         syslog(m_level, "%s", m_message.str().c_str());
     }
 
     /**
-        Message
-
-        @return a reference to the events message
-    */
-
+     * Message
+     *
+     * @return a reference to the events message
+     */
     std::stringstream& message() {
         return (m_message);
     }
@@ -104,27 +95,31 @@ public:
 private:
 
     /**
-        Capture Location
-
-        @param  filename    Name of the file the event was logged from
-        @param  lineNumber  The line number that the event was logged from
-        @param  function    The function that the event was logged from
-
-        Records the filename, line number, and function of where the event was logged.
-    */
-
-    inline void captureLocation(const char* filename, int32_t lineNumber, std::string function) {
+     * Capture Location
+     *
+     * @param  filename    Name of the file the event was logged from
+     * @param  lineNumber  The line number that the event was logged from
+     * @param  function    The function that the event was logged from
+     *
+     * Records the filename, line number, and function of where the event was logged.
+     */
+    inline void captureLocation(std::string filename, int32_t lineNumber, std::string function) {
+        /*
+         * Remove the path from the filename.
+         */
+        std::size_t position = filename.rfind('/');
+        if (position != std::string::npos)
+            filename = filename.substr(position + 1);
         m_location << ", file=" << filename << ", line=" << lineNumber << ", function=" << function;
     }
 
     /**
-        Capture Level
-
-        @param  level   Severity level of event
-
-        Records the severity level of the event to its message.
-    */
-
+     * Capture Level
+     *
+     * @param  level   Severity level of event
+     *
+     * Records the severity level of the event to its message.
+     */
     void captureLevel(LogLevel level) {
         std::string levelString;
         if (level == LOG_ERR)
@@ -143,12 +138,11 @@ private:
     std::stringstream   m_location;     //!< File, line, and function of event
 };
 
-/**
-    Log Control
-
-    Used to open and close the syslog.
-*/
-
+/*
+ * Log Control
+ *
+ * Used to open and close the syslog.
+ */
 class LogControl {
 public:
     explicit LogControl(const char* name, LogFacility facility, bool logToStandardError) {
@@ -162,15 +156,13 @@ public:
 }  // namespace _InternalUseOnly_
 
 /*
-    Macro to setup logging
-*/
-
+ * Macro to setup logging
+ */
 #define LOG_INIT(name, facility, logToStandardError) _InternalUseOnly_::LogControl _logControl_(name, facility, logToStandardError)
 
 /*
-    Macro to record an entry in the log (imitates the GLog API)
-*/
-
+ * Macro to record an entry in the log (imitates the GLog API)
+ */
 #ifdef LOG_EVENT_LOCATION
 #define LOG(level) _InternalUseOnly_::LogEntry(level, __FILE__, __LINE__, __FUNCTION__).message()
 #define LOG_WITHOUT_LOCATION(level) _InternalUseOnly_::LogEntry(level).message()

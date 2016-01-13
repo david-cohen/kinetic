@@ -1,7 +1,6 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef STREAM_INTERFACE_HPP
 #define STREAM_INTERFACE_HPP

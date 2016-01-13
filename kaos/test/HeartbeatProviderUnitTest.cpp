@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2015 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -21,16 +20,14 @@
 #include "HeartbeatProvider.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 using boost::property_tree::ptree;
 
 /*
-    Constants
-*/
-
+ * Constants
+ */
 static const char*   NOT_FOUND_STRING = "Not found";
 static const int32_t CONNECTION_HAS_NO_DATA_TO_RECEIVE = 0;
 static const int32_t CONNECTION_HAS_DATA_TO_RECEIVE = 1;
@@ -41,9 +38,8 @@ static const int32_t KNOWN_INCORRECT_PORT_NUMBER = 0;
 static const int     MESSAGE_BUFFER_SIZE = 2048;
 
 /*
-    Data Types
-*/
-
+ * Data Types
+ */
 class MulticastConnection {
 public:
     int     socketfd;
@@ -57,20 +53,18 @@ public:
 };
 
 /*
-    Data Objects
-*/
-
+ * Data Objects
+ */
 SystemConfig  systemConfig;
 
 /**
-    Create Connection
-
-    @param  connection  contains information about the multicast connection
-
-    Creates the multicast connection, joining the multicast group so that it will receive any
-    messages broadcast to the multicast IP address and port specified.
-*/
-
+ * Create Connection
+ *
+ * @param  connection  contains information about the multicast connection
+ *
+ * Creates the multicast connection, joining the multicast group so that it will receive any
+ * messages broadcast to the multicast IP address and port specified.
+ */
 void createConnection(MulticastConnection& connection) {
 
     connection.socketfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -93,13 +87,12 @@ void createConnection(MulticastConnection& connection) {
 }
 
 /**
-    Get Message
-
-    @param  connection  contains connection information as well as the message buffer
-
-    Reads the next multicast message (blocking until it is received).
-*/
-
+ * Get Message
+ *
+ * @param  connection  contains connection information as well as the message buffer
+ *
+ * Reads the next multicast message (blocking until it is received).
+ */
 void getMessage(MulticastConnection& connection) {
 
     int32_t byteCount = read(connection.socketfd, connection.messageBuffer, MESSAGE_BUFFER_SIZE);
@@ -109,14 +102,14 @@ void getMessage(MulticastConnection& connection) {
 }
 
 /**
-    I/O Ready Status
-
-    @param  connection  contains information about the multicast connection
-
-    @return  1 if I/O is ready to be performed on the connection
-             0 if I/O is not ready to be performed on the connection
-            -1 if an error was encountered checking if I/O was ready
-*/
+ * I/O Ready Status
+ *
+ * @param  connection  contains information about the multicast connection
+ *
+ * @return  1 if I/O is ready to be performed on the connection
+ *          0 if I/O is not ready to be performed on the connection
+ *         -1 if an error was encountered checking if I/O was ready
+ */
 bool ioReadyStatus(MulticastConnection& connection) {
 
     fd_set readfds;
@@ -131,13 +124,12 @@ bool ioReadyStatus(MulticastConnection& connection) {
 }
 
 /**
-    Validate Message
-
-    @param  connection  contains the last message received
-
-    Check that the contents of the heartbeat message are correct.
-*/
-
+ * Validate Message
+ *
+ * @param  connection  contains the last message received
+ *
+ * Check that the contents of the heartbeat message are correct.
+ */
 void validateMessage(MulticastConnection& connection) {
 
     string manufacturer = connection.messageNode.get<string>("manufacturer", NOT_FOUND_STRING);
@@ -150,10 +142,10 @@ void validateMessage(MulticastConnection& connection) {
     ASSERT_STREQ(systemConfig.version(), version.c_str());
 
     string serialNumber = connection.messageNode.get<string>("serial_number", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.serialNumber(), serialNumber.c_str());
+    ASSERT_STREQ(systemConfig.serialNumber().c_str(), serialNumber.c_str());
 
     string worldWideName = connection.messageNode.get<string>("world_wide_name", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.worldWideName(), worldWideName.c_str());
+    ASSERT_STREQ(systemConfig.worldWideName().c_str(), worldWideName.c_str());
 
     string protocolVersion = connection.messageNode.get<string>("protocol_version", NOT_FOUND_STRING);
     ASSERT_STREQ(systemConfig.protocolVersion(), protocolVersion.c_str());
@@ -185,11 +177,10 @@ void validateMessage(MulticastConnection& connection) {
 }
 
 /**
-    Broadcast Test
-
-    Verify that message is broadcast to the correct multicast IP address and port.
-*/
-
+ * Broadcast Test
+ *
+ * Verify that message is broadcast to the correct multicast IP address and port.
+ */
 TEST(Heartbeat_Provider_Unit_Test, Broadcast_Test) {
 
     MulticastConnection connection;
@@ -205,11 +196,10 @@ TEST(Heartbeat_Provider_Unit_Test, Broadcast_Test) {
 }
 
 /**
-    Message Content Test
-
-    Verify that the contents the heartbeat message are correct.
-*/
-
+ * Message Content Test
+ *
+ * Verify that the contents the heartbeat message are correct.
+ */
 TEST(Heartbeat_Provider_Unit_Test, Message_Content_Test) {
 
     MulticastConnection connection;
@@ -227,11 +217,10 @@ TEST(Heartbeat_Provider_Unit_Test, Message_Content_Test) {
 }
 
 /**
-    Broadcast Interval Test
-
-    Verify that the heartbeat messages are broadcast are the correct interval.
-*/
-
+ * Broadcast Interval Test
+ *
+ * Verify that the heartbeat messages are broadcast are the correct interval.
+ */
 TEST(Heartbeat_Provider_Unit_Test, Broadcast_Interval_Test) {
 
     MulticastConnection connection;
@@ -264,11 +253,10 @@ TEST(Heartbeat_Provider_Unit_Test, Broadcast_Interval_Test) {
 }
 
 /**
-    Halt Broadcast Test
-
-    Verify that the heartbeat provder does not send heartbeat messages after it has been stopped.
-*/
-
+ * Halt Broadcast Test
+ *
+ * Verify that the heartbeat provder does not send heartbeat messages after it has been stopped.
+ */
 TEST(Heartbeat_Provider_Unit_Test, Halt_Broadcast_Test) {
 
     MulticastConnection connection;
@@ -287,6 +275,7 @@ TEST(Heartbeat_Provider_Unit_Test, Halt_Broadcast_Test) {
 }
 
 int main(int argc, char** argv) {
+    std::cout << "Notice: No other Kinetic device can be broadcasting heartbeat messages on this network" << std::endl;
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

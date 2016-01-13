@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -16,11 +15,10 @@
 SystemConfig systemConfig;
 
 /**
-    Create Large String
-
-    @return a string with the maximum key size
-*/
-
+ * Create Large String
+ *
+ * @return a string with the maximum key size
+ */
 std::string createLargeString() {
 
     uint32_t stringSize = systemConfig.maxKeySize();
@@ -36,11 +34,10 @@ std::string createLargeString() {
 }
 
 /**
-    Create Binary String
-
-    @return a string contains binary values from 0 to 0xff
-*/
-
+ * Create Binary String
+ *
+ * @return a string contains binary values from 0 to 0xff
+ */
 std::string createBinaryString() {
 
     std::string binaryString;
@@ -51,14 +48,13 @@ std::string createBinaryString() {
 }
 
 /**
-    Create Operation Array
-
-    @param  bitmap  a bitmap that indicates which operations are to be allowed, each bit represents
-                    a different operation
-
-    @return the operation array initialized based on the specified bitmap
-*/
-
+ * Create Operation Array
+ *
+ * @param  bitmap  a bitmap that indicates which operations are to be allowed, each bit represents
+ *                 a different operation
+ *
+ * @return the operation array initialized based on the specified bitmap
+ */
 OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 
     OperationSizedBoolArray operationArray;
@@ -69,12 +65,11 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 }
 
 /**
-    Core Functionality Test
-
-    Tests that the AccessScope object is correctly initialized when created with a varity of
-    parameters and that the getter functions work correctly.
-*/
-
+ * Core Functionality Test
+ *
+ * Tests that the AccessScope object is correctly initialized when created with a varity of
+ * parameters and that the getter functions work correctly.
+ */
 TEST(Access_Scope_Unit_Test, Core_Functionality_Test) {
 
     std::vector<bool> tlsRequiredArray = {false, true};
@@ -82,9 +77,8 @@ TEST(Access_Scope_Unit_Test, Core_Functionality_Test) {
     std::vector<size_t> keySubstringOffsetArray = {0, 1, systemConfig.maxKeySize() / 4, systemConfig.maxKeySize() - 1};
 
     /*
-        Create an AccessScope object for all the different combination of parameters.
-    */
-
+     * Create an AccessScope object for all the different combination of parameters.
+     */
     for (uint32_t tlsRequiredIndex = 0; tlsRequiredIndex < tlsRequiredArray.size(); ++tlsRequiredIndex) {
         bool tlsRequired = tlsRequiredArray[tlsRequiredIndex];
         for (uint32_t keySubstringIndex = 0; keySubstringIndex < keySubstringArray.size(); ++keySubstringIndex) {
@@ -96,11 +90,10 @@ TEST(Access_Scope_Unit_Test, Core_Functionality_Test) {
                     AccessScope accessScope(tlsRequired, keySubstring, keySubstringOffset, operationArray);
 
                     /*
-                        If non-zero offset is not valid if the key substring is not specified.  The
-                        AccessScope class will set the offset to zero so we must do the same thing
-                        before comparing expected values.
-                    */
-
+                     * If non-zero offset is not valid if the key substring is not specified.  The
+                     * AccessScope class will set the offset to zero so we must do the same thing
+                     * before comparing expected values.
+                     */
                     if (keySubstring.size() == 0)
                         keySubstringOffset = 0;
 

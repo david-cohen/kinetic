@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef OBJECT_STORE_HPP
 #define OBJECT_STORE_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <list>
 #include <string>
@@ -20,20 +18,16 @@
 #include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
 
-
-
 /*
-    Types taken from the Kinetic message.
-*/
-
+ * Types taken from the Kinetic message.
+ */
 typedef com::seagate::kinetic::proto::Command_Synchronization PersistOption;
 typedef com::seagate::kinetic::proto::Command_Algorithm Algorithm;
 typedef leveldb::WriteBatch BatchDescriptor;
 
 /*
-    Return Status
-*/
-
+ * Return Status
+ */
 enum class ReturnStatus {
     SUCCESS                           = 0,
     UNSUPPORTED_MESSAGE               = 1,
@@ -54,25 +48,22 @@ enum class ReturnStatus {
     MAX_KEYS_RETURNED_COUNT_TOO_LARGE = 16,
 };
 
-/**
-    Object Store
-*/
-
+/*
+ * Object Store
+ */
 class ObjectStore {
 
 public:
 
     /*
-        Constructor/Destructor
-    */
-
+     * Constructor/Destructor
+     */
     explicit ObjectStore(std::string databaseDirectory);
     ~ObjectStore();
 
     /*
-        Public Member Functions
-    */
-
+     * Public Member Functions
+     */
     ReturnStatus open();
     ReturnStatus erase();
     ReturnStatus flush();
@@ -104,9 +95,8 @@ public:
 private:
 
     /*
-        Private Data Members
-    */
-
+     * Private Data Members
+     */
     leveldb::DB*        m_database;
     const std::string   m_databaseDirectory;
 
@@ -114,9 +104,8 @@ private:
 };
 
 /*
-    Shared pointer for ObjectStore
-*/
-
+ * Shared pointer for ObjectStore
+ */
 typedef std::shared_ptr<ObjectStore> ObjectStorePtr;
 
 extern ObjectStorePtr objectStore;

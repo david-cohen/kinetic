@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <atomic>
 #include <string>
@@ -21,55 +20,48 @@
 #include "KineticMessage.hpp"
 #include "ServerSettings.hpp"
 #include "MessageHandler.hpp"
-#include "TransportInterface.hpp"
+#include "CommunicationsManager.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 using std::unique_ptr;
 using std::runtime_error;
 
+/*
+ * Private Data Objects
+ */
 static std::atomic<int64_t> nextConnectionId(1);
 
 /**
- *  Connection Constructor
+ * Connection Constructor
  *
- *  @param transport        transport to be used for this connection
- *  @param stream           stream to be used for this connection
- *  @param serverPort       server's TCP port number
- *  @param serverIpAddress  server's IP address
- *  @param clientPort       client's TCP port number
- *  @param clientIpAddress  client's IP address
+ * @param stream                       stream to be used for this connection
+ * @param clientServerConnectionInfo   information about the client and server in the connection
  */
-
-Connection::Connection(TransportInterface* transport, StreamInterface* stream, uint32_t serverPort,
-                       std::string serverIpAddress, uint32_t clientPort, std::string clientIpAddress)
-    : m_transport(transport), m_stream(stream), m_serverPort(serverPort), m_serverIpAddress(serverIpAddress),
-      m_clientPort(clientPort), m_clientIpAddress(clientIpAddress), m_thread(new std::thread(&Connection::run, this)),
-      m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
+Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
+    : m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()), m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
+      m_clientPort(clientServerConnectionInfo.clientPort()), m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()),
+      m_thread(new std::thread(&Connection::run, this)), m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
 
     m_thread->detach();
 }
 
 /*
- *  Connection Destructor
+ * Connection Destructor
  */
-
 Connection::~Connection() {
     delete m_stream;
     delete m_thread;
 }
 
 /**
- *  Run
+ * Run
  *
- *  This is function that the Connection Handler's thread executes.  The thread will block waiting
- *  to receive and message.  When one is received, it will call the message handler thread to
- *  process it.
+ * This is the code the Connection Handler's thread executes.  The thread blocks waiting to receivea
+ * message, and when it does, it calls a message handler thread to process it.
  */
-
 void
 Connection::run() {
 
@@ -77,46 +69,50 @@ Connection::run() {
         LOG(INFO) << "Connection opened, server=" << m_serverIpAddress << ":" << m_serverPort
                   << ", client=" << m_clientIpAddress << ":" << m_clientPort;
 
+        /*
+         * When a new connection is established, the Kinetic device sends an unsolicited status
+         * message that describes some of the device's capabilities.
+         */
         sendUnsolicitedStatusMessage();
 
         for (;;) {
 
             /*
-             * Block waiting to receive a request.
+             * Block waiting for a request.  When receive, have the message handler process it.
+             * Since not a requests get a response (such as a batched put), check if there is a
+             * response before attempting to send one.
              */
-
             Transaction transaction(this);
             receiveRequest(transaction);
 
-            if (transaction.error == ConnectionError::NONE)
-                MessageHandler::processRequest(transaction);
-            else if (transaction.error == ConnectionError::VALUE_TOO_BIG)
-                MessageHandler::processError(transaction);
-            else
+            if (transaction.error == ConnectionError::IO_ERROR)
                 break;
+
+            MessageHandler::processRequest(transaction);
 
             if (transaction.response != nullptr)
                 sendResponse(transaction);
         }
     }
     catch (std::exception& ex) {
-        LOG(ERROR) << "Connection::run exception: " << ex.what();
+        LOG(ERROR) << "Exception encounter: " << ex.what();
     }
     catch (...) {
-        LOG(ERROR) << "Connection::run unknown exception";
+        LOG(ERROR) << "Unexpected exception encounter";
     }
+
     LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
               << ", client=" << m_clientIpAddress << ":" << m_clientPort;
-    m_transport->removeConnection(this);
+
+    communicationsManager.removeConnection(this);
 }
 
 /**
- *  Send Unsolicited Status Message
+ * Send Unsolicited Status Message
  *
- *  When a connection is first established, the Kinetic device is to send an unsolicited status
- *  messages to the client.
+ * When a connection is first established, the Kinetic device is to send an unsolicited
+ * statusmessages to the client.
  */
-
 void
 Connection::sendUnsolicitedStatusMessage() {
 
@@ -138,17 +134,16 @@ Connection::sendUnsolicitedStatusMessage() {
 }
 
 /**
- *  Receive Request
+ * Receive Request
  *
- *  @param transaction       maintains a request and response message
+ * @param transaction       maintains a request and response message
  *
- *  @return a pointer to the request message received
+ * @return a pointer to the request message received
  *
- *  This function performing blocking reads using the provided transport.  It understands the
- *  framing of the request message.  It uses that knowledge to determine when a complete request
- *  message has been received.
+ * This function performing blocking reads using the provided transport.  It understands the
+ * framing of the request message.  It uses that knowledge to determine when a complete request
+ * message has been received.
  */
-
 void
 Connection::receiveRequest(Transaction& transaction) {
 
@@ -156,11 +151,10 @@ Connection::receiveRequest(Transaction& transaction) {
 
         /*
          * First, read in the framing data, which consists of a magic number, the size of the
-         * protocol buffer message and the size of the (optional) value.  Then, validate the
-         * framing data.  If the magic number is not correct or the sizes specified are invalid,
-         * throw an exception, which will can the connection to be fail.
+         * protocol buffer message and the size of the (optional) value.  Then, validate the framing
+         * data.  If the magic number is not correct or the sizes specified are invalid, throw an
+         * exception, which will cause the connection to be fail.
          */
-
         KineticMessageFraming messageFraming;
         m_stream->read(reinterpret_cast<char*>(&messageFraming), sizeof(messageFraming));
 
@@ -173,18 +167,12 @@ Connection::receiveRequest(Transaction& transaction) {
         if (messageSize == 0)
             throw runtime_error("message size too small");
 
-//        if (messageSize > systemConfig.maxMessageSize()) {
-//            throw runtime_error("message size too large");
-//        }
-
         /*
-         * Read in the protocol buffer message.  If a value is included, also read in the value.
-         * Create a Kinetic Message to hold both the protocol buffer message and the value. Set it
-         * with the value and with the deserialized protocol buffer message.
+         * If the size of the message exceeds the support maximum value, read and save as much as
+         * possible so that the response will contain the correct header information.  Read and
+         * dispose of the remaining data (which should be the value, not the command).
          */
-
         if (messageSize > systemConfig.maxMessageSize()) {
-            std::cout << "message to large" << std::endl;
             unique_ptr<char> messageBuffer(new char[systemConfig.maxMessageSize()]);
             m_stream->read(messageBuffer.get(), messageSize);
             try {
@@ -200,6 +188,12 @@ Connection::receiveRequest(Transaction& transaction) {
             throw runtime_error("message size too large");
         }
 
+        /*
+         * Read in the protocol buffer message.  If a value is included, also attempt to read in the
+         * value. If the value is too large, read and discard the value then fail the request.
+         *  Otherwise, create a Kinetic Message to hold both the deserialized protocol buffer
+         * message and its value.
+         */
         unique_ptr<char> messageBuffer(new char[messageSize]);
         m_stream->read(messageBuffer.get(), messageSize);
 
@@ -242,13 +236,12 @@ Connection::receiveRequest(Transaction& transaction) {
 }
 
 /**
- *  Send Response
+ * Send Response
  *
- *  @param transaction       maintains a request and response message
+ * @param transaction       maintains a request and response message
  *
- *  @return true if the operation was successful, false otherwise
+ * @return true if the operation was successful, false otherwise
  */
-
 bool
 Connection::sendResponse(Transaction& transaction) {
 

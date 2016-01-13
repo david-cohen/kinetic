@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <map>
 #include <list>
@@ -19,12 +17,21 @@
 #include <memory>
 #include <atomic>
 #include "Common.hpp"
+#include "TcpTransport.hpp"
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
 
 typedef std::shared_ptr<KineticMessageList> BatchListPtr;
 typedef std::map<uint32_t, BatchListPtr> BatchListMap;
+
+/*
+ * Transport Security
+ */
+enum class Security {
+    NONE = 0,
+    SSL  = 1,
+};
 
 enum class ConnectionError {
     NONE          = 0,
@@ -33,10 +40,8 @@ enum class ConnectionError {
 };
 
 /*
-    Incomplete Class Definitions (to avoid cirular dependancies)
-*/
-
-class TransportInterface;
+ * Incomplete Class Definitions (to avoid cirular dependancies)
+ */
 class MessageHandler;
 class Connection;
 
@@ -53,36 +58,32 @@ public:
         : connection(transactionConnection), request(new KineticMessage()), response(new KineticMessage()), error(ConnectionError::NONE) {}
 };
 
-/*
-    Connection
-
-    Used to manage a single connection.
-*/
-
+/**
+ * Connection
+ *
+ * Used to manage a single connection.
+ */
 class Connection {
 public:
 
     /*
-        Constructor/Destructor
-    */
-
-    Connection(TransportInterface* transport, StreamInterface* stream, uint32_t serverPort,
-               std::string serverIpAddress, uint32_t clientPort, std::string clientIpAddress);
+     * Constructor/Destructor
+     */
+    Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
     ~Connection();
 
     /*
-        Public Member Functions
-    */
-
+     * Public Member Functions
+     */
     bool sendResponse(Transaction& transaction);
 
-    inline TransportInterface* transport() {return m_transport;}
     inline int64_t connectionId() {return m_connectionId;}
     inline int64_t previousSequence() {return m_previousSequence;}
     inline bool processedFirstRequest() {return m_processedFirstRequest;}
     inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
     inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
     inline uint32_t batchCount() {return m_batchListMap.size();}
+    inline Security security() {return m_security;}
 
     inline bool createBatchList(uint32_t batchId) {
         std::unique_lock<std::mutex> m_scopedLock(m_mutex);
@@ -114,10 +115,9 @@ private:
     void run();
 
     /*
-        Private Data Member
-    */
-
-    TransportInterface* const   m_transport;            //!< Transport assoicated with the connection
+     * Private Data Member
+     */
+    Security                    m_security;
     StreamInterface* const      m_stream;               //!< I/O Stream
     const uint32_t              m_serverPort;           //!< Server's TCP port number
     const std::string           m_serverIpAddress;      //!< Server's IP address

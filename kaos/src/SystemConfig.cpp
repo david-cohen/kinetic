@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <errno.h>
 #include <stdint.h>
 #include <ifaddrs.h>
@@ -26,42 +25,30 @@
 using std::string;
 
 /*
-    Identification
-*/
-
+ * Identification
+ */
 static const char* VENDOR("Western Digital");
 static const char* MODEL("Wasp");
 static const char* VERSION("0.0.2");
 static const char* WORLD_WIDE_NAME_PREFIX("2d2ca5d0-c201-48da-b2c2-");
 
 /*
-    Build/Source Information (updated on every build)
-*/
-
-static const char* COMPILATION_DATE("Wed Dec 8 05:59:59 PDT 2015");
-static const char* SOURCE_HASH("2d2ca5d0-c201-48da-b2c2-00803bd2c7c5");
-
-/*
-    Daemon Realted Settings
-*/
-
-static const char* PID_FILE_DIR("/var/run");
-static const char* PID_FILE_EXTENSION(".pid");
+ * Daemon Realted Settings
+ */
+static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
 static const char* DATABASE_DIRECTORY("/export/dfs/objectDatabase");
 static const char* SERVER_SETTINGS_FILE("/export/dfs/serverSettings");
 static const LogFacility KAOS_LOG_FACILITY(LOCAL0);
 
 /*
-    Object Store Settings
-*/
-
+ * Object Store Settings
+ */
 static const bool OBJECT_STORE_COMPRESSION_ENABLED(false);
 static const char* FLUSH_DATA_KEY_PATTERN("04231970_WesternDigital_07913240");
 
 /*
-    Communication Settings
-*/
-
+ * Communication Settings
+ */
 static const int32_t  MAX_PENDING_ADMIN_CONNECTIONS(5);
 static const uint32_t MAX_ACTIVE_ADMIN_CONNECTIONS(10);
 static const uint32_t TCP_PORT(8123);
@@ -73,9 +60,8 @@ static const uint32_t HEARTBEAT_SEND_INTERVAL(5);
 static const uint32_t HEARTBEAT_CONNECTION_RETRY_INTERVAL(60);
 
 /*
-    Limits
-*/
-
+ * Limits
+ */
 static const size_t UNSUPPORTED_LIMIT((uint32_t)0xffffffff);
 static const size_t MIN_KEY_SIZE(1);
 static const size_t MAX_KEY_SIZE(4096);
@@ -95,16 +81,14 @@ static const size_t MAX_ALGORITHM_SIZE(64);
 static const size_t MAX_HMAC_KEY_SIZE(4096);
 
 /*
-    SSL Settings
-*/
-
+ * SSL Settings
+ */
 static const char* SSL_PRIVATE_KEY_FILE("/etc/kaos/cert.pem");
 static const char* SSL_CERTIFICATE_FILE("/etc/kaos/cert.pem");
 
 /*
-    Setup Settings
-*/
-
+ * Setup Settings
+ */
 static const int64_t DEFAULT_CLUSTER_VERSION(0);
 static const char* DEFAULT_LOCK_PIN("");
 static const char* DEFAULT_ERASE_PIN("");
@@ -119,7 +103,6 @@ static const uint32_t ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING_OFFSET(0);
 
 bool getNextworkInfo(string name, string& ipv4, string& ipv6, string& macAddress);
 
-
 static std::string
 createFlushDataKey() {
     std::string flushDataKey;
@@ -130,8 +113,7 @@ createFlushDataKey() {
 }
 
 SystemConfig::SystemConfig()
-    : m_pidFileDir(PID_FILE_DIR),
-      m_pidFileExtension(PID_FILE_EXTENSION),
+    : m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
       m_databaseDirectory(DATABASE_DIRECTORY),
       m_serverSettingsFile(SERVER_SETTINGS_FILE),
       m_vendor(VENDOR),
@@ -140,7 +122,7 @@ SystemConfig::SystemConfig()
       m_serialNumber(""),
       m_worldWideName(""),
       m_protocolVersion(PROTOCOL_VERSION),
-      m_compilationDate(COMPILATION_DATE),
+      m_compilationDate(TIMESTAMP),
       m_sourceHash(SOURCE_HASH),
       m_kaosLogFacility(KAOS_LOG_FACILITY),
       m_objectStoreCompressionEnabled(OBJECT_STORE_COMPRESSION_ENABLED),
@@ -198,9 +180,8 @@ SystemConfig::SystemConfig()
     }
 
     /*
-        Put all the names in a set
-    */
-
+     * Put all the names in a set
+     */
     std::set<string> interfaceNames;
     for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next) {
         interfaceNames.insert(string(interface->ifa_name));
@@ -228,7 +209,7 @@ SystemConfig::SystemConfig()
 
                 if (m_serialNumber.empty()) {
                     std::stringstream serialNumberStream;
-                    serialNumberStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0]) 
+                    serialNumberStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0])
                                        << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[1])
                                        << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[2])
                                        << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[3])
@@ -236,8 +217,7 @@ SystemConfig::SystemConfig()
                                        << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[5]);
                     m_serialNumber = serialNumberStream.str();
                     m_worldWideName = WORLD_WIDE_NAME_PREFIX + m_serialNumber;
-                }             
-
+                }
             }
 
             else if (family == AF_INET) {
@@ -257,6 +237,3 @@ SystemConfig::SystemConfig()
     }
     freeifaddrs(interfaceList);
 }
-
-
-

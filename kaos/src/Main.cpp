@@ -1,131 +1,147 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
+#include <signal.h>
 #include <limits.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <list>
+#include <mutex>
 #include <string>
 #include <iostream>
+#include <condition_variable>
 #include "Logger.hpp"
+#include "SslStream.hpp"
 #include "SslControl.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
-#include "TcpTransport.hpp"
 #include "SystemControl.hpp"
 #include "ServerSettings.hpp"
-#include "TransportManager.hpp"
+#include "ClearTextStream.hpp"
 #include "MessageStatistics.hpp"
-#include "HeartbeatProvider.hpp"
-#include "ConnectionFactory.hpp"
+#include "ConnectionListener.hpp"
+#include "CommunicationsManager.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 
 /*
-    Global Variable
-*/
-
+ * Global Variable
+ */
 SystemConfig systemConfig;
 SystemControl systemControl;
 ServerSettings serverSettings(systemConfig.serverSettingsFile());
 MessageStatistics messageStatistics;
 ObjectStorePtr objectStore;
-TransportManager transportManager;
-HeartbeatProvider heartbeatProvider;
-ConnectionFactory connectionFactory;
-static string programName;
+CommunicationsManager communicationsManager;
+
+/*
+ * Privae Variables
+ */
+static std::mutex daemonMutex;
+static std::unique_lock<std::mutex> daemonLock(daemonMutex);
+static std::condition_variable daemonTerminated;
 
 /**
-    Create PID File
+ * Create PID File
+ *
+ * @param   pidFileName     name of the process ID file
+ *
+ * This function creates the process pid file. Should be called if process has been daemonized.
+ */
+void createPidFile(string pidFileName) {
 
-    This function creates the process pid file. Should be called if process has been daemonized.
-*/
-
-void
-createPidFile() {
-
-    string pidFilePath = systemConfig.pidFileDir() + "/" + programName + systemConfig.pidFileExtension();
-    FILE* file = fopen(pidFilePath.c_str(), "w");
+    FILE* file = fopen(pidFileName.c_str(), "w");
     if (file == nullptr)
         LOG(ERROR) << "Failed to create PID file: error_code=" << errno << ", error_description=" << strerror(errno);
     else {
-        int32_t returnCode = fprintf(file, "%i\n", getpid());
-        fclose(file);
-        if (returnCode != STATUS_SUCCESS)
+        if (fprintf(file, "%i\n", getpid()) < 0)
             LOG(ERROR) << "Failed to write PID file: error_code=" << errno << ", error_description=" << strerror(errno);
+        if (fclose(file) != STATUS_SUCCESS)
+            LOG(ERROR) << "Failed to close PID file: error_code=" << errno << ", error_description=" << strerror(errno);
     }
 }
 
 /**
-    Delete PID File
+ * Delete PID File
+ *
+ * @param   pidFileName     name of the process ID file
+ *
+ * This function deletes the process pid file. Should be called prior to exitting the program.
+ */
+void deletePidFile(string pidFileName) {
 
-    This function deletes the process pid file. Should be called prior to exitting the program.
-*/
-
-void
-deletePidFile() {
-
-    string pidFilePath = systemConfig.pidFileDir() + "/" + programName + systemConfig.pidFileExtension();
-    if (remove(pidFilePath.c_str()) != STATUS_SUCCESS)
+    if (remove(pidFileName.c_str()) != STATUS_SUCCESS)
         LOG(ERROR) << "Failed to remove PID file: error_code=" << errno << ", error_description=" << strerror(errno);
 }
 
 /**
-    Main
+ * Terminate Program
+ *
+ * @param    signum    signal sent to process
+ *
+ * This function is called when the program has been signalled to exit (using SIGTERM).
+ */
+void terminateProgram(int signum) {
 
-    @param    argc  number of command line arguments
-    @param    argv  array of command line arguments
+    /*
+     * Eliminate the unused args warning for signum.
+     */
+    static_cast<void>(signum);
 
-    @return   EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
-*/
+    daemonTerminated.notify_one();
+}
 
-int32_t
-main(int argc, char** argv) {
+/**
+ * Main
+ *
+ * @param    argc  number of command line arguments
+ * @param    argv  array of command line arguments
+ *
+ * @return   EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
+ */
+int32_t main(int argc, char** argv) {
 
-    programName = string(basename(argv[0]));
-    bool foreground(true);
+    bool background(true);
+    string pidFileName = systemConfig.defaultPidFileName();
     string databaseDirectory(systemConfig.databaseDirectory());
     struct option longopts[] = {
         { "dir",        required_argument, nullptr, 'x' },
+        { "pid",        required_argument, nullptr, 'p' },
         { "debug",      no_argument,       nullptr, 'd' },
-        { "background", no_argument,       nullptr, 'b' },
         { "foreground", no_argument,       nullptr, 'f' },
         { "help",       no_argument,       nullptr, 'h' },
         { 0, 0, 0, 0 }
     };
 
     /*
-        Process any command line arguments.  Arguments can be used to cause the program to run in
-        the foreground or in debug mode (which causes additional information to be logged).
-    */
-
+     * Process any command line arguments.  Arguments can be used to cause the program to run in
+     * the foreground or in debug mode (which causes additional information to be logged).
+     */
     int32_t opt(0);
     int32_t longindex(0);
     const int32_t ALL_ARGS_PROCESSED(-1);
-    while ((opt = getopt_long(argc, argv, "x:bdfh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
-        if (opt == 'd') {
+    while ((opt = getopt_long(argc, argv, "xp:dfh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
+        if (opt == 'x') {
+            databaseDirectory = string(optarg);
+        }
+        else if (opt == 'p') {
+            pidFileName = string(optarg);
+        }
+        else if (opt == 'd') {
             systemControl.setDebugEnabled(true);
         }
-        if (opt == 'x')
-            databaseDirectory = string(optarg);
         else if (opt == 'f') {
-            foreground = true;
-        }
-        else if (opt == 'b') {
-            foreground = false;
+            background = false;
         }
         else if (opt == 'h') {
-            std::cout << "Usage: " << programName << " [--dir|-x]|[--debug|-d]|[--background|-b]|[--foreground|-f]|[--help|-h]" << std::endl;
+            std::cout << "Usage: " << basename(argv[0]) << " [--dir|-x]|[--debug|-d]|[--pid|-p]|[--foreground|-f]|[--help|-h]" << std::endl;
             return (opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE);
         }
     }
@@ -133,17 +149,18 @@ main(int argc, char** argv) {
     LOG_INIT(nullptr, systemConfig.kaosLogFacility(), systemControl.debugEnabled());
 
     /*
-        If the daemon is not to run in the foreground, daemonize the process. That causes the
-        process to detach from it parent (so it can run in the background), detach from its
-        controlling terminal, close all associated file descriptors except stdin, stdout, and stderr
-        which will be connected to dev/null, and change to the root directory so that the daemon
-        can't prevent the root file system from being unmounted.
-    */
-
-    if ((!foreground) && (daemon(0, 0) != STATUS_SUCCESS)) {
+     * If the daemon is to run in the background, daemonize the process. That causes the process to
+     * detach from it parent, detach from its controlling terminal, close all associated file
+     * descriptors except stdin, stdout, and stderr which will be connected to dev/null, and change
+     * to the root directory so that the daemon can't prevent the root file system from being
+     * unmounted.
+     */
+    if ((background) && (daemon(0, 0) != STATUS_SUCCESS)) {
         LOG(ERROR) << "Failed to become daemon: error_code=" << errno << ", error_description=" << strerror(errno);
         return EXIT_FAILURE;
     }
+
+    signal(SIGTERM, terminateProgram);
 
     if (!SslControl::instance().operational()) {
         LOG(ERROR) << "Failed to configure SSL component";
@@ -151,9 +168,8 @@ main(int argc, char** argv) {
     }
 
     /*
-        Setup the object store.
-    */
-
+     * Setup the object store.
+      */
     objectStore.reset(new ObjectStore(databaseDirectory));
     ReturnStatus status = objectStore->open();
     if (status != ReturnStatus::SUCCESS) {
@@ -161,25 +177,18 @@ main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (!foreground)
-        createPidFile();
+    if (background)
+        createPidFile(pidFileName);
 
     /*
-        Start the transports.
-    */
+     * Start the communications;
+     */
+    communicationsManager.start();
 
-    std::list<TransportInterface*> transportList;
-    transportList.push_back(new TcpTransport(systemConfig.tcpPort(), Security::NONE));
-    transportList.push_back(new TcpTransport(systemConfig.sslPort(), Security::SSL));
+    daemonTerminated.wait(daemonLock);
 
-    transportManager.start(transportList);
-    heartbeatProvider.start();
-
-    transportManager.wait();
-
-
-    if (!foreground)
-        deletePidFile();
+    if (background)
+        deletePidFile(pidFileName);
 
     return EXIT_SUCCESS;
 }

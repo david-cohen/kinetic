@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef MESSAGE_HANDLER_HPP
 #define MESSAGE_HANDLER_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <list>
 #include <string>
@@ -20,8 +18,8 @@
 
 typedef struct {
 
-    const com::seagate::kinetic::proto::Command_MessageType  m_requestType;                     //!< Type of message
-    const Operation                                          m_operation;                       //!< Operation to be performed for this request
+    const com::seagate::kinetic::proto::Command_MessageType  m_requestType;             //!< Type of message
+    const Operation                                          m_operation;               //!< Operation to be performed for this request
     const bool                                               m_operationInvolvesKey;
 
     void (*perform)(Transaction& transaction);     //!< Function to process message type
@@ -32,23 +30,21 @@ typedef struct {
     }
     inline bool operationInvolvesKey() {return m_operationInvolvesKey;}
     inline com::seagate::kinetic::proto::Message_AuthType requiredAuthenticationType() {
-            return m_requestType == com::seagate::kinetic::proto::Command_MessageType_PINOP
-                   ? com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH
-                   : com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH;
+        return m_requestType == com::seagate::kinetic::proto::Command_MessageType_PINOP
+               ? com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH
+               : com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH;
     }
 } OperationInfo;
 
-/**
-    Message Handler
-*/
-
+/*
+ * Message Handler
+ */
 class MessageHandler {
 public:
 
     /*
-        Public Class Member Functions
-    */
-
+     * Public Class Member Functions
+     */
     static void processRequest(Transaction& transaction);
     static void processError(Transaction& transaction);
     static void processPutRequest(Transaction& transaction);
@@ -75,9 +71,8 @@ public:
 private:
 
     /*
-        Private Inline Member Functions
-    */
-
+     * Private Inline Member Functions
+     */
     static inline uint32_t messageTypeToIndex(::com::seagate::kinetic::proto::Command_MessageType messageType) {return static_cast<uint32_t>(messageType) >> 1;}
 
     DISALLOW_COPY_AND_ASSIGN(MessageHandler);

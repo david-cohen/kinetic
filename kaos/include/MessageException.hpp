@@ -1,36 +1,32 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef MESSAGE_EXCEPTION_HPP
 #define MESSAGE_EXCEPTION_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <string>
 #include <sstream>
 #include <exception>
 #include "KineticMessage.hpp"
 
 /**
-    Message Exception
-
-    An exception thrown due to an error encountered while processing a Kinetic Message.  The error
-    information is recorded as a status code and status message so it can be used to populate the
-    status fields of a Kinetic response message.
-*/
-
+ * Message Exception
+ *
+ * An exception thrown due to an error encountered while processing a Kinetic Message.  The error
+ * information is recorded as a status code and status message so it can be used to populate the
+ * status fields of a Kinetic response message.
+ */
 class MessageException: public std::exception {
 
 public:
 
     /*
-        Constructor/Destructor
-    */
-
+     * Constructor/Destructor
+     */
     MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode, const std::string& message)
         : m_statusCode(statusCode), m_message(message) {}
 
@@ -43,9 +39,8 @@ public:
     ~MessageException() throw() {}
 
     /*
-        Public Member Function
-    */
-
+     * Public Member Function
+     */
     inline com::seagate::kinetic::proto::Command_Status_StatusCode statusCode() {return m_statusCode;}
     inline const std::string& statusMessage() {return m_message;}
     inline virtual const char* what() const throw() {return m_message.c_str();}
@@ -58,11 +53,9 @@ private:
         return stream.str();
     }
 
-
     /*
-        Private Data Members
-    */
-
+     * Private Data Members
+     */
     const com::seagate::kinetic::proto::Command_Status_StatusCode m_statusCode;     //!< Enum that indicates category of error
     const std::string                                             m_message;        //!< Text description of specific error
 };

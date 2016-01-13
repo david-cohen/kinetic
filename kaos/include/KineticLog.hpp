@@ -1,29 +1,25 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef KINETIC_LOG_HPP
 #define KINETIC_LOG_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <string>
 #include "Kinetic.pb.hpp"
 
-/**
-    Kinetic Log
-*/
-
+/*
+ * Kinetic Log
+ */
 class KineticLog {
 public:
 
     /*
-        Public Class Member Functions
-    */
-
+     * Public Class Member Functions
+     */
     static void getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response);
     static void getStatistics(com::seagate::kinetic::proto::Command_GetLog* response);
     static void getCapacities(com::seagate::kinetic::proto::Command_GetLog* response);

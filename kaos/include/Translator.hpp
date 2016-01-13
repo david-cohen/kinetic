@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef TRANSLATOR_HPP
 #define TRANSLATOR_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <string>
 #include <sstream>
 #include "Hmac.hpp"
@@ -20,9 +18,8 @@
 #include "Settings.pb.hpp"
 
 /**
-    Translator Class
-*/
-
+ * Translator Class
+ */
 class Translator {
 public:
     static HmacAlgorithm fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSetting);

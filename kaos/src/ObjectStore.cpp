@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <unistd.h>
 #include <list>
@@ -13,24 +12,21 @@
 #include <memory>
 #include "leveldb/cache.h"
 #include "leveldb/slice.h"
+#include "leveldb/comparator.h"
 #include "leveldb/write_batch.h"
 #include "Entry.pb.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 using std::unique_ptr;
 
 /*
-    Constants
-*/
-
-#define CHECK_ALL
-
+ * Constants
+ */
 static leveldb::WriteOptions asyncWriteOptions;
 static leveldb::WriteOptions syncWriteOptions;
 static leveldb::WriteOptions flushWriteOptions;
@@ -45,12 +41,38 @@ inline bool validPersistOption(PersistOption option) {
             && (static_cast<int32_t>(option) <= static_cast<int32_t>(PersistOption::Command_Synchronization_FLUSH)));
 }
 
+class KineticComparator : public leveldb::Comparator {
+public:
+
+    int Compare(const leveldb::Slice& left, const leveldb::Slice& right) const {
+        int leftSize = left.size();
+        int rightSize = right.size();
+
+        int len = leftSize < rightSize ? leftSize : rightSize;
+
+        for (int i = 0; i < len; i++) {
+            int a = (left[i] & 0xff);
+            int b = (right[i] & 0xff);
+            if (a != b) {
+                return a - b;
+            }
+        }
+
+        return leftSize - rightSize;
+    }
+
+    // Ignore the following methods for now:
+    const char* Name() const { return "KineticComparator"; }
+    void FindShortestSeparator(std::string*, const leveldb::Slice&) const { }
+    void FindShortSuccessor(std::string*) const { }
+};
+
+static KineticComparator kineticComparator;
+
 /**
-    ObjectStore Constructor
-
-    @param  databaseDirectory   directory where the database resides
-*/
-
+ * ObjectStore Constructor
+ * @param  databaseDirectory   directory where the database resides
+ */
 ObjectStore::ObjectStore(std::string databaseDirectory)
     : m_databaseDirectory(databaseDirectory) {
 
@@ -58,20 +80,18 @@ ObjectStore::ObjectStore(std::string databaseDirectory)
     asyncWriteOptions.sync = false;
 }
 
-/**
-    ObjectStore Destructor
-*/
-
+/*
+ * ObjectStore Destructor
+ */
 ObjectStore::~ObjectStore() {
     delete m_database;
 }
 
 /**
-    Open
-
-    @return the completion status of the operations (success of failure)
-*/
-
+ * Open
+ *
+ * @return the completion status of the operations (success of failure)
+ */
 ReturnStatus
 ObjectStore::open() {
 
@@ -85,16 +105,18 @@ ObjectStore::open() {
     options.create_if_missing = true;
     options.block_cache = leveldb::NewLRUCache(64 * 1048576);
     options.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+    options.comparator = &kineticComparator;
+
     leveldb::Status status = leveldb::DB::Open(options, m_databaseDirectory, &m_database);
     return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
 }
 
+
 /**
-    Erase
-
-    @return the completion status of the operations (success of failure)
-*/
-
+ * Erase
+ *
+ * @return the completion status of the operations (success of failure)
+ */
 ReturnStatus
 ObjectStore::erase() {
 
@@ -106,27 +128,24 @@ ObjectStore::erase() {
 }
 
 /**
-    Flush
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Flush
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::flush() {
 
     /*
-        Make a key that will not match any entry in the database (by making the key size larger than
-        the that supported by the Kinetic API and setting a unique ID).
-    */
-
+     * Make a key that will not match any entry in the database (by making the key size larger than
+     * the that supported by the Kinetic API and setting a unique ID).
+     */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, systemConfig.flushDataKey(), &serializedEntryData);
     leveldb::WriteBatch batch;
 
     /*
-        No entry for key. perform no op
-    */
-
+     * No entry for key. perform no op
+     */
     if (!status.ok()) {
         leveldb::Slice emptyData;
         batch.Put(systemConfig.flushDataKey(), emptyData);
@@ -134,9 +153,8 @@ ObjectStore::flush() {
     }
 
     /*
-        entry found, put back after delete - is the delete necessary?
-    */
-
+     * entry found, put back after delete - is the delete necessary?
+     */
     else {
         leveldb::Slice slicedData(serializedEntryData);
         batch.Delete(systemConfig.flushDataKey());
@@ -144,39 +162,36 @@ ObjectStore::flush() {
     }
 
     /*
-        do batch operation with sync option.
-    */
-
+     * do batch operation with sync option.
+     */
     status = m_database->Write(syncWriteOptions, &batch);
     sync();
     return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
 }
 
 /**
-    Put
-
-    @param  key             the key of the entry to be put in the object store
-    @param  value           the value of the entry to be put in the object store
-    @param  newVersion      the new version of the entry to be put in the object store
-    @param  oldVersion      the (optional) old version of the entry in the object store
-    @param  tag             the (optional) tag of the entry to be put in the object store
-    @param  algorithm       the (optional) algorithm of the entry to be put in the object store
-    @param  persistOption   indicates how the change to the object store is to be persisted
-                            (SYNC - before returning status
-                             ASYNC - after returning status
-                             FLUSH - before return status and after all data destaged)
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Put
+ *
+ * @param  key             the key of the entry to be put in the object store
+ * @param  value           the value of the entry to be put in the object store
+ * @param  newVersion      the new version of the entry to be put in the object store
+ * @param  oldVersion      the (optional) old version of the entry in the object store
+ * @param  tag             the (optional) tag of the entry to be put in the object store
+ * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
+ * @param  persistOption   indicates how the change to the object store is to be persisted
+ *                         (SYNC - before returning status
+ *                          ASYNC - after returning status
+ *                          FLUSH - before return status and after all data destaged)
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::put(const string& key, const string& value, const string& newVersion, const string& oldVersion,
                  const string& tag, Algorithm algorithm, PersistOption persistOption) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -198,10 +213,9 @@ ObjectStore::put(const string& key, const string& value, const string& newVersio
 #endif
 
     /*
-        Validating the version includes checking if an entry with the specified key is already in
-        the object store.  If it is, the specified version must be the same.
-    */
-
+     * Validating the version includes checking if an entry with the specified key is already in the
+     * object store.  If it is, the specified version must be the same.
+     */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
@@ -217,10 +231,9 @@ ObjectStore::put(const string& key, const string& value, const string& newVersio
     }
 
     /*
-        First, create the metadata for the entry set set the write options, then put the entry in
-        the object store.
-    */
-
+     * First, create the metadata for the entry set set the write options, then put the entry in the
+     * object store.
+     */
     unique_ptr<kaos::Entry> entry(new kaos::Entry());
     entry->set_key(key);
     entry->set_value(value);
@@ -239,28 +252,26 @@ ObjectStore::put(const string& key, const string& value, const string& newVersio
 }
 
 /**
-    Put Forced
-
-    @param  key             the key of the entry to be put in the object store
-    @param  value           the value of the entry to be put in the object store
-    @param  version         the (optional) version of the entry to be put in the object store
-    @param  tag             the (optional) tag of the entry to be put in the object store
-    @param  algorithm       the (optional) algorithm of the entry to be put in the object store
-    @param  persistOption   indicates how the change to the object store is to be persisted
-                            (SYNC - before returning status
-                             ASYNC - after returning status
-                             FLUSH - before return status and after all data destaged)
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Put Forced
+ *
+ * @param  key             the key of the entry to be put in the object store
+ * @param  value           the value of the entry to be put in the object store
+ * @param  version         the (optional) version of the entry to be put in the object store
+ * @param  tag             the (optional) tag of the entry to be put in the object store
+ * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
+ * @param  persistOption   indicates how the change to the object store is to be persisted
+ *                         (SYNC - before returning status
+ *                          ASYNC - after returning status
+ *                          FLUSH - before return status and after all data destaged)
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::putForced(const string& key, const string& value, const string& version, const string& tag, Algorithm algorithm, PersistOption persistOption) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -299,17 +310,16 @@ ObjectStore::putForced(const string& key, const string& value, const string& ver
 }
 
 /**
-    Get
-
-    @param  key             the key of the entry in the object store to get
-    @param  value           the value of the entry in the object store
-    @param  version         the version of the entry in the object store
-    @param  tag             the tag of the entry in the object store
-    @param  algorithm       the algorithm of the entry in the object store
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Get
+ *
+ * @param  key             the key of the entry in the object store to get
+ * @param  value           the value of the entry in the object store
+ * @param  version         the version of the entry in the object store
+ * @param  tag             the tag of the entry in the object store
+ * @param  algorithm       the algorithm of the entry in the object store
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::get(const string& key, string& value, string& version, string& tag, Algorithm& algorithm) {
 
@@ -338,18 +348,17 @@ ObjectStore::get(const string& key, string& value, string& version, string& tag,
 }
 
 /**
-    Get Next
-
-    @param  key             the key of the entry before the one in the object store to get
-    @param  nextKey         the key of the next entry in the object store to get
-    @param  nextValue       the value of the next entry in the object store
-    @param  nextVersion     the version of the next entry in the object store
-    @param  nextTag         the tag of the next entry in the object store
-    @param  nextAlgorithm   the algorithm of the next entry in the object store
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Get Next
+ *
+ * @param  key             the key of the entry before the one in the object store to get
+ * @param  nextKey         the key of the next entry in the object store to get
+ * @param  nextValue       the value of the next entry in the object store
+ * @param  nextVersion     the version of the next entry in the object store
+ * @param  nextTag         the tag of the next entry in the object store
+ * @param  nextAlgorithm   the algorithm of the next entry in the object store
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::getNext(const string& key, string& nextKey, string& nextValue, string& nextVersion, string& nextTag, Algorithm& nextAlgorithm) {
 
@@ -362,21 +371,19 @@ ObjectStore::getNext(const string& key, string& nextKey, string& nextValue, stri
 #endif
 
     /*
-        The seek function will cause the iterator to be positioned at the entry with the requested
-        key, or at the entry in the database that is next after the requested key (if the entry with
-        the requested key is not in the database), or the iterator will be invalid (because
-        there are no entries in the database on or after the requested key).
-    */
-
+     * The seek function will cause the iterator to be positioned at the entry with the requested
+     * key, or at the entry in the database that is next after the requested key (if the entry with
+     * the requested key is not in the database), or the iterator will be invalid (because there are
+     * no entries in the database on or after the requested key).
+     */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
     iterator->Seek(key);
 
     /*
-        If the iterator is positioned at the entry of the requested key, advanced to the next entry.
-        If the iterator is at the entry past the request key, then that's the entry we want (so no
-        need to advance the iterator).
-    */
-
+     * If the iterator is positioned at the entry of the requested key, advanced to the next entry.
+     * If the iterator is at the entry past the request key, then that's the entry we want (so no
+     * need to advance the iterator).
+     */
     if (iterator->Valid() && (iterator->key().ToString() == key))
         iterator->Next();
 
@@ -395,18 +402,17 @@ ObjectStore::getNext(const string& key, string& nextKey, string& nextValue, stri
 }
 
 /**
-    Get Previous
-
-    @param  key                 the key of the entry after the one in the object store to get
-    @param  previousKey         the key of the previous entry in the object store to get
-    @param  previousValue       the value of the previous entry in the object store
-    @param  previousVersion     the version of the previous entry in the object store
-    @param  previousTag         the tag of the previous entry in the object store
-    @param  previousAlgorithm   the algorithm of the previous entry in the object store
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Get Previous
+ *
+ * @param  key                 the key of the entry after the one in the object store to get
+ * @param  previousKey         the key of the previous entry in the object store to get
+ * @param  previousValue       the value of the previous entry in the object store
+ * @param  previousVersion     the version of the previous entry in the object store
+ * @param  previousTag         the tag of the previous entry in the object store
+ * @param  previousAlgorithm   the algorithm of the previous entry in the object store
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::getPrevious(const string& key, string& previousKey, string& previousValue, string& previousVersion, string& previousTag, Algorithm& previousAlgorithm) {
 
@@ -419,28 +425,25 @@ ObjectStore::getPrevious(const string& key, string& previousKey, string& previou
 #endif
 
     /*
-        The seek function will cause the iterator to be positioned at the entry with the requested
-        key, or at the entry in the database that is next after the requested key (if the entry with
-        the requested key is not in the database), or the iterator will be invalid (because
-        there are no entries in the database on or after the requested key).
-    */
-
+     * The seek function will cause the iterator to be positioned at the entry with the requested
+     * key, or at the entry in the database that is next after the requested key (if the entry with
+     * the requested key is not in the database), or the iterator will be invalid (because there are
+     * no entries in the database on or after the requested key).
+     */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
     iterator->Seek(key);
 
     /*
-        If there are no entries on or after the requested key, position the iterator at the last key
-        in the database because it might be in the requested range.
-    */
-
+     * If there are no entries on or after the requested key, position the iterator at the last key
+     * in the database because it might be in the requested range.
+     */
     if (!iterator->Valid())
         iterator->SeekToLast();
 
     /*
-        If the iterator is positioned at or past the entry of the requested key, move it to the
-        previous entry.
-    */
-
+     * If the iterator is positioned at or past the entry of the requested key, move it to the
+     * previous entry.
+     */
     else if (iterator->Valid() && (iterator->key().ToString() >= key))
         iterator->Prev();
 
@@ -459,16 +462,15 @@ ObjectStore::getPrevious(const string& key, string& previousKey, string& previou
 }
 
 /**
-    Get Metadata
-
-    @param  key             the key of the entry in the object store to get
-    @param  version         the version of the entry in the object store
-    @param  tag             the tag of the entry in the object store
-    @param  algorithm       the algorithm of the entry in the object store
-
-    @return the completion status of the operations (success or the error status)
-*/
-
+ * Get Metadata
+ *
+ * @param  key             the key of the entry in the object store to get
+ * @param  version         the version of the entry in the object store
+ * @param  tag             the tag of the entry in the object store
+ * @param  algorithm       the algorithm of the entry in the object store
+ *
+ * @return the completion status of the operations (success or the error status)
+ */
 ReturnStatus
 ObjectStore::getMetadata(const string& key, string& version, string& tag, Algorithm& algorithm) {
 
@@ -496,20 +498,19 @@ ObjectStore::getMetadata(const string& key, string& version, string& tag, Algori
 }
 
 /**
-    Get Key Range
-
-    @param  startKey            the start key in the specified key range
-    @param  startKeyInclusive   true if the start key is inclusive
-    @param  endKey              the end key in the specified key range
-    @param  endKeyInclusive     true if the end key is inclusive
-    @param  maxKeys             the maximum number of keys to return
-    @param  accessControl       access control to be used for this operation
-
-    @return the completion status of the operations (success or the error status)
-
-    Note: A zero byte start key is allowed.
-*/
-
+ * Get Key Range
+ *
+ * @param  startKey            the start key in the specified key range
+ * @param  startKeyInclusive   true if the start key is inclusive
+ * @param  endKey              the end key in the specified key range
+ * @param  endKeyInclusive     true if the end key is inclusive
+ * @param  maxKeys             the maximum number of keys to return
+ * @param  accessControl       access control to be used for this operation
+ *
+ * @return the completion status of the operations (success or the error status)
+ *
+ * Note: A zero byte start key is allowed.
+ */
 ReturnStatus
 ObjectStore::getKeyRange(const string& startKey, bool startKeyInclusive, const string& endKey, bool endKeyInclusive,
                          int32_t maxKeys, std::list<string>& keyList, AccessControlPtr& accessControl) {
@@ -527,28 +528,25 @@ ObjectStore::getKeyRange(const string& startKey, bool startKeyInclusive, const s
         return ReturnStatus::MAX_KEYS_RETURNED_COUNT_TOO_LARGE;
 
     /*
-        The seek function will cause the iterator to be positioned at the entry with the requested
-        key, or at the entry in the database that is next after the requested key (if the entry with
-        the requested key is not in the database), or the iterator will be invalid (because
-        there are no entries in the database on or after the requested key).
-    */
-
+     * The seek function will cause the iterator to be positioned at the entry with the requested
+     * key, or at the entry in the database that is next after the requested key (if the entry with
+     * the requested key is not in the database), or the iterator will be invalid (because there are
+     * no entries in the database on or after the requested key).
+     */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
     iterator->Seek(startKey);
 
     /*
-        If the iterator is positioned at the start key and the start key is not to be included,
-        advanced to the next entry.
-    */
-
+     * If the iterator is positioned at the start key and the start key is not to be included,
+     * advanced to the next entry.
+     */
     if (!startKeyInclusive && iterator->Valid() && (iterator->key().ToString() == startKey))
         iterator->Next();
 
     /*
-        Add keys to the list as long as they are less than the end key or equal to the end key if it
-        is to be included and the number of keys don't exceed the specified maximum keys to return.
-    */
-
+     * Add keys to the list as long as they are less than the end key or equal to the end key if it
+     * is to be included and the number of keys don't exceed the specified maximum keys to return.
+     */
     for (int32_t keyCount = 0; iterator->Valid() && (keyCount < maxKeys); iterator->Next()) {
         string key = iterator->key().ToString();
         if (accessControl->permissionToGetRange(key)) {
@@ -561,9 +559,8 @@ ObjectStore::getKeyRange(const string& startKey, bool startKeyInclusive, const s
         }
 
         /*
-            If keys were already found, stop at the first miss.
-        */
-
+         * keys were already found, stop at the first miss.
+         */
         else if (keyCount > 0)
             break;
     }
@@ -573,20 +570,19 @@ ObjectStore::getKeyRange(const string& startKey, bool startKeyInclusive, const s
 }
 
 /**
-    Get Key Range Reversed
-
-    @param  startKey            the start key in the specified key range
-    @param  startKeyInclusive   true if the start key is inclusive
-    @param  endKey              the end key in the specified key range
-    @param  endKeyInclusive     true if the end key is inclusive
-    @param  maxKeys             the maximum number of keys to return
-    @param  accessControl       access control to be used for this operation
-
-    @return the completion status of the operations (success or the error status)
-
-    Note: A zero byte start key is allowed.
-*/
-
+ * Get Key Range Reversed
+ *
+ * @param  startKey            the start key in the specified key range
+ * @param  startKeyInclusive   true if the start key is inclusive
+ * @param  endKey              the end key in the specified key range
+ * @param  endKeyInclusive     true if the end key is inclusive
+ * @param  maxKeys             the maximum number of keys to return
+ * @param  accessControl       access control to be used for this operation
+ *
+ * @return the completion status of the operations (success or the error status)
+ *
+ * Note: A zero byte start key is allowed.
+ */
 ReturnStatus
 ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive, const string& endKey, bool endKeyInclusive,
                                  int32_t maxKeys, std::list<string>& keyList, AccessControlPtr& accessControl) {
@@ -604,38 +600,34 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
         return ReturnStatus::MAX_KEYS_RETURNED_COUNT_TOO_LARGE;
 
     /*
-        The seek function will cause the iterator to be positioned at the entry with the requested
-        key, or at the entry in the database that is next after the requested key (if the entry with
-        the requested key is not in the database), or the iterator will be invalid (because
-        there are no entries in the database on or after the requested key).
-    */
-
+     * The seek function will cause the iterator to be positioned at the entry with the requested
+     * key, or at the entry in the database that is next after the requested key (if the entry with
+     * the requested key is not in the database), or the iterator will be invalid (because there are
+     * no entries in the database on or after the requested key).
+     */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
     iterator->Seek(endKey);
 
     /*
-        If there are no entries on or after the requested key, position the iterator at the last key
-        in the database because it might be in the requested range.
-    */
-
+     * If there are no entries on or after the requested key, position the iterator at the last key
+     * in the database because it might be in the requested range.
+     */
     if (!iterator->Valid())
         iterator->SeekToLast();
 
     /*
-        If the iterator is positioned at an entry past the end key, move it to the previous entry.
-        If the iterator is positioned at the entry with the last key and it is not to be included,
-        move the iterator to the previous entry.
-    */
-
+     * If the iterator is positioned at an entry past the end key, move it to the previous entry.
+     * If the iterator is positioned at the entry with the last key and it is not to be included,
+     * move the iterator to the previous entry.
+     */
     else if (iterator->Valid() && ((iterator->key().ToString() > endKey) || (!endKeyInclusive && (iterator->key().ToString() == endKey))))
         iterator->Prev();
 
     /*
-        Add keys to the list as long as they are greater than the start key or equal to the start
-        key if it is to be included and the number of keys don't exceed the specified maximum keys
-        to return.
-    */
-
+     * Add keys to the list as long as they are greater than the start key or equal to the start key
+     * if it is to be included and the number of keys don't exceed the specified maximum keys to
+     * return.
+     */
     for (int32_t keyCount = 0; iterator->Valid() && (keyCount < maxKeys); iterator->Prev()) {
         string key = iterator->key().ToString();
 
@@ -649,9 +641,8 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
         }
 
         /*
-            If keys were already found, stop at the first miss.
-        */
-
+         * If keys were already found, stop at the first miss.
+         */
         else if (keyCount > 0)
             break;
     }
@@ -661,27 +652,25 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
 }
 
 /**
-    Delete Versioned
-
-    @param  key             the key of the entry to delete
-    @param  version         the version of the entry to delete
-    @param  persistOption   indicates how the change to the object store is to be persisted
-                            (SYNC - before returning status
-                             ASYNC - after returning status
-                             FLUSH - before return status and after all data destaged)
-
-    @return the completion status of the operations (success or the error status)
-
-    Delete the entry that is associated with the key specified.
-*/
-
+ * Delete Versioned
+ *
+ * @param  key             the key of the entry to delete
+ * @param  version         the version of the entry to delete
+ * @param  persistOption   indicates how the change to the object store is to be persisted
+ *                         (SYNC - before returning status
+ *                          ASYNC - after returning status
+ *                          FLUSH - before return status and after all data destaged)
+ *
+ * @return the completion status of the operations (success or the error status)
+ *
+ * Delete the entry that is associated with the key specified.
+ */
 ReturnStatus
 ObjectStore::deleteVersioned(const string& key, const string& version, PersistOption persistOption) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -697,10 +686,9 @@ ObjectStore::deleteVersioned(const string& key, const string& version, PersistOp
 #endif
 
     /*
-        Validating the version includes checking if an entry with the specified key is already in
-        the object store.  If it is, the specified version must be the same.
-    */
-
+     * Validating the version includes checking if an entry with the specified key is already in
+     * the object store.  If it is, the specified version must be the same.
+     */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
@@ -724,26 +712,24 @@ ObjectStore::deleteVersioned(const string& key, const string& version, PersistOp
 }
 
 /**
-    Delete Forced
-
-    @param  key             the key of the entry to delete
-    @param  persistOption   indicates how the change to the object store is to be persisted
-                            (SYNC - before returning status
-                             ASYNC - after returning status
-                             FLUSH - before return status and after all data destaged)
-
-    @return the completion status of the operations (success or the error status)
-
-    Delete the entry that is associated with the key specified.
-*/
-
+ * Delete Forced
+ *
+ * @param  key             the key of the entry to delete
+ * @param  persistOption   indicates how the change to the object store is to be persisted
+ *                         (SYNC - before returning status
+ *                          ASYNC - after returning status
+ *                          FLUSH - before return status and after all data destaged)
+ *
+ * @return the completion status of the operations (success or the error status)
+ *
+ * Delete the entry that is associated with the key specified.
+ */
 ReturnStatus
 ObjectStore::deleteForced(const string& key, PersistOption persistOption) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -764,27 +750,25 @@ ObjectStore::deleteForced(const string& key, PersistOption persistOption) {
 }
 
 /**
-    Batch Put
-
-    @param  batch           the batch to add an operation to
-    @param  key             the key of the entry to be put in the object store
-    @param  value           the value of the entry to be put in the object store
-    @param  newVersion      the new version of the entry to be put in the object store
-    @param  oldVersion      the (optional) old version of the entry in the object store
-    @param  tag             the (optional) tag of the entry to be put in the object store
-    @param  algorithm       the (optional) algorithm of the entry to be put in the object store
-
-    @return the status of adding the operation to the batch job
-*/
-
+ * Batch Put
+ *
+ * @param  batch           the batch to add an operation to
+ * @param  key             the key of the entry to be put in the object store
+ * @param  value           the value of the entry to be put in the object store
+ * @param  newVersion      the new version of the entry to be put in the object store
+ * @param  oldVersion      the (optional) old version of the entry in the object store
+ * @param  tag             the (optional) tag of the entry to be put in the object store
+ * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
+ *
+ * @return the status of adding the operation to the batch job
+ */
 ReturnStatus
 ObjectStore::batchPut(BatchDescriptor& batch, const string& key, const string& value, const string& newVersion,
                       const string& oldVersion, const string& tag, Algorithm algorithm) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -804,10 +788,9 @@ ObjectStore::batchPut(BatchDescriptor& batch, const string& key, const string& v
 #endif
 
     /*
-        Validating the version includes checking if an entry with the specified key is already in
-        the object store.  If it is, the specified version must be the same.
-    */
-
+     * Validating the version includes checking if an entry with the specified key is already in
+     * the object store.  If it is, the specified version must be the same.
+     */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
@@ -823,10 +806,9 @@ ObjectStore::batchPut(BatchDescriptor& batch, const string& key, const string& v
     }
 
     /*
-        First, create the metadata for the entry set set the write options, then put the entry in
-        the object store.
-    */
-
+     * First, create the metadata for the entry set set the write options, then put the entry in
+     * the object store.
+     */
     unique_ptr<kaos::Entry> entry(new kaos::Entry());
     entry->set_key(key);
     entry->set_value(value);
@@ -841,26 +823,24 @@ ObjectStore::batchPut(BatchDescriptor& batch, const string& key, const string& v
 }
 
 /**
-    Batch Put Forced
-
-    @param  batch           the batch to add an operation to
-    @param  key             the key of the entry to be put in the object store
-    @param  value           the value of the entry to be put in the object store
-    @param  version         the (optional) version of the entry to be put in the object store
-    @param  tag             the (optional) tag of the entry to be put in the object store
-    @param  algorithm       the (optional) algorithm of the entry to be put in the object store
-
-    @return the status of adding the operation to the batch job
-*/
-
+ * Batch Put Forced
+ *
+ * @param  batch           the batch to add an operation to
+ * @param  key             the key of the entry to be put in the object store
+ * @param  value           the value of the entry to be put in the object store
+ * @param  version         the (optional) version of the entry to be put in the object store
+ * @param  tag             the (optional) tag of the entry to be put in the object store
+ * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
+ *
+ * @return the status of adding the operation to the batch job
+ */
 ReturnStatus
 ObjectStore::batchPutForced(BatchDescriptor& batch, const string& key, const string& value,
                             const string& version, const string& tag, Algorithm algorithm) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -891,25 +871,24 @@ ObjectStore::batchPutForced(BatchDescriptor& batch, const string& key, const str
     return ReturnStatus::SUCCESS;
 }
 
+
 /**
-    Delete
-
-    @param  batch           the batch to add an operation to
-    @param  key             the key of the entry to delete
-    @param  version         the version of the entry to delete
-
-    @return the status of adding the operation to the batch job
-
-    Batches a delete of the entry that is associated with the key specified.
-*/
-
+ * Batch Delete
+ *
+ * @param  batch           the batch to add an operation to
+ * @param  key             the key of the entry to delete
+ * @param  version         the version of the entry to delete
+ *
+ * @return the status of adding the operation to the batch job
+ *
+ * Batches a delete of the entry that is associated with the key specified.
+ */
 ReturnStatus
 ObjectStore::batchDelete(BatchDescriptor& batch, const string& key, const string& version) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -922,10 +901,9 @@ ObjectStore::batchDelete(BatchDescriptor& batch, const string& key, const string
 #endif
 
     /*
-        Validating the version includes checking if an entry with the specified key is already in
-        the object store.  If it is, the specified version must be the same.
-    */
-
+     * Validating the version includes checking if an entry with the specified key is already in
+     * the object store.  If it is, the specified version must be the same.
+     */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
@@ -945,23 +923,21 @@ ObjectStore::batchDelete(BatchDescriptor& batch, const string& key, const string
 }
 
 /**
-    Batch Delete Forced
-
-    @param  batch           the batch to add an operation to
-    @param  key             the key of the entry to delete
-
-    @return the status of adding the operation to the batch job
-
-    Batches a delete of the entry that is associated with the key specified.
-*/
-
+ * Batch Delete Forced
+ *
+ * @param  batch           the batch to add an operation to
+ * @param  key             the key of the entry to delete
+ *
+ * @return the status of adding the operation to the batch job
+ *
+ * Batches a delete of the entry that is associated with the key specified.
+ */
 ReturnStatus
 ObjectStore::batchDeleteForced(BatchDescriptor& batch, const string& key) {
 
     /*
-        Ensure that the parameters are valid.  If not, fail the operation.
-    */
-
+     * Ensure that the parameters are valid.  If not, fail the operation.
+     */
 #ifdef CHECK_ALL
     if (key.size() < systemConfig.minKeySize())
         return ReturnStatus::KEY_SIZE_TOO_SMALL;
@@ -975,15 +951,14 @@ ObjectStore::batchDeleteForced(BatchDescriptor& batch, const string& key) {
 }
 
 /**
-    Batch Commit
-
-    @param  batch   contains the batch operations to perform
-
-    @return the status of the commit operation
-
-    Performs all the batched operations commiting them to the database.
-*/
-
+ * Batch Commit
+ *
+ * @param  batch   contains the batch operations to perform
+ *
+ * @return the status of the commit operation
+ *
+ * Performs all the batched operations commiting them to the database.
+ */
 ReturnStatus
 ObjectStore::batchCommit(BatchDescriptor& batch) {
 
@@ -991,6 +966,11 @@ ObjectStore::batchCommit(BatchDescriptor& batch) {
     return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
 }
 
+/**
+ * Optimize Media
+ *
+ * @return the status of the operation
+ */
 ReturnStatus
 ObjectStore::optimizeMedia() {
 

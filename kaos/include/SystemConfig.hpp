@@ -1,15 +1,13 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef SYSTEM_CONFIG_HPP
 #define SYSTEM_CONFIG_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <set>
 #include <memory>
@@ -23,6 +21,11 @@
 #include "Common.hpp"
 #include "Kinetic.pb.hpp"
 
+/**
+ * Network Interface
+ *
+ * Describes the attributes of a network interface (which is reported through the Kinetic protocol).
+ */
 class NetworkInterface {
 private:
     std::string m_name;
@@ -39,26 +42,27 @@ public:
     std::string ipv6() {return m_ipv6;}
 };
 
-
 typedef std::shared_ptr<NetworkInterface> NetworkInterfacePtr;
 typedef std::unordered_map<std::string, NetworkInterfacePtr> NetworkInterfaceMap;
 typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSet;
 
+/**
+ * System Configuration
+ *
+ * Contains the system attributes/constraints that can not be set by the user.
+ */
 class SystemConfig {
 public:
 
     /*
-        Constructor
-    */
-
+     * Constructor
+     */
     SystemConfig();
 
     /*
-        Public Accessors
-    */
-
-    inline std::string pidFileDir() {return m_pidFileDir;}
-    inline std::string pidFileExtension() {return m_pidFileExtension;}
+     * Public Accessors
+     */
+    inline std::string defaultPidFileName() {return m_defaultPidFileName;}
     inline std::string databaseDirectory() {return m_databaseDirectory;}
     inline std::string serverSettingsFile() {return m_serverSettingsFile;}
     inline const char* vendor() {return m_vendor;}
@@ -114,11 +118,9 @@ public:
 private:
 
     /*
-        Private Data Members
-    */
-
-    std::string          m_pidFileDir;
-    std::string          m_pidFileExtension;
+     * Private Data Members
+     */
+    std::string          m_defaultPidFileName;
     std::string          m_databaseDirectory;
     std::string          m_serverSettingsFile;
     const char*          m_vendor;

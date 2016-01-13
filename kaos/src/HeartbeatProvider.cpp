@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2015 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <errno.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -22,17 +21,15 @@
 #include "HeartbeatProvider.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 
 /**
-    HeartbeatProvider Constructor
-
-    Initailize the structure used to broadcast messages.
-*/
-
+ * HeartbeatProvider Constructor
+ *
+ * Initailize the structure used to broadcast messages.
+ */
 HeartbeatProvider::HeartbeatProvider()
     : m_active(false), m_thread(nullptr), m_socketFd(-1) {
 
@@ -43,14 +40,13 @@ HeartbeatProvider::HeartbeatProvider()
 }
 
 /**
-    Start
-
-    @return true if the thread was successfully created
-
-    Starts the heartbeat provider thread, which sends out a heartbeat message at a recurring
-    interval (around five seconds).
-*/
-
+ * Start
+ *
+ * @return true if the thread was successfully created
+ *
+ * Starts the heartbeat provider thread, which sends out a heartbeat message at a recurring interval
+ * (around five seconds).
+ */
 bool
 HeartbeatProvider::start() {
 
@@ -67,14 +63,12 @@ HeartbeatProvider::start() {
 }
 
 /**
-    Open Socket
-
-    @exception  a runtime error exception is thrown if the socket could not be
-                opened and configured successfully
-
-    Causes a datagram socket on which to send multicast messages to be opened.
-*/
-
+ * Open Socket
+ *
+ * @exception  a runtime error exception is thrown if the socket could not be opened and configured successfully
+ *
+ * Causes a datagram socket on which to send multicast messages to be opened.
+ */
 void
 HeartbeatProvider::openSocket() {
 
@@ -93,14 +87,13 @@ HeartbeatProvider::openSocket() {
 }
 
 /**
-    Send Heartbeat Message
-
-    @exception  a runtime error exception is thrown if the message wasn't sent successfully
-
-    Send a kinetic heartbeat message to the multicast address.  Since some of the values in the
-    message can change, it must be built with the latest values before sending.
-*/
-
+ * Send Heartbeat Message
+ *
+ * @exception  a runtime error exception is thrown if the message wasn't sent successfully
+ *
+ * Send a kinetic heartbeat message to the multicast address.  Since some of the values in the
+ * message can change, it must be built with the latest values before sending.
+ */
 void
 HeartbeatProvider::sendHeartbeatMessage() {
 
@@ -134,12 +127,11 @@ HeartbeatProvider::sendHeartbeatMessage() {
 }
 
 /**
-    Run
-
-    This is the function performed by the heartbeat provider thread.  It opens a multicast sockets
-    and sends heartbeat messages at the specified interval.
-*/
-
+ * Run
+ *
+ * This is the function performed by the heartbeat provider thread.  It opens a multicast sockets
+ * and sends heartbeat messages at the specified interval.
+ */
 void
 HeartbeatProvider::run() {
 
@@ -159,11 +151,10 @@ HeartbeatProvider::run() {
 }
 
 /**
-    Stop
-
-    Causes the heartbeat provider thread to terminate.
-*/
-
+ * Stop
+ *
+ * Causes the heartbeat provider thread to terminate.
+ */
 void
 HeartbeatProvider::stop() {
 
@@ -171,15 +162,13 @@ HeartbeatProvider::stop() {
 }
 
 /**
-    Wait
-
-    Causes the caller to be blocked until the thread ends.
-*/
-
+ * Wait
+ *
+ * Causes the caller to be blocked until the thread ends.
+ */
 void
 HeartbeatProvider::wait() {
 
     if (m_thread != nullptr)
         m_thread->join();
 }
-

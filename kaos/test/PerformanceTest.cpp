@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <time.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -21,15 +20,13 @@
 #include "SystemConfig.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 
 /*
-    Global Variable
-*/
-
+ * Global Variable
+ */
 SystemConfig systemConfig;
 ObjectStorePtr objectStore;
 bool debug = false;
@@ -40,12 +37,6 @@ const uint32_t NUMBER_OF_LARGE_WRITES = 6000;
 string value_4kib(4096, 'X');
 string value_64kib(65536, 'X');
 string value_1mib(1048576, 'X');
-
-/*
-    goal 100 writes a second
-    write time 60 seconds
-    timestamp in microseconds
-*/
 
 uint64_t
 getTimestamp(void) {
@@ -67,6 +58,7 @@ repeatedPut(const string& value, uint32_t numberOfPuts) {
     PersistOption persistOption = PersistOption::Command_Synchronization_WRITEBACK;
 
     for (uint32_t count = 0; count < numberOfPuts; count++) {
+        std::count << "count " << count << std::end;
         std::stringstream stream;
         stream << count;
         string number = stream.str();
@@ -81,21 +73,18 @@ repeatedPut(const string& value, uint32_t numberOfPuts) {
 }
 
 /**
-    Main
-
-    @param    argc  number of command line arguments
-    @param    argv  array of command line arguments
-
-    @return   EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
-*/
-
+ * Main
+ *
+ * @param    argc  number of command line arguments
+ * @param    argv  array of command line arguments
+ *
+ * @return   EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
+ */
 int32_t
 main(int argc, char** argv) {
 
     string databaseDirectory("/tmp/objectStore");
-    std::string ipAddress("192.168.0.143");
     struct option longopts[] = {
-        { "ip",         required_argument, nullptr, 'i' },
         { "dir",        required_argument, nullptr, 'x' },
         { "debug",      no_argument,       nullptr, 'd' },
         { "help",       no_argument,       nullptr, 'h' },
@@ -103,24 +92,22 @@ main(int argc, char** argv) {
     };
 
     /*
-        Process any command line arguments.  Arguments can be used to cause the program to run in
-        the foreground or in debug mode (which causes additional information to be logged).
-    */
+     * Process any command line arguments.  Arguments can be used to cause the program to run in
+     * the foreground or in debug mode (which causes additional information to be logged).
+     */
 
     int32_t opt(0);
     int32_t longindex(0);
     const int32_t ALL_ARGS_PROCESSED(-1);
-    while ((opt = getopt_long(argc, argv, "ix:dh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
+    while ((opt = getopt_long(argc, argv, "x:dh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
         if (opt == 'd') {
             debug = true;
             std::cout << "debug" << std::endl;
         }
-        if (opt == 'i')
-            ipAddress = string(optarg);
         else if (opt == 'x')
             databaseDirectory = string(optarg);
         else if (opt == 'h') {
-            std::cout << "Usage: " << string(basename(argv[0])) << " [--ip|-i ipAddress]|[--debug|-d]|[--foreground|-f]|[--background|-b]|[--help|-h]" << std::endl;
+            std::cout << "Usage: " << string(basename(argv[0])) << " [--debug|-d]|[--foreground|-f]|[--background|-b]|[--help|-h]" << std::endl;
             return (opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE);
         }
     }

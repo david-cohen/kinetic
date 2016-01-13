@@ -1,25 +1,22 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef MESSAGE_STATISTICS_HPP
 #define MESSAGE_STATISTICS_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <map>
 #include <mutex>
 #include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "KineticMessage.hpp"
 
-/**
-    Message Statistics Class
-*/
-
+/*
+ * Message Statistics Class
+ */
 class MessageStatistics {
 
     class Stats {

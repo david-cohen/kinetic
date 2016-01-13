@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,17 +21,15 @@
 #include "KineticMessage.hpp"
 
 /*
-    Used Namespaces
-*/
-
+ * Used Namespaces
+ */
 using std::string;
 
 SystemConfig systemConfig;
 
 /*
-    Constants
-*/
-
+ * Constants
+ */
 static const string UNIT_TEST_SETTINGS_FILE("/tmp/testSettings");
 
 bool
@@ -61,11 +58,10 @@ protected:
 };
 
 /**
-    Create Large String
-
-    @return a string with the maximum key size
-*/
-
+ * Create Large String
+ *
+ * @return a string with the maximum key size
+ */
 std::string createTextString(uint32_t stringSize) {
 
     std::string pattern = "0123456789abcdef";
@@ -80,11 +76,10 @@ std::string createTextString(uint32_t stringSize) {
 }
 
 /**
-    Create Binary String
-
-    @return a string contains binary values from 0 to 0xff
-*/
-
+ * Create Binary String
+ *
+ * @return a string contains binary values from 0 to 0xff
+ */
 std::string createBinaryString(uint32_t stringSize) {
 
     std::string binaryString;
@@ -95,14 +90,13 @@ std::string createBinaryString(uint32_t stringSize) {
 }
 
 /**
-    Create Operation Array
-
-    @param  bitmap  a bitmap that indicates which operations are to be allowed, each bit represents
-                    a different operation
-
-    @return the operation array initialized based on the specified bitmap
-*/
-
+ * Create Operation Array
+ *
+ * @param  bitmap  a bitmap that indicates which operations are to be allowed, each bit represents
+ *                 a different operation
+ *
+ * @return the operation array initialized based on the specified bitmap
+ */
 OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 
     OperationSizedBoolArray operationArray;
@@ -115,25 +109,22 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
 
     /*
-        Make sure that the test settings file does not exist (it should have been deleted in setup).
-    */
-
+     * Make sure that the test settings file does not exist (it should have been deleted in setup).
+     */
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
     ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
 
     /*
-        Check server settings default values.
-    */
-
+     * Check server settings default values.
+     */
     ASSERT_TRUE(serverSettings.lockPin() == systemConfig.defaultLockPin());
     ASSERT_TRUE(serverSettings.erasePin() == systemConfig.defaultErasePin());
     ASSERT_EQ(serverSettings.clusterVersion(), systemConfig.defaultClusterVersion());
     ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
 
     /*
-        Check access control default values.
-    */
-
+     * Check access control default values.
+     */
     AccessControlPtr accessControl(serverSettings.accessControl(systemConfig.accessControlDefaultIdentity()));
     ASSERT_NE(accessControl, nullptr);
 
@@ -157,9 +148,8 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
     ASSERT_EQ(accessControl->scopeList().size(), 1U);
 
     /*
-        Check access scope default values.
-    */
-
+     * Check access scope default values.
+     */
     const AccessScope& accessScope = accessControl->scopeList().front();
     ASSERT_EQ(accessScope.tlsRequired(), systemConfig.accessControlDefaultTlsRequired());
     ASSERT_STREQ(accessScope.keySubstring().c_str(), systemConfig.accessScopeDefaultKeySubstring().c_str());
@@ -174,25 +164,22 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
 TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creation) {
 
     /*
-        Make sure that the test settings file does not exist (it should have been deleted in setup).
-    */
-
+     * Make sure that the test settings file does not exist (it should have been deleted in setup).
+     */
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
     ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
 
     /*
-        Check server settings default values.
-    */
-
+     * Check server settings default values.
+     */
     ASSERT_TRUE(serverSettings.lockPin() == systemConfig.defaultLockPin());
     ASSERT_TRUE(serverSettings.erasePin() == systemConfig.defaultErasePin());
     ASSERT_EQ(serverSettings.clusterVersion(), systemConfig.defaultClusterVersion());
     ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
 
     /*
-        Check access control default values.
-    */
-
+     * Check access control default values.
+     */
     AccessControlPtr accessControl(serverSettings.accessControl(systemConfig.accessControlDefaultIdentity()));
     ASSERT_NE(accessControl, nullptr);
 
@@ -216,9 +203,8 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
     ASSERT_EQ(accessControl->scopeList().size(), 1U);
 
     /*
-        Check access scope default values.
-    */
-
+     * Check access scope default values.
+     */
     const AccessScope& accessScope = accessControl->scopeList().front();
     ASSERT_EQ(accessScope.tlsRequired(), systemConfig.accessControlDefaultTlsRequired());
     ASSERT_STREQ(accessScope.keySubstring().c_str(), systemConfig.accessScopeDefaultKeySubstring().c_str());
@@ -232,9 +218,8 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
 
     /*
-        Make sure that the test settings file does not exist (it should have been deleted in setup).
-    */
-
+     * Make sure that the test settings file does not exist (it should have been deleted in setup).
+     */
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
 
     std::vector<std::string> pinArray = {"a", createBinaryString(systemConfig.maxPinSize()), createTextString(systemConfig.maxPinSize()), ""};
@@ -265,9 +250,8 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Cluster_Version_Test) {
 
     /*
-        Make sure that the test settings file does not exist (it should have been deleted in setup).
-    */
-
+     * Make sure that the test settings file does not exist (it should have been deleted in setup).
+     */
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
 
     std::vector<int64_t> clusterVersionArray = {LLONG_MAX, LLONG_MAX / 2, LLONG_MAX / 4, 1, 0};
@@ -296,9 +280,8 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Cluster_Version_Test) {
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
 
     /*
-        Make sure that the test settings file does not exist (it should have been deleted in setup).
-    */
-
+     * Make sure that the test settings file does not exist (it should have been deleted in setup).
+     */
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
 
     std::vector<int64_t> identityArray = {0, LLONG_MAX};
@@ -311,9 +294,8 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key("SampleKey");
 
     /*
-        Create an AccessControl object for all the different combination of parameters.
-    */
-
+     * Create an AccessControl object for all the different combination of parameters.
+     */
     for (uint32_t identityIndex = 0; identityIndex < identityArray.size(); ++identityIndex) {
         int64_t identity = identityArray[identityIndex];
         for (uint32_t hmacKeyIndex = 0; hmacKeyIndex < hmacKeyArray.size(); ++hmacKeyIndex) {
@@ -348,11 +330,10 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
                                 AccessControlPtr accessControl = serverSettings.accessControl(identity);
 
                                 /*
-                                    If non-zero offset is not valid if the key substring is not specified.  The
-                                    AccessScope class will set the offset to zero so we must do the same thing
-                                    before comparing expected values.
-                                */
-
+                                 * If non-zero offset is not valid if the key substring is not specified.  The
+                                 * AccessScope class will set the offset to zero so we must do the same thing
+                                 * before comparing expected values.
+                                 */
                                 if (keySubstring.size() == 0)
                                     keySubstringOffset = 0;
 

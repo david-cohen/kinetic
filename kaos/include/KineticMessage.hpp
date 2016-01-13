@@ -1,15 +1,14 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
-
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 #pragma once
 #ifndef KINETIC_MESSAGE_HPP
 #define KINETIC_MESSAGE_HPP
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
+#include <time.h>
 #include <stdint.h>
 #include <list>
 #include <string>
@@ -20,30 +19,27 @@
 #include "MessageException.hpp"
 #include "KineticMessageFraming.hpp"
 
-/**
-    Kinetic Message
-
-    This class is a wrapper for a Kinetic protocol buffer message and its assoicated object value.
-    Although the protocol buffer has many substructures, at the top level, it is made up of a
-    encoded command and authentication information (authentication type and HMAC authentication
-    parameters or PIN authentication parameters).  In addition to combining the message with the
-    value, it also provides an interface to the decode command.
-*/
-
+/*
+ * Kinetic Message
+ *
+ * This class is a wrapper for a Kinetic protocol buffer message and its assoicated object value.
+ * Although the protocol buffer has many substructures, at the top level, it is made up of a
+ * encoded command and authentication information (authentication type and HMAC authentication
+ * parameters or PIN authentication parameters).  In addition to combining the message with the
+ * value, it also provides an interface to the decode command.
+ */
 class KineticMessage {
 public:
 
     /*
-        Constructor
-    */
-
+     * Constructor
+     */
     KineticMessage() : m_protoMessage(new com::seagate::kinetic::proto::Message()),
         m_command(new com::seagate::kinetic::proto::Command()) {}
 
     /*
-        Command Functions
-    */
-
+     * Command Functions
+     */
     inline bool has_command() {return m_command != nullptr;}
     inline const ::com::seagate::kinetic::proto::Command* command() {return m_command.get();}
     inline ::com::seagate::kinetic::proto::Command* mutable_command() {return m_command.get();}
@@ -51,9 +47,8 @@ public:
     inline void build_commandbytes() {m_protoMessage->set_commandbytes(m_command->SerializeAsString());}
 
     /*
-        HMAC Functions
-    */
-
+     * HMAC Functions
+     */
     inline bool has_authtype() {return m_protoMessage->has_authtype();}
     inline ::com::seagate::kinetic::proto::Message_AuthType authtype() {return m_protoMessage->authtype();}
     inline void set_authtype(::com::seagate::kinetic::proto::Message_AuthType authtype) {m_protoMessage->set_authtype(authtype);}
@@ -77,16 +72,14 @@ public:
     }
 
     /*
-        Value Functions
-    */
-
+     * Value Functions
+     */
     inline std::string& value() {return m_value;}
     inline void setValue(const char* value, size_t valueSize) {m_value.assign(value, valueSize);}
 
     /*
-        Serialize/Deserialize Functions
-    */
-
+     * Serialize/Deserialize Functions
+     */
     inline bool serializeData(char* buffer, uint32_t size) {return m_protoMessage->SerializeToArray(buffer, size);}
 
     inline bool deserializeData(char* buffer, uint32_t size) {
@@ -96,18 +89,24 @@ public:
     }
 
     /*
-        Message Size Functions
-    */
-
+     * Message Size Functions
+     */
     inline uint32_t serializedSize() { return m_protoMessage->ByteSize();}
     inline uint32_t totalSize() {return sizeof(KineticMessageFraming) + m_protoMessage->ByteSize() + m_value.size();}
 
 private:
 
     /*
-        Private Data Members
-    */
+     * Private Member Functions
+     */
+    uint64_t getTimestamp(void) {
+        struct timespec time;
+        return (clock_gettime(CLOCK_REALTIME, &time) != 0) ? 0 : time.tv_sec * 1000000 + time.tv_nsec / 1000;
+    }
 
+    /*
+     * Private Data Members
+     */
     std::shared_ptr<com::seagate::kinetic::proto::Message> m_protoMessage;
     std::shared_ptr<com::seagate::kinetic::proto::Command> m_command;
     std::string                                            m_value;
@@ -116,8 +115,8 @@ private:
 };
 
 /*
-    Shared pointer and list for the Kinetic message
-*/
+ * Shared pointer and list for the Kinetic message
+ */
 
 typedef std::shared_ptr<KineticMessage> KineticMessagePtr;
 typedef std::list<KineticMessagePtr> KineticMessageList;

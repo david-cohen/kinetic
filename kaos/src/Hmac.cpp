@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <openssl/sha.h>
@@ -14,28 +13,26 @@
 #include "Hmac.hpp"
 
 /**
-    Compute
-
-    @param  data            the data to have an HMAC computed for
-    @param  key             the key to use to generate the HMAC
-    @param  algorithm       the algorithm to use to generate the HMAC (currently ignored because
-                            only SHA1 is supported)
-    @param  prependSize     true if the data size is to be prepended to the data before hashing
-
-    @return HMAC for the specified data using the specified key
-
-    This function computes a SHA1 HMAC for the specified data using the specified key.  The size of
-    the data can be optionality prepended to the data before hashing.  Currently, HMAC is only
-    generated using SHA1.
-*/
-
+ * Compute
+ *
+ * @param  data            the data to have an HMAC computed for
+ * @param  key             the key to use to generate the HMAC
+ * @param  algorithm       the algorithm to use to generate the HMAC (currently ignored because
+ *                         only SHA1 is supported)
+ * @param  prependSize     true if the data size is to be prepended to the data before hashing
+ *
+ * @return HMAC for the specified data using the specified key
+ *
+ * This function computes a SHA1 HMAC for the specified data using the specified key.  The size of
+ * the data can be optionality prepended to the data before hashing.  Currently, HMAC is only
+ * generated using SHA1.
+ */
 std::string
 Hmac::compute(const std::string& data, const std::string& key, HmacAlgorithm algorithm, bool prependSize) {
 
     /*
-        Eliminate the unused args warning for algorithm.
-    */
-
+     * Eliminate the unused args warning for algorithm.
+     */
     static_cast<void>(algorithm);
 
     HMAC_CTX hmacContext;
@@ -57,4 +54,3 @@ Hmac::compute(const std::string& data, const std::string& key, HmacAlgorithm alg
 
     return std::string(reinterpret_cast<char*>(result), resultLength);
 }
-

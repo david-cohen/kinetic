@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <sys/stat.h>
 #include <list>
@@ -21,10 +20,9 @@
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
 
-/**
-    Server Settings
-*/
-
+/*
+ * Server Settings
+ */
 ServerSettings::ServerSettings(std::string filename)
     : m_filename(filename) {
 
@@ -103,12 +101,11 @@ ServerSettings::setDefaults() {
 #endif
 }
 
-/**
-    Load
-
-    Need to add multiple copies and add hash of their value
-*/
-
+/*
+ * Load
+ *
+ * Need to add multiple copies and add hash of their value
+ */
 bool
 ServerSettings::load() {
 

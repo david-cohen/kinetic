@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -19,11 +18,10 @@
 SystemConfig systemConfig;
 
 /**
-    Create Large String
-
-    @return a string with the maximum key size
-*/
-
+ * Create Large String
+ *
+ * @return a string with the maximum key size
+ */
 std::string createLargeString() {
 
     uint32_t stringSize = systemConfig.maxHmacKeySize();
@@ -39,11 +37,10 @@ std::string createLargeString() {
 }
 
 /**
-    Create Binary String
-
-    @return a string contains binary values from 0 to 0xff
-*/
-
+ * Create Binary String
+ *
+ * @return a string contains binary values from 0 to 0xff
+ */
 std::string createBinaryString(uint32_t count = 0x100, uint32_t offset = 0) {
 
     std::string binaryString;
@@ -54,14 +51,13 @@ std::string createBinaryString(uint32_t count = 0x100, uint32_t offset = 0) {
 }
 
 /**
-    Create Operation Array
-
-    @param  bitmap  a bitmap that indicates which operations are to be allowed, each bit represents
-                    a different operation
-
-    @return the operation array initialized based on the specified bitmap
-*/
-
+ * Create Operation Array
+ *
+ * @param  bitmap  a bitmap that indicates which operations are to be allowed, each bit represents
+ *                 a different operation
+ *
+ * @return the operation array initialized based on the specified bitmap
+ */
 OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 
     OperationSizedBoolArray operationArray;
@@ -72,14 +68,13 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 }
 
 /**
-    Create Access Control
-
-    @param  keySubstring        permission's required key substring
-    @param  keySubstringOffset  permission's required key substring offset
-
-    @return the access control initialized with specified values
-*/
-
+ * Create Access Control
+ *
+ * @param  keySubstring        permission's required key substring
+ * @param  keySubstringOffset  permission's required key substring offset
+ *
+ * @return the access control initialized with specified values
+ */
 AccessControl createAccessControl(std::string keySubstring, uint32_t keySubstringOffset) {
 
     int64_t identity = systemConfig.accessControlDefaultIdentity();
@@ -97,12 +92,11 @@ AccessControl createAccessControl(std::string keySubstring, uint32_t keySubstrin
 }
 
 /**
-    Core Functionality Test
-
-    Tests that the AccessControl object is correctly initialized when created with a varity of
-    parameters and that the getter functions work correctly.
-*/
-
+ * Core Functionality Test
+ *
+ * Tests that the AccessControl object is correctly initialized when created with a varity of
+ * parameters and that the getter functions work correctly.
+ */
 TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
 
     std::vector<int64_t> identityArray = {0, 1, LLONG_MAX};
@@ -115,9 +109,8 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key("SampleKey");
 
     /*
-        Create an AccessControl object for all the different combination of parameters.
-    */
-
+     * Create an AccessControl object for all the different combination of parameters.
+     */
     for (uint32_t identityIndex = 0; identityIndex < identityArray.size(); ++identityIndex) {
         int64_t identity = identityArray[identityIndex];
         for (uint32_t hmacKeyIndex = 0; hmacKeyIndex < hmacKeyArray.size(); ++hmacKeyIndex) {
@@ -142,11 +135,10 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
                                 AccessControl accessControl(identity, hmacKey, hmacAlgorithm, scopeList);
 
                                 /*
-                                    If non-zero offset is not valid if the key substring is not specified.  The
-                                    AccessScope class will set the offset to zero so we must do the same thing
-                                    before comparing expected values.
-                                */
-
+                                 * If non-zero offset is not valid if the key substring is not
+                                 * specified.  The AccessScope class will set the offset to zero
+                                 * so we must do the same thing before comparing expected values.
+                                 */
                                 if (keySubstring.size() == 0)
                                     keySubstringOffset = 0;
 

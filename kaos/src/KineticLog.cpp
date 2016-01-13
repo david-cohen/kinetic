@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2015] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
@@ -17,11 +16,10 @@
 #include "MessageStatistics.hpp"
 
 /**
-    Get Configuration
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Configuration
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response) {
 
@@ -47,11 +45,10 @@ KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* respo
 }
 
 /**
-    Get Temperatures
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Temperatures
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* response) {
 
@@ -64,22 +61,20 @@ KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* respon
 }
 
 /**
-    Get Statistics
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Statistics
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response) {
     messageStatistics.get(response);
 }
 
 /**
-    Get Limits
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Limits
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
 
@@ -101,11 +96,10 @@ KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
 }
 
 /**
-    Get Message
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Message
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* response) {
 
@@ -115,11 +109,10 @@ KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* response) {
 }
 
 /**
-    Get Device
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Device
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& request, std::string& responseValue) {
 
@@ -136,11 +129,10 @@ KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& reques
 }
 
 /**
-    Get Capacities
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Capacities
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response) {
 
@@ -173,11 +165,10 @@ KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response
 }
 
 /**
-    Get Utilizations
-
-    @param response     pointer to the get log response to be populated
-*/
-
+ * Get Utilizations
+ *
+ * @param response     pointer to the get log response to be populated
+ */
 void
 KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* response) {
 

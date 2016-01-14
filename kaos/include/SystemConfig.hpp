@@ -20,30 +20,8 @@
 #include "Logger.hpp"
 #include "Common.hpp"
 #include "Kinetic.pb.hpp"
+#include "NetworkInterface.hpp"
 
-/**
- * Network Interface
- *
- * Describes the attributes of a network interface (which is reported through the Kinetic protocol).
- */
-class NetworkInterface {
-private:
-    std::string m_name;
-    std::string m_macAddress;
-    std::string m_ipv4;
-    std::string m_ipv6;
-public:
-    NetworkInterface(std::string m_name, std::string m_macAddress, std::string m_ipv4, std::string m_ipv6)
-        : m_name(m_name), m_macAddress(m_macAddress), m_ipv4(m_ipv4), m_ipv6(m_ipv6) {}
-
-    std::string name() {return m_name;}
-    std::string macAddress() {return m_macAddress;}
-    std::string ipv4() {return m_ipv4;}
-    std::string ipv6() {return m_ipv6;}
-};
-
-typedef std::shared_ptr<NetworkInterface> NetworkInterfacePtr;
-typedef std::unordered_map<std::string, NetworkInterfacePtr> NetworkInterfaceMap;
 typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSet;
 
 /**
@@ -99,7 +77,6 @@ public:
     inline size_t maxBatchCountPerDevice() {return m_maxBatchCountPerDevice;}
     inline size_t maxAlgorithmSize() {return m_maxAlgorithmSize;}
     inline size_t maxHmacKeySize() {return m_maxHmacKeySize;}
-    inline size_t unsupportedLimit() {return m_unsupportedLimit;}
     inline std::string sslPrivateKeyFile() {return m_sslPrivateKeyFile;}
     inline std::string sslCertificateFile() {return m_sslCertificateFile;}
     inline int64_t defaultClusterVersion() {return m_defaultClusterVersion;}
@@ -157,7 +134,6 @@ private:
     size_t               m_maxBatchCountPerDevice;
     size_t               m_maxAlgorithmSize;
     size_t               m_maxHmacKeySize;
-    size_t               m_unsupportedLimit;
     std::string          m_sslPrivateKeyFile;
     std::string          m_sslCertificateFile;
     int64_t              m_defaultClusterVersion;

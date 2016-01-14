@@ -6,7 +6,6 @@
  * Include Files
  */
 #include <signal.h>
-#include <limits.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -15,28 +14,22 @@
 #include <iostream>
 #include <condition_variable>
 #include "Logger.hpp"
-#include "SslStream.hpp"
 #include "SslControl.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
 #include "SystemControl.hpp"
 #include "ServerSettings.hpp"
-#include "ClearTextStream.hpp"
 #include "MessageStatistics.hpp"
-#include "ConnectionListener.hpp"
 #include "CommunicationsManager.hpp"
-
-/*
- * Used Namespaces
- */
-using std::string;
 
 /*
  * Global Variable
  */
+
 SystemConfig systemConfig;
 SystemControl systemControl;
 ServerSettings serverSettings(systemConfig.serverSettingsFile());
+SslControl sslControl;
 MessageStatistics messageStatistics;
 ObjectStorePtr objectStore;
 CommunicationsManager communicationsManager;
@@ -47,39 +40,6 @@ CommunicationsManager communicationsManager;
 static std::mutex daemonMutex;
 static std::unique_lock<std::mutex> daemonLock(daemonMutex);
 static std::condition_variable daemonTerminated;
-
-/**
- * Create PID File
- *
- * @param   pidFileName     name of the process ID file
- *
- * This function creates the process pid file. Should be called if process has been daemonized.
- */
-void createPidFile(string pidFileName) {
-
-    FILE* file = fopen(pidFileName.c_str(), "w");
-    if (file == nullptr)
-        LOG(ERROR) << "Failed to create PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-    else {
-        if (fprintf(file, "%i\n", getpid()) < 0)
-            LOG(ERROR) << "Failed to write PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-        if (fclose(file) != STATUS_SUCCESS)
-            LOG(ERROR) << "Failed to close PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-    }
-}
-
-/**
- * Delete PID File
- *
- * @param   pidFileName     name of the process ID file
- *
- * This function deletes the process pid file. Should be called prior to exitting the program.
- */
-void deletePidFile(string pidFileName) {
-
-    if (remove(pidFileName.c_str()) != STATUS_SUCCESS)
-        LOG(ERROR) << "Failed to remove PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-}
 
 /**
  * Terminate Program
@@ -94,7 +54,6 @@ void terminateProgram(int signum) {
      * Eliminate the unused args warning for signum.
      */
     static_cast<void>(signum);
-
     daemonTerminated.notify_one();
 }
 
@@ -109,8 +68,8 @@ void terminateProgram(int signum) {
 int32_t main(int argc, char** argv) {
 
     bool background(true);
-    string pidFileName = systemConfig.defaultPidFileName();
-    string databaseDirectory(systemConfig.databaseDirectory());
+    std::string pidFileName = systemConfig.defaultPidFileName();
+    std::string databaseDirectory(systemConfig.databaseDirectory());
     struct option longopts[] = {
         { "dir",        required_argument, nullptr, 'x' },
         { "pid",        required_argument, nullptr, 'p' },
@@ -129,10 +88,10 @@ int32_t main(int argc, char** argv) {
     const int32_t ALL_ARGS_PROCESSED(-1);
     while ((opt = getopt_long(argc, argv, "xp:dfh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
         if (opt == 'x') {
-            databaseDirectory = string(optarg);
+            databaseDirectory.assign(optarg);
         }
         else if (opt == 'p') {
-            pidFileName = string(optarg);
+            pidFileName.assign(optarg);
         }
         else if (opt == 'd') {
             systemControl.setDebugEnabled(true);
@@ -162,7 +121,7 @@ int32_t main(int argc, char** argv) {
 
     signal(SIGTERM, terminateProgram);
 
-    if (!SslControl::instance().operational()) {
+    if (!sslControl.operational()) {
         LOG(ERROR) << "Failed to configure SSL component";
         return EXIT_FAILURE;
     }
@@ -177,8 +136,17 @@ int32_t main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (background)
-        createPidFile(pidFileName);
+    if (background) {
+        FILE* file = fopen(pidFileName.c_str(), "w");
+        if (file == nullptr)
+            LOG(ERROR) << "Failed to create PID file: error_code=" << errno << ", error_description=" << strerror(errno);
+        else {
+            if (fprintf(file, "%i\n", getpid()) < 0)
+                LOG(ERROR) << "Failed to write PID file: error_code=" << errno << ", error_description=" << strerror(errno);
+            if (fclose(file) != STATUS_SUCCESS)
+                LOG(ERROR) << "Failed to close PID file: error_code=" << errno << ", error_description=" << strerror(errno);
+        }
+    }
 
     /*
      * Start the communications;
@@ -187,8 +155,10 @@ int32_t main(int argc, char** argv) {
 
     daemonTerminated.wait(daemonLock);
 
-    if (background)
-        deletePidFile(pidFileName);
+    if (background) {
+        if (remove(pidFileName.c_str()) != STATUS_SUCCESS)
+            LOG(ERROR) << "Failed to remove PID file: error_code=" << errno << ", error_description=" << strerror(errno);
+    }
 
     return EXIT_SUCCESS;
 }

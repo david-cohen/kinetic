@@ -6,11 +6,13 @@
  * Include Files
  */
 #include <errno.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netpacket/packet.h>
+#include <boost/algorithm/string.hpp>
 #include <set>
 #include <string>
 #include <sstream>
@@ -22,18 +24,20 @@
 #include "Kinetic.pb.hpp"
 #include "SystemConfig.hpp"
 
+/*
+ * Used Namespaces
+ */
 using std::string;
 
 /*
  * Identification
  */
-static const char* VENDOR("Western Digital");
+static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
 static const char* VERSION("0.0.2");
-static const char* WORLD_WIDE_NAME_PREFIX("2d2ca5d0-c201-48da-b2c2-");
 
 /*
- * Daemon Realted Settings
+ * Daemon Related Settings
  */
 static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
 static const char* DATABASE_DIRECTORY("/export/dfs/objectDatabase");
@@ -62,7 +66,6 @@ static const uint32_t HEARTBEAT_CONNECTION_RETRY_INTERVAL(60);
 /*
  * Limits
  */
-static const size_t UNSUPPORTED_LIMIT((uint32_t)0xffffffff);
 static const size_t MIN_KEY_SIZE(1);
 static const size_t MAX_KEY_SIZE(4096);
 static const size_t MAX_VALUE_SIZE(1048576);
@@ -75,8 +78,8 @@ static const size_t MAX_MESSAGE_SIZE(2097152);
 static const size_t MAX_KEY_RANGE_COUNT(200);
 static const size_t MAX_IDENTITY_COUNT(16);
 static const size_t MAX_PIN_SIZE(128);
-static const size_t MAX_OPERATION_COUNT_PER_BATCH(UNSUPPORTED_LIMIT);  // 15
-static const size_t MAX_BATCH_COUNT_PER_DEVICE(UNSUPPORTED_LIMIT);     // 5
+static const size_t MAX_OPERATION_COUNT_PER_BATCH(15);
+static const size_t MAX_BATCH_COUNT_PER_DEVICE(5);
 static const size_t MAX_ALGORITHM_SIZE(64);
 static const size_t MAX_HMAC_KEY_SIZE(4096);
 
@@ -93,16 +96,24 @@ static const int64_t DEFAULT_CLUSTER_VERSION(0);
 static const char* DEFAULT_LOCK_PIN("");
 static const char* DEFAULT_ERASE_PIN("");
 
+/*
+ * Access Settings
+ */
 static const bool ACCESS_CONTROL_DEFAULT_TLS_REQUIRED(false);
 static const int64_t ACCESS_CONTROL_DEFAULT_IDENTITY(1);
 static const char* ACCESS_CONTROL_DEFAULT_HMAC_KEY("asdfasdf");
 static const HmacAlgorithm ACCESS_CONTROL_DEFAULT_HMAC_ALGORITHM(HmacAlgorithm::SHA1);
-
 static const char* ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING("");
 static const uint32_t ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING_OFFSET(0);
 
-bool getNextworkInfo(string name, string& ipv4, string& ipv6, string& macAddress);
-
+/**
+ * Create Flush Data Key
+ *
+ * @return the key used to perform a flush write on the database
+ *
+ * The flush data key must not be a valid user key, which is accomplished by making it larger than
+ * the maximum size of a user key.
+ */
 static std::string
 createFlushDataKey() {
     std::string flushDataKey;
@@ -112,6 +123,11 @@ createFlushDataKey() {
     return flushDataKey;
 }
 
+/**
+ * System Config Constructor
+ *
+ * Initializes the attributes which the user can not set.
+ */
 SystemConfig::SystemConfig()
     : m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
       m_databaseDirectory(DATABASE_DIRECTORY),
@@ -127,7 +143,7 @@ SystemConfig::SystemConfig()
       m_kaosLogFacility(KAOS_LOG_FACILITY),
       m_objectStoreCompressionEnabled(OBJECT_STORE_COMPRESSION_ENABLED),
       m_maxPendingAdminConnections(MAX_PENDING_ADMIN_CONNECTIONS),
-      m_maxActiveAdminConnections(MAX_ACTIVE_ADMIN_CONNECTIONS),                // Not used yet
+      m_maxActiveAdminConnections(MAX_ACTIVE_ADMIN_CONNECTIONS),
       m_tcpPort(TCP_PORT),
       m_sslPort(SSL_PORT),
       m_multicastPort(MULTICAST_PORT),
@@ -150,7 +166,6 @@ SystemConfig::SystemConfig()
       m_maxBatchCountPerDevice(MAX_BATCH_COUNT_PER_DEVICE),
       m_maxAlgorithmSize(MAX_ALGORITHM_SIZE),
       m_maxHmacKeySize(MAX_HMAC_KEY_SIZE),
-      m_unsupportedLimit(UNSUPPORTED_LIMIT),
       m_sslPrivateKeyFile(SSL_PRIVATE_KEY_FILE),
       m_sslCertificateFile(SSL_CERTIFICATE_FILE),
       m_defaultClusterVersion(DEFAULT_CLUSTER_VERSION),
@@ -180,12 +195,11 @@ SystemConfig::SystemConfig()
     }
 
     /*
-     * Put all the names in a set
+     * Gather network interface information (which is reported in the Kinetic protocol).
      */
     std::set<string> interfaceNames;
-    for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next) {
+    for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next)
         interfaceNames.insert(string(interface->ifa_name));
-    }
 
     for (string name : interfaceNames) {
 
@@ -206,18 +220,6 @@ SystemConfig::SystemConfig()
                                  << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[4]) << ":"
                                  << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[5]);
                 macAddress = macAddressStream.str();
-
-                if (m_serialNumber.empty()) {
-                    std::stringstream serialNumberStream;
-                    serialNumberStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0])
-                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[1])
-                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[2])
-                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[3])
-                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[4])
-                                       << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[5]);
-                    m_serialNumber = serialNumberStream.str();
-                    m_worldWideName = WORLD_WIDE_NAME_PREFIX + m_serialNumber;
-                }
             }
 
             else if (family == AF_INET) {
@@ -236,4 +238,38 @@ SystemConfig::SystemConfig()
         }
     }
     freeifaddrs(interfaceList);
+
+    /*
+     * Get the serial number and world-wide name from the drive.
+     */
+    FILE* fp = popen("/sbin/hdparm -I /dev/sda", "r");
+    if (fp == nullptr) {
+        LOG(ERROR) << "Failed to obtain drive information: error_code=" << errno << ", description=" << strerror(errno);
+    }
+    else {
+        char* line = nullptr;
+        size_t length = 0;
+        ssize_t read;
+        const int32_t GET_LINE_FAILURE(-1);
+        const string serialNumberLabel("Serial Number:");
+        const string worldWideNameLabel("Logical Unit WWN Device Identifier:");
+        while ((read = getline(&line, &length, fp)) != GET_LINE_FAILURE) {
+            string stringLine(line);
+            if (m_serialNumber.empty()) {
+                std::size_t index = stringLine.find(serialNumberLabel);
+                if (index != std::string::npos)
+                    m_serialNumber = stringLine.substr(index + serialNumberLabel.size());
+            }
+
+            if (m_worldWideName.empty()) {
+                std::size_t index = stringLine.find(worldWideNameLabel);
+                if (index != std::string::npos)
+                    m_worldWideName = stringLine.substr(index + worldWideNameLabel.size());
+            }
+        }
+        free(line);
+        pclose(fp);
+        boost::trim(m_serialNumber);
+        boost::trim(m_worldWideName);
+    }
 }

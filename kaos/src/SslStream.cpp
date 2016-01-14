@@ -21,7 +21,7 @@
  * @param  socketDescriptor     Stream socket's file descrptor
  */
 SslStream::SslStream(int32_t socketDescriptor)
-    : m_streamFd(socketDescriptor), m_ssl(SslControl::instance().createConnection(socketDescriptor)) {
+    : m_streamFd(socketDescriptor), m_ssl(sslControl.createConnection(socketDescriptor)) {
 }
 
 /**
@@ -130,7 +130,7 @@ void SslStream::write(const char* const buffer, size_t byteCount) {
     while (byteCount > 0);
 }
 
-/*
+/**
  * Close
  */
 void SslStream::close() {

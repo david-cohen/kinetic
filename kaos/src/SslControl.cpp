@@ -7,19 +7,12 @@
  */
 #include <openssl/err.h>
 #include <string>
-#include <exception>
 #include <stdexcept>
 #include "Logger.hpp"
 #include "SslControl.hpp"
 #include "SystemConfig.hpp"
 
-/*
- * Data Objects
- */
-SslControl* SslControl::m_instance(nullptr);
-const int32_t SSL_SUCCESS(1);
-
-/*
+/**
  * SSL Control Constructor
  */
 SslControl::SslControl()
@@ -45,6 +38,7 @@ SslControl::SslControl()
     /*
      * Load the certificate and the private key and then make sure they are consistent.
      */
+    const int32_t SSL_SUCCESS(1);
     if (SSL_CTX_use_certificate_file(m_context, systemConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to Load Certificate" << std::endl;
         return;
@@ -72,7 +66,7 @@ SslControl::~SslControl() {
     ERR_free_strings();
 }
 
-/*
+/**
  * Create Connection
  *
  * @param socketFd     file descriptor of the socket
@@ -114,16 +108,3 @@ SSL* SslControl::createConnection(int socketFd) {
 
     return ssl;
 }
-
-/**
- * Instance
- *
- * @return an instance of the (singleton) SSL control object
- */
-SslControl& SslControl::instance() {
-    if (m_instance == nullptr)
-        m_instance = new SslControl();
-
-    return *m_instance;
-}
-

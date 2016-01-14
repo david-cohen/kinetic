@@ -11,21 +11,33 @@
 #include <stdint.h>
 #include <openssl/ssl.h>
 
+/**
+ * SSL Control
+ *
+ * Used to create SSL connections.
+ */
 class SslControl {
 public:
+    /*
+     * Constructor/Destructor
+     */
     SslControl();
     ~SslControl();
+
+    /*
+     * Public Member Functions
+     */
     SSL* createConnection(int32_t socketFd);
-    bool operational() {
-        return m_operational;
-    }
-    static SslControl& instance();
+    bool operational() {return m_operational;}
 
 private:
-    bool                m_operational;
-    SSL_CTX*            m_context;
-
-    static SslControl*  m_instance;
+    /*
+     * Private Data Members
+     */
+    bool        m_operational;
+    SSL_CTX*    m_context;
 };
+
+extern SslControl sslControl;
 
 #endif

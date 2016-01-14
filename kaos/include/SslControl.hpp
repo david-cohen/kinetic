@@ -34,8 +34,8 @@ private:
     /*
      * Private Data Members
      */
-    bool        m_operational;
-    SSL_CTX*    m_context;
+    bool        m_operational;  //!< True if the required libraries, certificate and private key were loaded successfully
+    SSL_CTX*    m_context;      //!< Object needed to establish TLS/SSL enabled connection
 };
 
 extern SslControl sslControl;

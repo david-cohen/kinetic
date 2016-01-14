@@ -14,6 +14,7 @@
 #include "leveldb/slice.h"
 #include "leveldb/comparator.h"
 #include "leveldb/write_batch.h"
+#include "Logger.hpp"
 #include "Entry.pb.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
@@ -108,7 +109,12 @@ ObjectStore::open() {
     options.comparator = &kineticComparator;
 
     leveldb::Status status = leveldb::DB::Open(options, m_databaseDirectory, &m_database);
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to open database, status: " << status.ToString() << std::endl;
+        return ReturnStatus::FAILURE;
+    }
+
+    return ReturnStatus::SUCCESS;
 }
 
 

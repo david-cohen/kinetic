@@ -16,12 +16,18 @@
 #include "SystemConfig.hpp"
 #include "ClearTextStream.hpp"
 
+/*
+ * Constants
+ */
+const uint32_t  STATUS_END_OF_STREAM(0);
+
 /**
  * Clear Text Stream Constructor
  *
- * @param  streamFd    Stream's file descrptor
+ * @param  streamFd    Stream's file descriptor
  */
-ClearTextStream::ClearTextStream(int32_t streamFd) : m_streamFd(streamFd) {
+ClearTextStream::ClearTextStream(int32_t streamFd)
+    : m_streamFd(streamFd) {
 }
 
 /**
@@ -29,6 +35,8 @@ ClearTextStream::ClearTextStream(int32_t streamFd) : m_streamFd(streamFd) {
  *
  * @param  buffer      Pointer to the buffer the data is to be read into
  * @param  byteCount   the number of bytes to be read
+ *
+ * Reads the specified number of bytes into the specified buffer.
 */
 void
 ClearTextStream::read(char* buffer, size_t byteCount) {
@@ -41,17 +49,17 @@ ClearTextStream::read(char* buffer, size_t byteCount) {
         int32_t byteCountStatus = ::read(m_streamFd, &buffer[bufferIndex], byteCount);
 
         /*
-         * If the read failed because it was interupted (non-fatal error), then retry the operation.
+         * If the read failed because it was interrupted (non-fatal error), then retry the operation.
          */
         if ((byteCountStatus == STATUS_FAILURE) && (errno == EINTR))
             continue;
 
-        if (byteCountStatus == 0) {
+        if (byteCountStatus == STATUS_END_OF_STREAM) {
             close();
             throw std::runtime_error("socket closed");
         }
 
-        if (byteCountStatus < 0) {
+        if (byteCountStatus == STATUS_FAILURE) {
             LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Error Description=" << strerror(errno);
             close();
             throw std::runtime_error("failed read");
@@ -83,17 +91,17 @@ ClearTextStream::blackHoleRead(size_t byteCount) {
         int32_t byteCountStatus = ::read(m_streamFd, valueBuffer.get(), byteCount > systemConfig.maxValueSize() ? systemConfig.maxValueSize() : byteCount);
 
         /*
-         * If the read failed because it was interupted (non-fatal error), then retry the operation.
+         * If the read failed because it was interrupted (non-fatal error), then retry the operation.
          */
         if ((byteCountStatus == STATUS_FAILURE) && (errno == EINTR))
             continue;
 
-        if (byteCountStatus == 0) {
+        if (byteCountStatus == STATUS_END_OF_STREAM) {
             close();
             throw std::runtime_error("socket closed");
         }
 
-        if (byteCountStatus < 0) {
+        if (byteCountStatus == STATUS_FAILURE) {
             LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Error Description=" << strerror(errno);
             close();
             throw std::runtime_error("failed read");
@@ -123,18 +131,18 @@ ClearTextStream::write(const char* const buffer, size_t byteCount) {
         int32_t byteCountStatus = ::write(m_streamFd, &buffer[bufferIndex], byteCount);
 
         /*
-         * If the write failed because it was interupted (non-fatal error), then retry the
+         * If the write failed because it was interrupted (non-fatal error), then retry the
          * operation.
          */
         if ((byteCountStatus == STATUS_FAILURE) && (errno == EINTR))
             continue;
 
-        if (byteCountStatus == 0) {
+        if (byteCountStatus == STATUS_END_OF_STREAM) {
             close();
             throw std::runtime_error("socket closed");
         }
 
-        if (byteCountStatus < 0) {
+        if (byteCountStatus == STATUS_FAILURE) {
             LOG(ERROR) << "TCP Write Failure: Error Code=" << errno << ", Error Description=" << strerror(errno);
             close();
             throw std::runtime_error("failed write");
@@ -148,6 +156,8 @@ ClearTextStream::write(const char* const buffer, size_t byteCount) {
 
 /**
  * Close
+ *
+ * Close the stream.
  */
 void
 ClearTextStream::close() {

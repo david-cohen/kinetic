@@ -40,8 +40,8 @@ class Settings_ACL;
 class Settings_ACL_Scope;
 
 enum Settings_ACL_HmacAlgorithm {
-  Settings_ACL_HmacAlgorithm_HMAC_INVALID = -1,
-  Settings_ACL_HmacAlgorithm_HMAC_SHA1 = 1
+    Settings_ACL_HmacAlgorithm_HMAC_INVALID = -1,
+    Settings_ACL_HmacAlgorithm_HMAC_SHA1 = 1
 };
 bool Settings_ACL_HmacAlgorithm_IsValid(int value);
 const Settings_ACL_HmacAlgorithm Settings_ACL_HmacAlgorithm_HmacAlgorithm_MIN = Settings_ACL_HmacAlgorithm_HMAC_INVALID;
@@ -50,23 +50,23 @@ const int Settings_ACL_HmacAlgorithm_HmacAlgorithm_ARRAYSIZE = Settings_ACL_Hmac
 
 const ::google::protobuf::EnumDescriptor* Settings_ACL_HmacAlgorithm_descriptor();
 inline const ::std::string& Settings_ACL_HmacAlgorithm_Name(Settings_ACL_HmacAlgorithm value) {
-  return ::google::protobuf::internal::NameOfEnum(
-    Settings_ACL_HmacAlgorithm_descriptor(), value);
+    return ::google::protobuf::internal::NameOfEnum(
+               Settings_ACL_HmacAlgorithm_descriptor(), value);
 }
 inline bool Settings_ACL_HmacAlgorithm_Parse(
     const ::std::string& name, Settings_ACL_HmacAlgorithm* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<Settings_ACL_HmacAlgorithm>(
-    Settings_ACL_HmacAlgorithm_descriptor(), name, value);
+    return ::google::protobuf::internal::ParseNamedEnum<Settings_ACL_HmacAlgorithm>(
+               Settings_ACL_HmacAlgorithm_descriptor(), name, value);
 }
 enum Settings_ACL_Operation {
-  Settings_ACL_Operation_READ = 0,
-  Settings_ACL_Operation_WRITE = 1,
-  Settings_ACL_Operation_DELETE = 2,
-  Settings_ACL_Operation_RANGE = 3,
-  Settings_ACL_Operation_SETUP = 4,
-  Settings_ACL_Operation_P2POP = 5,
-  Settings_ACL_Operation_GETLOG = 7,
-  Settings_ACL_Operation_SECURITY = 8
+    Settings_ACL_Operation_READ = 0,
+    Settings_ACL_Operation_WRITE = 1,
+    Settings_ACL_Operation_DELETE = 2,
+    Settings_ACL_Operation_RANGE = 3,
+    Settings_ACL_Operation_SETUP = 4,
+    Settings_ACL_Operation_P2POP = 5,
+    Settings_ACL_Operation_GETLOG = 7,
+    Settings_ACL_Operation_SECURITY = 8
 };
 bool Settings_ACL_Operation_IsValid(int value);
 const Settings_ACL_Operation Settings_ACL_Operation_Operation_MIN = Settings_ACL_Operation_READ;
@@ -75,425 +75,425 @@ const int Settings_ACL_Operation_Operation_ARRAYSIZE = Settings_ACL_Operation_Op
 
 const ::google::protobuf::EnumDescriptor* Settings_ACL_Operation_descriptor();
 inline const ::std::string& Settings_ACL_Operation_Name(Settings_ACL_Operation value) {
-  return ::google::protobuf::internal::NameOfEnum(
-    Settings_ACL_Operation_descriptor(), value);
+    return ::google::protobuf::internal::NameOfEnum(
+               Settings_ACL_Operation_descriptor(), value);
 }
 inline bool Settings_ACL_Operation_Parse(
     const ::std::string& name, Settings_ACL_Operation* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<Settings_ACL_Operation>(
-    Settings_ACL_Operation_descriptor(), name, value);
+    return ::google::protobuf::internal::ParseNamedEnum<Settings_ACL_Operation>(
+               Settings_ACL_Operation_descriptor(), name, value);
 }
 // ===================================================================
 
 class Settings_ACL_Scope : public ::google::protobuf::Message {
- public:
-  Settings_ACL_Scope();
-  virtual ~Settings_ACL_Scope();
+public:
+    Settings_ACL_Scope();
+    virtual ~Settings_ACL_Scope();
 
-  Settings_ACL_Scope(const Settings_ACL_Scope& from);
+    Settings_ACL_Scope(const Settings_ACL_Scope& from);
 
-  inline Settings_ACL_Scope& operator=(const Settings_ACL_Scope& from) {
-    CopyFrom(from);
-    return *this;
-  }
+    inline Settings_ACL_Scope& operator=(const Settings_ACL_Scope& from) {
+        CopyFrom(from);
+        return *this;
+    }
 
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
+    inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+        return _unknown_fields_;
+    }
 
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
+    inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+        return &_unknown_fields_;
+    }
 
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const Settings_ACL_Scope& default_instance();
+    static const ::google::protobuf::Descriptor* descriptor();
+    static const Settings_ACL_Scope& default_instance();
 
-  void Swap(Settings_ACL_Scope* other);
+    void Swap(Settings_ACL_Scope* other);
 
-  // implements Message ----------------------------------------------
+    // implements Message ----------------------------------------------
 
-  Settings_ACL_Scope* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Settings_ACL_Scope& from);
-  void MergeFrom(const Settings_ACL_Scope& from);
-  void Clear();
-  bool IsInitialized() const;
+    Settings_ACL_Scope* New() const;
+    void CopyFrom(const ::google::protobuf::Message& from);
+    void MergeFrom(const ::google::protobuf::Message& from);
+    void CopyFrom(const Settings_ACL_Scope& from);
+    void MergeFrom(const Settings_ACL_Scope& from);
+    void Clear();
+    bool IsInitialized() const;
 
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
+    int ByteSize() const;
+    bool MergePartialFromCodedStream(
+        ::google::protobuf::io::CodedInputStream* input);
+    void SerializeWithCachedSizes(
+        ::google::protobuf::io::CodedOutputStream* output) const;
+    ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+    int GetCachedSize() const { return _cached_size_; }
+private:
+    void SharedCtor();
+    void SharedDtor();
+    void SetCachedSize(int size) const;
+public:
+    ::google::protobuf::Metadata GetMetadata() const;
 
-  // nested types ----------------------------------------------------
+    // nested types ----------------------------------------------------
 
-  // accessors -------------------------------------------------------
+    // accessors -------------------------------------------------------
 
-  // optional bool tlsRequired = 1;
-  inline bool has_tlsrequired() const;
-  inline void clear_tlsrequired();
-  static const int kTlsRequiredFieldNumber = 1;
-  inline bool tlsrequired() const;
-  inline void set_tlsrequired(bool value);
+    // optional bool tlsRequired = 1;
+    inline bool has_tlsrequired() const;
+    inline void clear_tlsrequired();
+    static const int kTlsRequiredFieldNumber = 1;
+    inline bool tlsrequired() const;
+    inline void set_tlsrequired(bool value);
 
-  // optional bytes keySubstring = 2;
-  inline bool has_keysubstring() const;
-  inline void clear_keysubstring();
-  static const int kKeySubstringFieldNumber = 2;
-  inline const ::std::string& keysubstring() const;
-  inline void set_keysubstring(const ::std::string& value);
-  inline void set_keysubstring(const char* value);
-  inline void set_keysubstring(const void* value, size_t size);
-  inline ::std::string* mutable_keysubstring();
-  inline ::std::string* release_keysubstring();
-  inline void set_allocated_keysubstring(::std::string* keysubstring);
+    // optional bytes keySubstring = 2;
+    inline bool has_keysubstring() const;
+    inline void clear_keysubstring();
+    static const int kKeySubstringFieldNumber = 2;
+    inline const ::std::string& keysubstring() const;
+    inline void set_keysubstring(const ::std::string& value);
+    inline void set_keysubstring(const char* value);
+    inline void set_keysubstring(const void* value, size_t size);
+    inline ::std::string* mutable_keysubstring();
+    inline ::std::string* release_keysubstring();
+    inline void set_allocated_keysubstring(::std::string* keysubstring);
 
-  // optional int64 keySubstringOffset = 3;
-  inline bool has_keysubstringoffset() const;
-  inline void clear_keysubstringoffset();
-  static const int kKeySubstringOffsetFieldNumber = 3;
-  inline ::google::protobuf::int64 keysubstringoffset() const;
-  inline void set_keysubstringoffset(::google::protobuf::int64 value);
+    // optional int64 keySubstringOffset = 3;
+    inline bool has_keysubstringoffset() const;
+    inline void clear_keysubstringoffset();
+    static const int kKeySubstringOffsetFieldNumber = 3;
+    inline ::google::protobuf::int64 keysubstringoffset() const;
+    inline void set_keysubstringoffset(::google::protobuf::int64 value);
 
-  // repeated .kaos.Settings.ACL.Operation operation = 4;
-  inline int operation_size() const;
-  inline void clear_operation();
-  static const int kOperationFieldNumber = 4;
-  inline ::kaos::Settings_ACL_Operation operation(int index) const;
-  inline void set_operation(int index, ::kaos::Settings_ACL_Operation value);
-  inline void add_operation(::kaos::Settings_ACL_Operation value);
-  inline const ::google::protobuf::RepeatedField<int>& operation() const;
-  inline ::google::protobuf::RepeatedField<int>* mutable_operation();
+    // repeated .kaos.Settings.ACL.Operation operation = 4;
+    inline int operation_size() const;
+    inline void clear_operation();
+    static const int kOperationFieldNumber = 4;
+    inline ::kaos::Settings_ACL_Operation operation(int index) const;
+    inline void set_operation(int index, ::kaos::Settings_ACL_Operation value);
+    inline void add_operation(::kaos::Settings_ACL_Operation value);
+    inline const ::google::protobuf::RepeatedField<int>& operation() const;
+    inline ::google::protobuf::RepeatedField<int>* mutable_operation();
 
-  // @@protoc_insertion_point(class_scope:kaos.Settings.ACL.Scope)
- private:
-  inline void set_has_tlsrequired();
-  inline void clear_has_tlsrequired();
-  inline void set_has_keysubstring();
-  inline void clear_has_keysubstring();
-  inline void set_has_keysubstringoffset();
-  inline void clear_has_keysubstringoffset();
+    // @@protoc_insertion_point(class_scope:kaos.Settings.ACL.Scope)
+private:
+    inline void set_has_tlsrequired();
+    inline void clear_has_tlsrequired();
+    inline void set_has_keysubstring();
+    inline void clear_has_keysubstring();
+    inline void set_has_keysubstringoffset();
+    inline void clear_has_keysubstringoffset();
 
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+    ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::std::string* keysubstring_;
-  ::google::protobuf::int64 keysubstringoffset_;
-  ::google::protobuf::RepeatedField<int> operation_;
-  bool tlsrequired_;
-  friend void  protobuf_AddDesc_Settings_2eproto();
-  friend void protobuf_AssignDesc_Settings_2eproto();
-  friend void protobuf_ShutdownFile_Settings_2eproto();
+    ::google::protobuf::uint32 _has_bits_[1];
+    mutable int _cached_size_;
+    ::std::string* keysubstring_;
+    ::google::protobuf::int64 keysubstringoffset_;
+    ::google::protobuf::RepeatedField<int> operation_;
+    bool tlsrequired_;
+    friend void  protobuf_AddDesc_Settings_2eproto();
+    friend void protobuf_AssignDesc_Settings_2eproto();
+    friend void protobuf_ShutdownFile_Settings_2eproto();
 
-  void InitAsDefaultInstance();
-  static Settings_ACL_Scope* default_instance_;
+    void InitAsDefaultInstance();
+    static Settings_ACL_Scope* default_instance_;
 };
 // -------------------------------------------------------------------
 
 class Settings_ACL : public ::google::protobuf::Message {
- public:
-  Settings_ACL();
-  virtual ~Settings_ACL();
+public:
+    Settings_ACL();
+    virtual ~Settings_ACL();
 
-  Settings_ACL(const Settings_ACL& from);
+    Settings_ACL(const Settings_ACL& from);
 
-  inline Settings_ACL& operator=(const Settings_ACL& from) {
-    CopyFrom(from);
-    return *this;
-  }
+    inline Settings_ACL& operator=(const Settings_ACL& from) {
+        CopyFrom(from);
+        return *this;
+    }
 
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
+    inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+        return _unknown_fields_;
+    }
 
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
+    inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+        return &_unknown_fields_;
+    }
 
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const Settings_ACL& default_instance();
+    static const ::google::protobuf::Descriptor* descriptor();
+    static const Settings_ACL& default_instance();
 
-  void Swap(Settings_ACL* other);
+    void Swap(Settings_ACL* other);
 
-  // implements Message ----------------------------------------------
+    // implements Message ----------------------------------------------
 
-  Settings_ACL* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Settings_ACL& from);
-  void MergeFrom(const Settings_ACL& from);
-  void Clear();
-  bool IsInitialized() const;
+    Settings_ACL* New() const;
+    void CopyFrom(const ::google::protobuf::Message& from);
+    void MergeFrom(const ::google::protobuf::Message& from);
+    void CopyFrom(const Settings_ACL& from);
+    void MergeFrom(const Settings_ACL& from);
+    void Clear();
+    bool IsInitialized() const;
 
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
+    int ByteSize() const;
+    bool MergePartialFromCodedStream(
+        ::google::protobuf::io::CodedInputStream* input);
+    void SerializeWithCachedSizes(
+        ::google::protobuf::io::CodedOutputStream* output) const;
+    ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+    int GetCachedSize() const { return _cached_size_; }
+private:
+    void SharedCtor();
+    void SharedDtor();
+    void SetCachedSize(int size) const;
+public:
+    ::google::protobuf::Metadata GetMetadata() const;
 
-  // nested types ----------------------------------------------------
+    // nested types ----------------------------------------------------
 
-  typedef Settings_ACL_Scope Scope;
+    typedef Settings_ACL_Scope Scope;
 
-  typedef Settings_ACL_HmacAlgorithm HmacAlgorithm;
-  static const HmacAlgorithm HMAC_INVALID = Settings_ACL_HmacAlgorithm_HMAC_INVALID;
-  static const HmacAlgorithm HMAC_SHA1 = Settings_ACL_HmacAlgorithm_HMAC_SHA1;
-  static inline bool HmacAlgorithm_IsValid(int value) {
-    return Settings_ACL_HmacAlgorithm_IsValid(value);
-  }
-  static const HmacAlgorithm HmacAlgorithm_MIN =
-    Settings_ACL_HmacAlgorithm_HmacAlgorithm_MIN;
-  static const HmacAlgorithm HmacAlgorithm_MAX =
-    Settings_ACL_HmacAlgorithm_HmacAlgorithm_MAX;
-  static const int HmacAlgorithm_ARRAYSIZE =
-    Settings_ACL_HmacAlgorithm_HmacAlgorithm_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor*
-  HmacAlgorithm_descriptor() {
-    return Settings_ACL_HmacAlgorithm_descriptor();
-  }
-  static inline const ::std::string& HmacAlgorithm_Name(HmacAlgorithm value) {
-    return Settings_ACL_HmacAlgorithm_Name(value);
-  }
-  static inline bool HmacAlgorithm_Parse(const ::std::string& name,
-      HmacAlgorithm* value) {
-    return Settings_ACL_HmacAlgorithm_Parse(name, value);
-  }
+    typedef Settings_ACL_HmacAlgorithm HmacAlgorithm;
+    static const HmacAlgorithm HMAC_INVALID = Settings_ACL_HmacAlgorithm_HMAC_INVALID;
+    static const HmacAlgorithm HMAC_SHA1 = Settings_ACL_HmacAlgorithm_HMAC_SHA1;
+    static inline bool HmacAlgorithm_IsValid(int value) {
+        return Settings_ACL_HmacAlgorithm_IsValid(value);
+    }
+    static const HmacAlgorithm HmacAlgorithm_MIN =
+        Settings_ACL_HmacAlgorithm_HmacAlgorithm_MIN;
+    static const HmacAlgorithm HmacAlgorithm_MAX =
+        Settings_ACL_HmacAlgorithm_HmacAlgorithm_MAX;
+    static const int HmacAlgorithm_ARRAYSIZE =
+        Settings_ACL_HmacAlgorithm_HmacAlgorithm_ARRAYSIZE;
+    static inline const ::google::protobuf::EnumDescriptor*
+    HmacAlgorithm_descriptor() {
+        return Settings_ACL_HmacAlgorithm_descriptor();
+    }
+    static inline const ::std::string& HmacAlgorithm_Name(HmacAlgorithm value) {
+        return Settings_ACL_HmacAlgorithm_Name(value);
+    }
+    static inline bool HmacAlgorithm_Parse(const ::std::string& name,
+                                           HmacAlgorithm* value) {
+        return Settings_ACL_HmacAlgorithm_Parse(name, value);
+    }
 
-  typedef Settings_ACL_Operation Operation;
-  static const Operation READ = Settings_ACL_Operation_READ;
-  static const Operation WRITE = Settings_ACL_Operation_WRITE;
-  static const Operation DELETE = Settings_ACL_Operation_DELETE;
-  static const Operation RANGE = Settings_ACL_Operation_RANGE;
-  static const Operation SETUP = Settings_ACL_Operation_SETUP;
-  static const Operation P2POP = Settings_ACL_Operation_P2POP;
-  static const Operation GETLOG = Settings_ACL_Operation_GETLOG;
-  static const Operation SECURITY = Settings_ACL_Operation_SECURITY;
-  static inline bool Operation_IsValid(int value) {
-    return Settings_ACL_Operation_IsValid(value);
-  }
-  static const Operation Operation_MIN =
-    Settings_ACL_Operation_Operation_MIN;
-  static const Operation Operation_MAX =
-    Settings_ACL_Operation_Operation_MAX;
-  static const int Operation_ARRAYSIZE =
-    Settings_ACL_Operation_Operation_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor*
-  Operation_descriptor() {
-    return Settings_ACL_Operation_descriptor();
-  }
-  static inline const ::std::string& Operation_Name(Operation value) {
-    return Settings_ACL_Operation_Name(value);
-  }
-  static inline bool Operation_Parse(const ::std::string& name,
-      Operation* value) {
-    return Settings_ACL_Operation_Parse(name, value);
-  }
+    typedef Settings_ACL_Operation Operation;
+    static const Operation READ = Settings_ACL_Operation_READ;
+    static const Operation WRITE = Settings_ACL_Operation_WRITE;
+    static const Operation DELETE = Settings_ACL_Operation_DELETE;
+    static const Operation RANGE = Settings_ACL_Operation_RANGE;
+    static const Operation SETUP = Settings_ACL_Operation_SETUP;
+    static const Operation P2POP = Settings_ACL_Operation_P2POP;
+    static const Operation GETLOG = Settings_ACL_Operation_GETLOG;
+    static const Operation SECURITY = Settings_ACL_Operation_SECURITY;
+    static inline bool Operation_IsValid(int value) {
+        return Settings_ACL_Operation_IsValid(value);
+    }
+    static const Operation Operation_MIN =
+        Settings_ACL_Operation_Operation_MIN;
+    static const Operation Operation_MAX =
+        Settings_ACL_Operation_Operation_MAX;
+    static const int Operation_ARRAYSIZE =
+        Settings_ACL_Operation_Operation_ARRAYSIZE;
+    static inline const ::google::protobuf::EnumDescriptor*
+    Operation_descriptor() {
+        return Settings_ACL_Operation_descriptor();
+    }
+    static inline const ::std::string& Operation_Name(Operation value) {
+        return Settings_ACL_Operation_Name(value);
+    }
+    static inline bool Operation_Parse(const ::std::string& name,
+                                       Operation* value) {
+        return Settings_ACL_Operation_Parse(name, value);
+    }
 
-  // accessors -------------------------------------------------------
+    // accessors -------------------------------------------------------
 
-  // optional int64 identity = 1;
-  inline bool has_identity() const;
-  inline void clear_identity();
-  static const int kIdentityFieldNumber = 1;
-  inline ::google::protobuf::int64 identity() const;
-  inline void set_identity(::google::protobuf::int64 value);
+    // optional int64 identity = 1;
+    inline bool has_identity() const;
+    inline void clear_identity();
+    static const int kIdentityFieldNumber = 1;
+    inline ::google::protobuf::int64 identity() const;
+    inline void set_identity(::google::protobuf::int64 value);
 
-  // optional bytes hmacKey = 2;
-  inline bool has_hmackey() const;
-  inline void clear_hmackey();
-  static const int kHmacKeyFieldNumber = 2;
-  inline const ::std::string& hmackey() const;
-  inline void set_hmackey(const ::std::string& value);
-  inline void set_hmackey(const char* value);
-  inline void set_hmackey(const void* value, size_t size);
-  inline ::std::string* mutable_hmackey();
-  inline ::std::string* release_hmackey();
-  inline void set_allocated_hmackey(::std::string* hmackey);
+    // optional bytes hmacKey = 2;
+    inline bool has_hmackey() const;
+    inline void clear_hmackey();
+    static const int kHmacKeyFieldNumber = 2;
+    inline const ::std::string& hmackey() const;
+    inline void set_hmackey(const ::std::string& value);
+    inline void set_hmackey(const char* value);
+    inline void set_hmackey(const void* value, size_t size);
+    inline ::std::string* mutable_hmackey();
+    inline ::std::string* release_hmackey();
+    inline void set_allocated_hmackey(::std::string* hmackey);
 
-  // optional .kaos.Settings.ACL.HmacAlgorithm hmacAlgorithm = 3;
-  inline bool has_hmacalgorithm() const;
-  inline void clear_hmacalgorithm();
-  static const int kHmacAlgorithmFieldNumber = 3;
-  inline ::kaos::Settings_ACL_HmacAlgorithm hmacalgorithm() const;
-  inline void set_hmacalgorithm(::kaos::Settings_ACL_HmacAlgorithm value);
+    // optional .kaos.Settings.ACL.HmacAlgorithm hmacAlgorithm = 3;
+    inline bool has_hmacalgorithm() const;
+    inline void clear_hmacalgorithm();
+    static const int kHmacAlgorithmFieldNumber = 3;
+    inline ::kaos::Settings_ACL_HmacAlgorithm hmacalgorithm() const;
+    inline void set_hmacalgorithm(::kaos::Settings_ACL_HmacAlgorithm value);
 
-  // repeated .kaos.Settings.ACL.Scope scope = 4;
-  inline int scope_size() const;
-  inline void clear_scope();
-  static const int kScopeFieldNumber = 4;
-  inline const ::kaos::Settings_ACL_Scope& scope(int index) const;
-  inline ::kaos::Settings_ACL_Scope* mutable_scope(int index);
-  inline ::kaos::Settings_ACL_Scope* add_scope();
-  inline const ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL_Scope >&
-      scope() const;
-  inline ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL_Scope >*
-      mutable_scope();
+    // repeated .kaos.Settings.ACL.Scope scope = 4;
+    inline int scope_size() const;
+    inline void clear_scope();
+    static const int kScopeFieldNumber = 4;
+    inline const ::kaos::Settings_ACL_Scope& scope(int index) const;
+    inline ::kaos::Settings_ACL_Scope* mutable_scope(int index);
+    inline ::kaos::Settings_ACL_Scope* add_scope();
+    inline const ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL_Scope>&
+    scope() const;
+    inline ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL_Scope>*
+    mutable_scope();
 
-  // @@protoc_insertion_point(class_scope:kaos.Settings.ACL)
- private:
-  inline void set_has_identity();
-  inline void clear_has_identity();
-  inline void set_has_hmackey();
-  inline void clear_has_hmackey();
-  inline void set_has_hmacalgorithm();
-  inline void clear_has_hmacalgorithm();
+    // @@protoc_insertion_point(class_scope:kaos.Settings.ACL)
+private:
+    inline void set_has_identity();
+    inline void clear_has_identity();
+    inline void set_has_hmackey();
+    inline void clear_has_hmackey();
+    inline void set_has_hmacalgorithm();
+    inline void clear_has_hmacalgorithm();
 
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+    ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::int64 identity_;
-  ::std::string* hmackey_;
-  ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL_Scope > scope_;
-  int hmacalgorithm_;
-  friend void  protobuf_AddDesc_Settings_2eproto();
-  friend void protobuf_AssignDesc_Settings_2eproto();
-  friend void protobuf_ShutdownFile_Settings_2eproto();
+    ::google::protobuf::uint32 _has_bits_[1];
+    mutable int _cached_size_;
+    ::google::protobuf::int64 identity_;
+    ::std::string* hmackey_;
+    ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL_Scope> scope_;
+    int hmacalgorithm_;
+    friend void  protobuf_AddDesc_Settings_2eproto();
+    friend void protobuf_AssignDesc_Settings_2eproto();
+    friend void protobuf_ShutdownFile_Settings_2eproto();
 
-  void InitAsDefaultInstance();
-  static Settings_ACL* default_instance_;
+    void InitAsDefaultInstance();
+    static Settings_ACL* default_instance_;
 };
 // -------------------------------------------------------------------
 
 class Settings : public ::google::protobuf::Message {
- public:
-  Settings();
-  virtual ~Settings();
+public:
+    Settings();
+    virtual ~Settings();
 
-  Settings(const Settings& from);
+    Settings(const Settings& from);
 
-  inline Settings& operator=(const Settings& from) {
-    CopyFrom(from);
-    return *this;
-  }
+    inline Settings& operator=(const Settings& from) {
+        CopyFrom(from);
+        return *this;
+    }
 
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
+    inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+        return _unknown_fields_;
+    }
 
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
+    inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+        return &_unknown_fields_;
+    }
 
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const Settings& default_instance();
+    static const ::google::protobuf::Descriptor* descriptor();
+    static const Settings& default_instance();
 
-  void Swap(Settings* other);
+    void Swap(Settings* other);
 
-  // implements Message ----------------------------------------------
+    // implements Message ----------------------------------------------
 
-  Settings* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Settings& from);
-  void MergeFrom(const Settings& from);
-  void Clear();
-  bool IsInitialized() const;
+    Settings* New() const;
+    void CopyFrom(const ::google::protobuf::Message& from);
+    void MergeFrom(const ::google::protobuf::Message& from);
+    void CopyFrom(const Settings& from);
+    void MergeFrom(const Settings& from);
+    void Clear();
+    bool IsInitialized() const;
 
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
+    int ByteSize() const;
+    bool MergePartialFromCodedStream(
+        ::google::protobuf::io::CodedInputStream* input);
+    void SerializeWithCachedSizes(
+        ::google::protobuf::io::CodedOutputStream* output) const;
+    ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+    int GetCachedSize() const { return _cached_size_; }
+private:
+    void SharedCtor();
+    void SharedDtor();
+    void SetCachedSize(int size) const;
+public:
+    ::google::protobuf::Metadata GetMetadata() const;
 
-  // nested types ----------------------------------------------------
+    // nested types ----------------------------------------------------
 
-  typedef Settings_ACL ACL;
+    typedef Settings_ACL ACL;
 
-  // accessors -------------------------------------------------------
+    // accessors -------------------------------------------------------
 
-  // optional int64 clusterVersion = 1;
-  inline bool has_clusterversion() const;
-  inline void clear_clusterversion();
-  static const int kClusterVersionFieldNumber = 1;
-  inline ::google::protobuf::int64 clusterversion() const;
-  inline void set_clusterversion(::google::protobuf::int64 value);
+    // optional int64 clusterVersion = 1;
+    inline bool has_clusterversion() const;
+    inline void clear_clusterversion();
+    static const int kClusterVersionFieldNumber = 1;
+    inline ::google::protobuf::int64 clusterversion() const;
+    inline void set_clusterversion(::google::protobuf::int64 value);
 
-  // optional bytes lockPin = 2;
-  inline bool has_lockpin() const;
-  inline void clear_lockpin();
-  static const int kLockPinFieldNumber = 2;
-  inline const ::std::string& lockpin() const;
-  inline void set_lockpin(const ::std::string& value);
-  inline void set_lockpin(const char* value);
-  inline void set_lockpin(const void* value, size_t size);
-  inline ::std::string* mutable_lockpin();
-  inline ::std::string* release_lockpin();
-  inline void set_allocated_lockpin(::std::string* lockpin);
+    // optional bytes lockPin = 2;
+    inline bool has_lockpin() const;
+    inline void clear_lockpin();
+    static const int kLockPinFieldNumber = 2;
+    inline const ::std::string& lockpin() const;
+    inline void set_lockpin(const ::std::string& value);
+    inline void set_lockpin(const char* value);
+    inline void set_lockpin(const void* value, size_t size);
+    inline ::std::string* mutable_lockpin();
+    inline ::std::string* release_lockpin();
+    inline void set_allocated_lockpin(::std::string* lockpin);
 
-  // optional bytes erasePin = 3;
-  inline bool has_erasepin() const;
-  inline void clear_erasepin();
-  static const int kErasePinFieldNumber = 3;
-  inline const ::std::string& erasepin() const;
-  inline void set_erasepin(const ::std::string& value);
-  inline void set_erasepin(const char* value);
-  inline void set_erasepin(const void* value, size_t size);
-  inline ::std::string* mutable_erasepin();
-  inline ::std::string* release_erasepin();
-  inline void set_allocated_erasepin(::std::string* erasepin);
+    // optional bytes erasePin = 3;
+    inline bool has_erasepin() const;
+    inline void clear_erasepin();
+    static const int kErasePinFieldNumber = 3;
+    inline const ::std::string& erasepin() const;
+    inline void set_erasepin(const ::std::string& value);
+    inline void set_erasepin(const char* value);
+    inline void set_erasepin(const void* value, size_t size);
+    inline ::std::string* mutable_erasepin();
+    inline ::std::string* release_erasepin();
+    inline void set_allocated_erasepin(::std::string* erasepin);
 
-  // repeated .kaos.Settings.ACL acl = 4;
-  inline int acl_size() const;
-  inline void clear_acl();
-  static const int kAclFieldNumber = 4;
-  inline const ::kaos::Settings_ACL& acl(int index) const;
-  inline ::kaos::Settings_ACL* mutable_acl(int index);
-  inline ::kaos::Settings_ACL* add_acl();
-  inline const ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL >&
-      acl() const;
-  inline ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL >*
-      mutable_acl();
+    // repeated .kaos.Settings.ACL acl = 4;
+    inline int acl_size() const;
+    inline void clear_acl();
+    static const int kAclFieldNumber = 4;
+    inline const ::kaos::Settings_ACL& acl(int index) const;
+    inline ::kaos::Settings_ACL* mutable_acl(int index);
+    inline ::kaos::Settings_ACL* add_acl();
+    inline const ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL>&
+    acl() const;
+    inline ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL>*
+    mutable_acl();
 
-  // @@protoc_insertion_point(class_scope:kaos.Settings)
- private:
-  inline void set_has_clusterversion();
-  inline void clear_has_clusterversion();
-  inline void set_has_lockpin();
-  inline void clear_has_lockpin();
-  inline void set_has_erasepin();
-  inline void clear_has_erasepin();
+    // @@protoc_insertion_point(class_scope:kaos.Settings)
+private:
+    inline void set_has_clusterversion();
+    inline void clear_has_clusterversion();
+    inline void set_has_lockpin();
+    inline void clear_has_lockpin();
+    inline void set_has_erasepin();
+    inline void clear_has_erasepin();
 
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+    ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::int64 clusterversion_;
-  ::std::string* lockpin_;
-  ::std::string* erasepin_;
-  ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL > acl_;
-  friend void  protobuf_AddDesc_Settings_2eproto();
-  friend void protobuf_AssignDesc_Settings_2eproto();
-  friend void protobuf_ShutdownFile_Settings_2eproto();
+    ::google::protobuf::uint32 _has_bits_[1];
+    mutable int _cached_size_;
+    ::google::protobuf::int64 clusterversion_;
+    ::std::string* lockpin_;
+    ::std::string* erasepin_;
+    ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL> acl_;
+    friend void  protobuf_AddDesc_Settings_2eproto();
+    friend void protobuf_AssignDesc_Settings_2eproto();
+    friend void protobuf_ShutdownFile_Settings_2eproto();
 
-  void InitAsDefaultInstance();
-  static Settings* default_instance_;
+    void InitAsDefaultInstance();
+    static Settings* default_instance_;
 };
 // ===================================================================
 
@@ -504,158 +504,160 @@ class Settings : public ::google::protobuf::Message {
 
 // optional bool tlsRequired = 1;
 inline bool Settings_ACL_Scope::has_tlsrequired() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
+    return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void Settings_ACL_Scope::set_has_tlsrequired() {
-  _has_bits_[0] |= 0x00000001u;
+    _has_bits_[0] |= 0x00000001u;
 }
 inline void Settings_ACL_Scope::clear_has_tlsrequired() {
-  _has_bits_[0] &= ~0x00000001u;
+    _has_bits_[0] &= ~0x00000001u;
 }
 inline void Settings_ACL_Scope::clear_tlsrequired() {
-  tlsrequired_ = false;
-  clear_has_tlsrequired();
+    tlsrequired_ = false;
+    clear_has_tlsrequired();
 }
 inline bool Settings_ACL_Scope::tlsrequired() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.tlsRequired)
-  return tlsrequired_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.tlsRequired)
+    return tlsrequired_;
 }
 inline void Settings_ACL_Scope::set_tlsrequired(bool value) {
-  set_has_tlsrequired();
-  tlsrequired_ = value;
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.tlsRequired)
+    set_has_tlsrequired();
+    tlsrequired_ = value;
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.tlsRequired)
 }
 
 // optional bytes keySubstring = 2;
 inline bool Settings_ACL_Scope::has_keysubstring() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+    return (_has_bits_[0] & 0x00000002u) != 0;
 }
 inline void Settings_ACL_Scope::set_has_keysubstring() {
-  _has_bits_[0] |= 0x00000002u;
+    _has_bits_[0] |= 0x00000002u;
 }
 inline void Settings_ACL_Scope::clear_has_keysubstring() {
-  _has_bits_[0] &= ~0x00000002u;
+    _has_bits_[0] &= ~0x00000002u;
 }
 inline void Settings_ACL_Scope::clear_keysubstring() {
-  if (keysubstring_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    keysubstring_->clear();
-  }
-  clear_has_keysubstring();
+    if (keysubstring_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        keysubstring_->clear();
+    }
+    clear_has_keysubstring();
 }
 inline const ::std::string& Settings_ACL_Scope::keysubstring() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.keySubstring)
-  return *keysubstring_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.keySubstring)
+    return *keysubstring_;
 }
 inline void Settings_ACL_Scope::set_keysubstring(const ::std::string& value) {
-  set_has_keysubstring();
-  if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    keysubstring_ = new ::std::string;
-  }
-  keysubstring_->assign(value);
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.keySubstring)
+    set_has_keysubstring();
+    if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        keysubstring_ = new ::std::string;
+    }
+    keysubstring_->assign(value);
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.keySubstring)
 }
 inline void Settings_ACL_Scope::set_keysubstring(const char* value) {
-  set_has_keysubstring();
-  if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    keysubstring_ = new ::std::string;
-  }
-  keysubstring_->assign(value);
-  // @@protoc_insertion_point(field_set_char:kaos.Settings.ACL.Scope.keySubstring)
+    set_has_keysubstring();
+    if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        keysubstring_ = new ::std::string;
+    }
+    keysubstring_->assign(value);
+    // @@protoc_insertion_point(field_set_char:kaos.Settings.ACL.Scope.keySubstring)
 }
 inline void Settings_ACL_Scope::set_keysubstring(const void* value, size_t size) {
-  set_has_keysubstring();
-  if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    keysubstring_ = new ::std::string;
-  }
-  keysubstring_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:kaos.Settings.ACL.Scope.keySubstring)
+    set_has_keysubstring();
+    if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        keysubstring_ = new ::std::string;
+    }
+    keysubstring_->assign(reinterpret_cast<const char*>(value), size);
+    // @@protoc_insertion_point(field_set_pointer:kaos.Settings.ACL.Scope.keySubstring)
 }
 inline ::std::string* Settings_ACL_Scope::mutable_keysubstring() {
-  set_has_keysubstring();
-  if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    keysubstring_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:kaos.Settings.ACL.Scope.keySubstring)
-  return keysubstring_;
+    set_has_keysubstring();
+    if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        keysubstring_ = new ::std::string;
+    }
+    // @@protoc_insertion_point(field_mutable:kaos.Settings.ACL.Scope.keySubstring)
+    return keysubstring_;
 }
 inline ::std::string* Settings_ACL_Scope::release_keysubstring() {
-  clear_has_keysubstring();
-  if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = keysubstring_;
-    keysubstring_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
+    clear_has_keysubstring();
+    if (keysubstring_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        return NULL;
+    }
+    else {
+        ::std::string* temp = keysubstring_;
+        keysubstring_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+        return temp;
+    }
 }
 inline void Settings_ACL_Scope::set_allocated_keysubstring(::std::string* keysubstring) {
-  if (keysubstring_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete keysubstring_;
-  }
-  if (keysubstring) {
-    set_has_keysubstring();
-    keysubstring_ = keysubstring;
-  } else {
-    clear_has_keysubstring();
-    keysubstring_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:kaos.Settings.ACL.Scope.keySubstring)
+    if (keysubstring_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        delete keysubstring_;
+    }
+    if (keysubstring) {
+        set_has_keysubstring();
+        keysubstring_ = keysubstring;
+    }
+    else {
+        clear_has_keysubstring();
+        keysubstring_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    }
+    // @@protoc_insertion_point(field_set_allocated:kaos.Settings.ACL.Scope.keySubstring)
 }
 
 // optional int64 keySubstringOffset = 3;
 inline bool Settings_ACL_Scope::has_keysubstringoffset() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+    return (_has_bits_[0] & 0x00000004u) != 0;
 }
 inline void Settings_ACL_Scope::set_has_keysubstringoffset() {
-  _has_bits_[0] |= 0x00000004u;
+    _has_bits_[0] |= 0x00000004u;
 }
 inline void Settings_ACL_Scope::clear_has_keysubstringoffset() {
-  _has_bits_[0] &= ~0x00000004u;
+    _has_bits_[0] &= ~0x00000004u;
 }
 inline void Settings_ACL_Scope::clear_keysubstringoffset() {
-  keysubstringoffset_ = GOOGLE_LONGLONG(0);
-  clear_has_keysubstringoffset();
+    keysubstringoffset_ = GOOGLE_LONGLONG(0);
+    clear_has_keysubstringoffset();
 }
 inline ::google::protobuf::int64 Settings_ACL_Scope::keysubstringoffset() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.keySubstringOffset)
-  return keysubstringoffset_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.keySubstringOffset)
+    return keysubstringoffset_;
 }
 inline void Settings_ACL_Scope::set_keysubstringoffset(::google::protobuf::int64 value) {
-  set_has_keysubstringoffset();
-  keysubstringoffset_ = value;
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.keySubstringOffset)
+    set_has_keysubstringoffset();
+    keysubstringoffset_ = value;
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.keySubstringOffset)
 }
 
 // repeated .kaos.Settings.ACL.Operation operation = 4;
 inline int Settings_ACL_Scope::operation_size() const {
-  return operation_.size();
+    return operation_.size();
 }
 inline void Settings_ACL_Scope::clear_operation() {
-  operation_.Clear();
+    operation_.Clear();
 }
 inline ::kaos::Settings_ACL_Operation Settings_ACL_Scope::operation(int index) const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.operation)
-  return static_cast< ::kaos::Settings_ACL_Operation >(operation_.Get(index));
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.Scope.operation)
+    return static_cast<::kaos::Settings_ACL_Operation>(operation_.Get(index));
 }
 inline void Settings_ACL_Scope::set_operation(int index, ::kaos::Settings_ACL_Operation value) {
-  assert(::kaos::Settings_ACL_Operation_IsValid(value));
-  operation_.Set(index, value);
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.operation)
+    assert(::kaos::Settings_ACL_Operation_IsValid(value));
+    operation_.Set(index, value);
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.Scope.operation)
 }
 inline void Settings_ACL_Scope::add_operation(::kaos::Settings_ACL_Operation value) {
-  assert(::kaos::Settings_ACL_Operation_IsValid(value));
-  operation_.Add(value);
-  // @@protoc_insertion_point(field_add:kaos.Settings.ACL.Scope.operation)
+    assert(::kaos::Settings_ACL_Operation_IsValid(value));
+    operation_.Add(value);
+    // @@protoc_insertion_point(field_add:kaos.Settings.ACL.Scope.operation)
 }
 inline const ::google::protobuf::RepeatedField<int>&
 Settings_ACL_Scope::operation() const {
-  // @@protoc_insertion_point(field_list:kaos.Settings.ACL.Scope.operation)
-  return operation_;
+    // @@protoc_insertion_point(field_list:kaos.Settings.ACL.Scope.operation)
+    return operation_;
 }
 inline ::google::protobuf::RepeatedField<int>*
 Settings_ACL_Scope::mutable_operation() {
-  // @@protoc_insertion_point(field_mutable_list:kaos.Settings.ACL.Scope.operation)
-  return &operation_;
+    // @@protoc_insertion_point(field_mutable_list:kaos.Settings.ACL.Scope.operation)
+    return &operation_;
 }
 
 // -------------------------------------------------------------------
@@ -664,157 +666,159 @@ Settings_ACL_Scope::mutable_operation() {
 
 // optional int64 identity = 1;
 inline bool Settings_ACL::has_identity() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
+    return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void Settings_ACL::set_has_identity() {
-  _has_bits_[0] |= 0x00000001u;
+    _has_bits_[0] |= 0x00000001u;
 }
 inline void Settings_ACL::clear_has_identity() {
-  _has_bits_[0] &= ~0x00000001u;
+    _has_bits_[0] &= ~0x00000001u;
 }
 inline void Settings_ACL::clear_identity() {
-  identity_ = GOOGLE_LONGLONG(0);
-  clear_has_identity();
+    identity_ = GOOGLE_LONGLONG(0);
+    clear_has_identity();
 }
 inline ::google::protobuf::int64 Settings_ACL::identity() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.identity)
-  return identity_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.identity)
+    return identity_;
 }
 inline void Settings_ACL::set_identity(::google::protobuf::int64 value) {
-  set_has_identity();
-  identity_ = value;
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.identity)
+    set_has_identity();
+    identity_ = value;
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.identity)
 }
 
 // optional bytes hmacKey = 2;
 inline bool Settings_ACL::has_hmackey() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+    return (_has_bits_[0] & 0x00000002u) != 0;
 }
 inline void Settings_ACL::set_has_hmackey() {
-  _has_bits_[0] |= 0x00000002u;
+    _has_bits_[0] |= 0x00000002u;
 }
 inline void Settings_ACL::clear_has_hmackey() {
-  _has_bits_[0] &= ~0x00000002u;
+    _has_bits_[0] &= ~0x00000002u;
 }
 inline void Settings_ACL::clear_hmackey() {
-  if (hmackey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    hmackey_->clear();
-  }
-  clear_has_hmackey();
+    if (hmackey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        hmackey_->clear();
+    }
+    clear_has_hmackey();
 }
 inline const ::std::string& Settings_ACL::hmackey() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.hmacKey)
-  return *hmackey_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.hmacKey)
+    return *hmackey_;
 }
 inline void Settings_ACL::set_hmackey(const ::std::string& value) {
-  set_has_hmackey();
-  if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    hmackey_ = new ::std::string;
-  }
-  hmackey_->assign(value);
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.hmacKey)
+    set_has_hmackey();
+    if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        hmackey_ = new ::std::string;
+    }
+    hmackey_->assign(value);
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.hmacKey)
 }
 inline void Settings_ACL::set_hmackey(const char* value) {
-  set_has_hmackey();
-  if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    hmackey_ = new ::std::string;
-  }
-  hmackey_->assign(value);
-  // @@protoc_insertion_point(field_set_char:kaos.Settings.ACL.hmacKey)
+    set_has_hmackey();
+    if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        hmackey_ = new ::std::string;
+    }
+    hmackey_->assign(value);
+    // @@protoc_insertion_point(field_set_char:kaos.Settings.ACL.hmacKey)
 }
 inline void Settings_ACL::set_hmackey(const void* value, size_t size) {
-  set_has_hmackey();
-  if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    hmackey_ = new ::std::string;
-  }
-  hmackey_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:kaos.Settings.ACL.hmacKey)
+    set_has_hmackey();
+    if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        hmackey_ = new ::std::string;
+    }
+    hmackey_->assign(reinterpret_cast<const char*>(value), size);
+    // @@protoc_insertion_point(field_set_pointer:kaos.Settings.ACL.hmacKey)
 }
 inline ::std::string* Settings_ACL::mutable_hmackey() {
-  set_has_hmackey();
-  if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    hmackey_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:kaos.Settings.ACL.hmacKey)
-  return hmackey_;
+    set_has_hmackey();
+    if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        hmackey_ = new ::std::string;
+    }
+    // @@protoc_insertion_point(field_mutable:kaos.Settings.ACL.hmacKey)
+    return hmackey_;
 }
 inline ::std::string* Settings_ACL::release_hmackey() {
-  clear_has_hmackey();
-  if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = hmackey_;
-    hmackey_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
+    clear_has_hmackey();
+    if (hmackey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        return NULL;
+    }
+    else {
+        ::std::string* temp = hmackey_;
+        hmackey_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+        return temp;
+    }
 }
 inline void Settings_ACL::set_allocated_hmackey(::std::string* hmackey) {
-  if (hmackey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete hmackey_;
-  }
-  if (hmackey) {
-    set_has_hmackey();
-    hmackey_ = hmackey;
-  } else {
-    clear_has_hmackey();
-    hmackey_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:kaos.Settings.ACL.hmacKey)
+    if (hmackey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        delete hmackey_;
+    }
+    if (hmackey) {
+        set_has_hmackey();
+        hmackey_ = hmackey;
+    }
+    else {
+        clear_has_hmackey();
+        hmackey_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    }
+    // @@protoc_insertion_point(field_set_allocated:kaos.Settings.ACL.hmacKey)
 }
 
 // optional .kaos.Settings.ACL.HmacAlgorithm hmacAlgorithm = 3;
 inline bool Settings_ACL::has_hmacalgorithm() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+    return (_has_bits_[0] & 0x00000004u) != 0;
 }
 inline void Settings_ACL::set_has_hmacalgorithm() {
-  _has_bits_[0] |= 0x00000004u;
+    _has_bits_[0] |= 0x00000004u;
 }
 inline void Settings_ACL::clear_has_hmacalgorithm() {
-  _has_bits_[0] &= ~0x00000004u;
+    _has_bits_[0] &= ~0x00000004u;
 }
 inline void Settings_ACL::clear_hmacalgorithm() {
-  hmacalgorithm_ = -1;
-  clear_has_hmacalgorithm();
+    hmacalgorithm_ = -1;
+    clear_has_hmacalgorithm();
 }
 inline ::kaos::Settings_ACL_HmacAlgorithm Settings_ACL::hmacalgorithm() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.hmacAlgorithm)
-  return static_cast< ::kaos::Settings_ACL_HmacAlgorithm >(hmacalgorithm_);
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.hmacAlgorithm)
+    return static_cast<::kaos::Settings_ACL_HmacAlgorithm>(hmacalgorithm_);
 }
 inline void Settings_ACL::set_hmacalgorithm(::kaos::Settings_ACL_HmacAlgorithm value) {
-  assert(::kaos::Settings_ACL_HmacAlgorithm_IsValid(value));
-  set_has_hmacalgorithm();
-  hmacalgorithm_ = value;
-  // @@protoc_insertion_point(field_set:kaos.Settings.ACL.hmacAlgorithm)
+    assert(::kaos::Settings_ACL_HmacAlgorithm_IsValid(value));
+    set_has_hmacalgorithm();
+    hmacalgorithm_ = value;
+    // @@protoc_insertion_point(field_set:kaos.Settings.ACL.hmacAlgorithm)
 }
 
 // repeated .kaos.Settings.ACL.Scope scope = 4;
 inline int Settings_ACL::scope_size() const {
-  return scope_.size();
+    return scope_.size();
 }
 inline void Settings_ACL::clear_scope() {
-  scope_.Clear();
+    scope_.Clear();
 }
 inline const ::kaos::Settings_ACL_Scope& Settings_ACL::scope(int index) const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.ACL.scope)
-  return scope_.Get(index);
+    // @@protoc_insertion_point(field_get:kaos.Settings.ACL.scope)
+    return scope_.Get(index);
 }
 inline ::kaos::Settings_ACL_Scope* Settings_ACL::mutable_scope(int index) {
-  // @@protoc_insertion_point(field_mutable:kaos.Settings.ACL.scope)
-  return scope_.Mutable(index);
+    // @@protoc_insertion_point(field_mutable:kaos.Settings.ACL.scope)
+    return scope_.Mutable(index);
 }
 inline ::kaos::Settings_ACL_Scope* Settings_ACL::add_scope() {
-  // @@protoc_insertion_point(field_add:kaos.Settings.ACL.scope)
-  return scope_.Add();
+    // @@protoc_insertion_point(field_add:kaos.Settings.ACL.scope)
+    return scope_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL_Scope >&
+inline const ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL_Scope>&
 Settings_ACL::scope() const {
-  // @@protoc_insertion_point(field_list:kaos.Settings.ACL.scope)
-  return scope_;
+    // @@protoc_insertion_point(field_list:kaos.Settings.ACL.scope)
+    return scope_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL_Scope >*
+inline ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL_Scope>*
 Settings_ACL::mutable_scope() {
-  // @@protoc_insertion_point(field_mutable_list:kaos.Settings.ACL.scope)
-  return &scope_;
+    // @@protoc_insertion_point(field_mutable_list:kaos.Settings.ACL.scope)
+    return &scope_;
 }
 
 // -------------------------------------------------------------------
@@ -823,208 +827,212 @@ Settings_ACL::mutable_scope() {
 
 // optional int64 clusterVersion = 1;
 inline bool Settings::has_clusterversion() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
+    return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void Settings::set_has_clusterversion() {
-  _has_bits_[0] |= 0x00000001u;
+    _has_bits_[0] |= 0x00000001u;
 }
 inline void Settings::clear_has_clusterversion() {
-  _has_bits_[0] &= ~0x00000001u;
+    _has_bits_[0] &= ~0x00000001u;
 }
 inline void Settings::clear_clusterversion() {
-  clusterversion_ = GOOGLE_LONGLONG(0);
-  clear_has_clusterversion();
+    clusterversion_ = GOOGLE_LONGLONG(0);
+    clear_has_clusterversion();
 }
 inline ::google::protobuf::int64 Settings::clusterversion() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.clusterVersion)
-  return clusterversion_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.clusterVersion)
+    return clusterversion_;
 }
 inline void Settings::set_clusterversion(::google::protobuf::int64 value) {
-  set_has_clusterversion();
-  clusterversion_ = value;
-  // @@protoc_insertion_point(field_set:kaos.Settings.clusterVersion)
+    set_has_clusterversion();
+    clusterversion_ = value;
+    // @@protoc_insertion_point(field_set:kaos.Settings.clusterVersion)
 }
 
 // optional bytes lockPin = 2;
 inline bool Settings::has_lockpin() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+    return (_has_bits_[0] & 0x00000002u) != 0;
 }
 inline void Settings::set_has_lockpin() {
-  _has_bits_[0] |= 0x00000002u;
+    _has_bits_[0] |= 0x00000002u;
 }
 inline void Settings::clear_has_lockpin() {
-  _has_bits_[0] &= ~0x00000002u;
+    _has_bits_[0] &= ~0x00000002u;
 }
 inline void Settings::clear_lockpin() {
-  if (lockpin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    lockpin_->clear();
-  }
-  clear_has_lockpin();
+    if (lockpin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        lockpin_->clear();
+    }
+    clear_has_lockpin();
 }
 inline const ::std::string& Settings::lockpin() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.lockPin)
-  return *lockpin_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.lockPin)
+    return *lockpin_;
 }
 inline void Settings::set_lockpin(const ::std::string& value) {
-  set_has_lockpin();
-  if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    lockpin_ = new ::std::string;
-  }
-  lockpin_->assign(value);
-  // @@protoc_insertion_point(field_set:kaos.Settings.lockPin)
+    set_has_lockpin();
+    if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        lockpin_ = new ::std::string;
+    }
+    lockpin_->assign(value);
+    // @@protoc_insertion_point(field_set:kaos.Settings.lockPin)
 }
 inline void Settings::set_lockpin(const char* value) {
-  set_has_lockpin();
-  if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    lockpin_ = new ::std::string;
-  }
-  lockpin_->assign(value);
-  // @@protoc_insertion_point(field_set_char:kaos.Settings.lockPin)
+    set_has_lockpin();
+    if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        lockpin_ = new ::std::string;
+    }
+    lockpin_->assign(value);
+    // @@protoc_insertion_point(field_set_char:kaos.Settings.lockPin)
 }
 inline void Settings::set_lockpin(const void* value, size_t size) {
-  set_has_lockpin();
-  if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    lockpin_ = new ::std::string;
-  }
-  lockpin_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:kaos.Settings.lockPin)
+    set_has_lockpin();
+    if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        lockpin_ = new ::std::string;
+    }
+    lockpin_->assign(reinterpret_cast<const char*>(value), size);
+    // @@protoc_insertion_point(field_set_pointer:kaos.Settings.lockPin)
 }
 inline ::std::string* Settings::mutable_lockpin() {
-  set_has_lockpin();
-  if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    lockpin_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:kaos.Settings.lockPin)
-  return lockpin_;
+    set_has_lockpin();
+    if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        lockpin_ = new ::std::string;
+    }
+    // @@protoc_insertion_point(field_mutable:kaos.Settings.lockPin)
+    return lockpin_;
 }
 inline ::std::string* Settings::release_lockpin() {
-  clear_has_lockpin();
-  if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = lockpin_;
-    lockpin_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
+    clear_has_lockpin();
+    if (lockpin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        return NULL;
+    }
+    else {
+        ::std::string* temp = lockpin_;
+        lockpin_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+        return temp;
+    }
 }
 inline void Settings::set_allocated_lockpin(::std::string* lockpin) {
-  if (lockpin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete lockpin_;
-  }
-  if (lockpin) {
-    set_has_lockpin();
-    lockpin_ = lockpin;
-  } else {
-    clear_has_lockpin();
-    lockpin_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:kaos.Settings.lockPin)
+    if (lockpin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        delete lockpin_;
+    }
+    if (lockpin) {
+        set_has_lockpin();
+        lockpin_ = lockpin;
+    }
+    else {
+        clear_has_lockpin();
+        lockpin_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    }
+    // @@protoc_insertion_point(field_set_allocated:kaos.Settings.lockPin)
 }
 
 // optional bytes erasePin = 3;
 inline bool Settings::has_erasepin() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+    return (_has_bits_[0] & 0x00000004u) != 0;
 }
 inline void Settings::set_has_erasepin() {
-  _has_bits_[0] |= 0x00000004u;
+    _has_bits_[0] |= 0x00000004u;
 }
 inline void Settings::clear_has_erasepin() {
-  _has_bits_[0] &= ~0x00000004u;
+    _has_bits_[0] &= ~0x00000004u;
 }
 inline void Settings::clear_erasepin() {
-  if (erasepin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    erasepin_->clear();
-  }
-  clear_has_erasepin();
+    if (erasepin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        erasepin_->clear();
+    }
+    clear_has_erasepin();
 }
 inline const ::std::string& Settings::erasepin() const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.erasePin)
-  return *erasepin_;
+    // @@protoc_insertion_point(field_get:kaos.Settings.erasePin)
+    return *erasepin_;
 }
 inline void Settings::set_erasepin(const ::std::string& value) {
-  set_has_erasepin();
-  if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    erasepin_ = new ::std::string;
-  }
-  erasepin_->assign(value);
-  // @@protoc_insertion_point(field_set:kaos.Settings.erasePin)
+    set_has_erasepin();
+    if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        erasepin_ = new ::std::string;
+    }
+    erasepin_->assign(value);
+    // @@protoc_insertion_point(field_set:kaos.Settings.erasePin)
 }
 inline void Settings::set_erasepin(const char* value) {
-  set_has_erasepin();
-  if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    erasepin_ = new ::std::string;
-  }
-  erasepin_->assign(value);
-  // @@protoc_insertion_point(field_set_char:kaos.Settings.erasePin)
+    set_has_erasepin();
+    if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        erasepin_ = new ::std::string;
+    }
+    erasepin_->assign(value);
+    // @@protoc_insertion_point(field_set_char:kaos.Settings.erasePin)
 }
 inline void Settings::set_erasepin(const void* value, size_t size) {
-  set_has_erasepin();
-  if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    erasepin_ = new ::std::string;
-  }
-  erasepin_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:kaos.Settings.erasePin)
+    set_has_erasepin();
+    if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        erasepin_ = new ::std::string;
+    }
+    erasepin_->assign(reinterpret_cast<const char*>(value), size);
+    // @@protoc_insertion_point(field_set_pointer:kaos.Settings.erasePin)
 }
 inline ::std::string* Settings::mutable_erasepin() {
-  set_has_erasepin();
-  if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    erasepin_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:kaos.Settings.erasePin)
-  return erasepin_;
+    set_has_erasepin();
+    if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        erasepin_ = new ::std::string;
+    }
+    // @@protoc_insertion_point(field_mutable:kaos.Settings.erasePin)
+    return erasepin_;
 }
 inline ::std::string* Settings::release_erasepin() {
-  clear_has_erasepin();
-  if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = erasepin_;
-    erasepin_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
+    clear_has_erasepin();
+    if (erasepin_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        return NULL;
+    }
+    else {
+        ::std::string* temp = erasepin_;
+        erasepin_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+        return temp;
+    }
 }
 inline void Settings::set_allocated_erasepin(::std::string* erasepin) {
-  if (erasepin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete erasepin_;
-  }
-  if (erasepin) {
-    set_has_erasepin();
-    erasepin_ = erasepin;
-  } else {
-    clear_has_erasepin();
-    erasepin_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:kaos.Settings.erasePin)
+    if (erasepin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        delete erasepin_;
+    }
+    if (erasepin) {
+        set_has_erasepin();
+        erasepin_ = erasepin;
+    }
+    else {
+        clear_has_erasepin();
+        erasepin_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    }
+    // @@protoc_insertion_point(field_set_allocated:kaos.Settings.erasePin)
 }
 
 // repeated .kaos.Settings.ACL acl = 4;
 inline int Settings::acl_size() const {
-  return acl_.size();
+    return acl_.size();
 }
 inline void Settings::clear_acl() {
-  acl_.Clear();
+    acl_.Clear();
 }
 inline const ::kaos::Settings_ACL& Settings::acl(int index) const {
-  // @@protoc_insertion_point(field_get:kaos.Settings.acl)
-  return acl_.Get(index);
+    // @@protoc_insertion_point(field_get:kaos.Settings.acl)
+    return acl_.Get(index);
 }
 inline ::kaos::Settings_ACL* Settings::mutable_acl(int index) {
-  // @@protoc_insertion_point(field_mutable:kaos.Settings.acl)
-  return acl_.Mutable(index);
+    // @@protoc_insertion_point(field_mutable:kaos.Settings.acl)
+    return acl_.Mutable(index);
 }
 inline ::kaos::Settings_ACL* Settings::add_acl() {
-  // @@protoc_insertion_point(field_add:kaos.Settings.acl)
-  return acl_.Add();
+    // @@protoc_insertion_point(field_add:kaos.Settings.acl)
+    return acl_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL >&
+inline const ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL>&
 Settings::acl() const {
-  // @@protoc_insertion_point(field_list:kaos.Settings.acl)
-  return acl_;
+    // @@protoc_insertion_point(field_list:kaos.Settings.acl)
+    return acl_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::kaos::Settings_ACL >*
+inline ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL>*
 Settings::mutable_acl() {
-  // @@protoc_insertion_point(field_mutable_list:kaos.Settings.acl)
-  return &acl_;
+    // @@protoc_insertion_point(field_mutable_list:kaos.Settings.acl)
+    return &acl_;
 }
 
 
@@ -1036,15 +1044,15 @@ Settings::mutable_acl() {
 namespace google {
 namespace protobuf {
 
-template <> struct is_proto_enum< ::kaos::Settings_ACL_HmacAlgorithm> : ::google::protobuf::internal::true_type {};
+template <> struct is_proto_enum<::kaos::Settings_ACL_HmacAlgorithm> : ::google::protobuf::internal::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::kaos::Settings_ACL_HmacAlgorithm>() {
-  return ::kaos::Settings_ACL_HmacAlgorithm_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::kaos::Settings_ACL_HmacAlgorithm>() {
+    return ::kaos::Settings_ACL_HmacAlgorithm_descriptor();
 }
-template <> struct is_proto_enum< ::kaos::Settings_ACL_Operation> : ::google::protobuf::internal::true_type {};
+template <> struct is_proto_enum<::kaos::Settings_ACL_Operation> : ::google::protobuf::internal::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::kaos::Settings_ACL_Operation>() {
-  return ::kaos::Settings_ACL_Operation_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::kaos::Settings_ACL_Operation>() {
+    return ::kaos::Settings_ACL_Operation_descriptor();
 }
 
 }  // namespace protobuf

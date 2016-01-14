@@ -11,14 +11,25 @@
 #include <stdint.h>
 #include <string>
 
+/**
+ * Client Server Connection Information
+ *
+ * Maintains the IP address and port for both the client and the server in a connection.
+ */
 class ClientServerConnectionInfo {
 public:
+    /*
+     * Constructor
+     */
     ClientServerConnectionInfo(int32_t socketDescriptor, uint32_t serverPort, std::string serverIpAddress,
                                uint32_t clientPort, std::string clientIpAddress)
         : m_socketDescriptor(socketDescriptor), m_serverPort(serverPort), m_serverIpAddress(serverIpAddress),
           m_clientPort(clientPort), m_clientIpAddress(clientIpAddress) {
     }
 
+    /*
+     * Public Accessors
+     */
     inline int32_t         socketDescriptor() {return m_socketDescriptor;}
     inline uint32_t        serverPort() {return m_serverPort;}
     inline std::string     serverIpAddress() {return m_serverIpAddress;}
@@ -27,11 +38,14 @@ public:
 
 private:
 
-    int32_t         m_socketDescriptor;
-    uint32_t        m_serverPort;
-    std::string     m_serverIpAddress;
-    uint32_t        m_clientPort;
-    std::string     m_clientIpAddress;
+    /*
+     * Private Data Members
+     */
+    int32_t         m_socketDescriptor;     //!< File descrption of the connection's socket
+    uint32_t        m_serverPort;           //!< Port number of the server
+    std::string     m_serverIpAddress;      //!< IP address of the server
+    uint32_t        m_clientPort;           //!< Port number of the client
+    std::string     m_clientIpAddress;      //!< IP address of the client
 };
 
 #endif

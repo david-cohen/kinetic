@@ -14,6 +14,9 @@
 
 /**
  * Communications Manager Constructor
+ *
+ * Initializes the list of connection listeners.  Currently, there are only two - one for encrypted
+ * communication (on the SSL port) and one for clear text communications (on the TCP port).
 */
 CommunicationsManager::CommunicationsManager() {
 
@@ -25,6 +28,9 @@ CommunicationsManager::CommunicationsManager() {
 
 /**
  * Start
+ *
+ * Start the heartbeat message provider, which allows discovery of this Kinetic device.  Also,
+ * start the listener threads, which enables client communications.
  */
 void CommunicationsManager::start() {
 
@@ -36,6 +42,9 @@ void CommunicationsManager::start() {
 
 /**
  * Stop
+ *
+ * Stop the heartbeat message provider, which prevents discovery of this Kinetic device.  Also, stop
+ * the listener threads, which disables client communications.
  */
 void CommunicationsManager::stop() {
 
@@ -51,6 +60,10 @@ void CommunicationsManager::stop() {
  * @param   connection  the connection being added
  *
  * @throw   runtime_error if the maximum number of connections are already open
+ *
+ * If the maximum number of connections hasn't been reached, add the connection
+ * to the manager's database and permit it to be used.  Otherwise, reject the
+ * connection (by throwing an exception), causing it to be closed.
  */
 void CommunicationsManager::addConnection(Connection* connection) {
 
@@ -65,6 +78,8 @@ void CommunicationsManager::addConnection(Connection* connection) {
  * Remove Connection
  *
  * @param   connection  the connection being removed
+ *
+ * Remove the connection from the manager's database.
  */
 void CommunicationsManager::removeConnection(Connection* connection) {
 
@@ -77,6 +92,8 @@ void CommunicationsManager::removeConnection(Connection* connection) {
  * Batch Count
  *
  * @return  the number of active batch commands
+ *
+ * Determine the number of outstanding batch commands across all connections.
  */
 uint32_t CommunicationsManager::batchCount() {
 

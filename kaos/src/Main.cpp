@@ -25,7 +25,6 @@
 /*
  * Global Variable
  */
-
 SystemConfig systemConfig;
 SystemControl systemControl;
 ServerSettings serverSettings(systemConfig.serverSettingsFile());
@@ -119,8 +118,6 @@ int32_t main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    signal(SIGTERM, terminateProgram);
-
     if (!sslControl.operational()) {
         LOG(ERROR) << "Failed to configure SSL component";
         return EXIT_FAILURE;
@@ -135,6 +132,8 @@ int32_t main(int argc, char** argv) {
         LOG(ERROR) << "Failed to open object store";
         return EXIT_FAILURE;
     }
+
+    signal(SIGTERM, terminateProgram);
 
     if (background) {
         FILE* file = fopen(pidFileName.c_str(), "w");

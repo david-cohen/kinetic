@@ -17,11 +17,10 @@
 /**
  * Heartbeat Provider
  *
- * Sends a Kinetic heartbeat message to a UDP multicast address at a regular interval (around five
+ * Sends a Kinetic heartbeat message to a UDP multicast address at regular intervals (around five
  * seconds).
  */
 class HeartbeatProvider {
-
 public:
 
     /*

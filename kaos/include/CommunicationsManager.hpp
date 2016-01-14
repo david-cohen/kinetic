@@ -18,7 +18,7 @@
 /**
  * Communications Manager Class
  *
- * This class provides management of the daemon's communications.
+ * This class provides management of the daemon's communications with clients.
  */
 class CommunicationsManager {
 

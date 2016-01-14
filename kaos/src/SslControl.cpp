@@ -12,8 +12,15 @@
 #include "SslControl.hpp"
 #include "SystemConfig.hpp"
 
+/*
+ * Constants
+ */
+const int32_t SSL_SUCCESS(1);
+
 /**
  * SSL Control Constructor
+ *
+ * Attempts to load the needed libraries as well as the SSL certificate and private key.
  */
 SslControl::SslControl()
     : m_operational(false), m_context(nullptr) {
@@ -38,7 +45,6 @@ SslControl::SslControl()
     /*
      * Load the certificate and the private key and then make sure they are consistent.
      */
-    const int32_t SSL_SUCCESS(1);
     if (SSL_CTX_use_certificate_file(m_context, systemConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to Load Certificate" << std::endl;
         return;
@@ -56,6 +62,8 @@ SslControl::SslControl()
 
 /**
  * SSL Control Destructor
+ *
+ * Frees the allocated resources.
  */
 SslControl::~SslControl() {
 
@@ -70,40 +78,35 @@ SslControl::~SslControl() {
  * Create Connection
  *
  * @param socketFd     file descriptor of the socket
+ *
+ * Attempts to create a SSL/TLS connection.
  */
 SSL* SslControl::createConnection(int socketFd) {
 
     SSL* ssl = SSL_new(m_context);
 
-    /*
-     * We want to automatically retry reads and writes when a renegotiation
-     * takes place. This way the only errors we have to handle are real,
-     * permanent ones.
-     */
     if (ssl == nullptr) {
         LOG(ERROR) << "Failed to create new SSL object";
-        throw std::runtime_error("failed SSL oobject creation");
+        throw std::runtime_error("failed SSL object creation");
     }
 
+    /*
+     * We want to automatically retry reads and writes when a renegotiation takes place. This way
+     * the only errors we have to handle are real, permanent ones.
+     */
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
-    if (SSL_set_fd(ssl, socketFd) != 1) {
+    if (SSL_set_fd(ssl, socketFd) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to associate SSL object with file descriptor";
         SSL_free(ssl);
         throw std::runtime_error("failed SSL set mode creation");
     }
 
     int32_t status = SSL_accept(ssl);
-
-    if (status == 0) {
-        SSL_free(ssl);
-        throw std::runtime_error("socket closed");
-    }
-
-    if (status < 0) {
+    if (status != SSL_SUCCESS) {
         SSL_free(ssl);
         LOG(ERROR) << "SSL accept failure: return_code=" << status << ", ssl_error=" << SSL_get_error(ssl, status);
-        throw std::runtime_error("failed to perform SSL accpet");
+        throw std::runtime_error("failed to perform SSL accept");
     }
 
     return ssl;

@@ -37,11 +37,15 @@ private:
     /*
      * Private Data Members
      */
-    std::string m_name;
-    std::string m_macAddress;
-    std::string m_ipv4;
-    std::string m_ipv6;
+    std::string m_name;         //!< Assigned name of network interface
+    std::string m_macAddress;   //!< MAC address
+    std::string m_ipv4;         //!< IP address version 4
+    std::string m_ipv6;         //!< IP address version 6
 };
+
+/*
+ * Network Interface Shared Pointer and Unordered Map
+ */
 
 typedef std::shared_ptr<NetworkInterface> NetworkInterfacePtr;
 typedef std::unordered_map<std::string, NetworkInterfacePtr> NetworkInterfaceMap;

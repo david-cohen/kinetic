@@ -15,7 +15,6 @@
 /*
  * Commonly Used Constants
  */
-const uint32_t SYSTEM_BLOCK_SIZE(512);
 const int32_t  STATUS_SUCCESS(0);
 const int32_t  STATUS_FAILURE(-1);
 
@@ -33,15 +32,6 @@ std::string toString(T value) {
     stream << value;
     return stream.str();
 }
-
-/*
- * Prevents code from being included when built for unit tests.
- */
-#ifdef UNIT_TEST
-#define DISABLE_FOR_UNIT_TEST(unitTestDisabledCode)
-#else
-#define DISABLE_FOR_UNIT_TEST(unitTestDisabledCode) unitTestDisabledCode
-#endif
 
 /*
  * Prevents a class from have a copy or assignment constructor when placed in the private

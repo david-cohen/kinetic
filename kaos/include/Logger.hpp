@@ -53,9 +53,10 @@ public:
      * @param  level       Severity level of event
      * @param  filename    Name of the file the event was logged from
      * @param  lineNumber  The line number that the event was logged from
+     * @param  function    The function that the event was logged from
      *
-     * Creates an event log entry and sets the message with its severity level and the filename and
-     * line number of where the event was logged from.
+     * Creates an event log entry and sets the message with its severity level and where it was
+     * logged from (filename, function name and line number).
      */
     LogEntry(LogLevel level, std::string filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
         captureLevel(level);

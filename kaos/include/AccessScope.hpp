@@ -29,9 +29,9 @@ enum class Operation : uint32_t {
 };
 
 /*
- * The following define conversion macros for converted an Operation enum to and from a 32-bit
+ * The following define conversion macros for converting an Operation enum to and from a 32-bit
  * unsigned integer, the number of possible Kinetic operations, and a boolean array that has one
- * entry for each operation, and .
+ * entry for each operation.
  */
 #define OPERATION_TO_UINT32(operation) (static_cast<uint32_t>(operation))
 #define UINT32_TO_OPERATION(uint32) (static_cast<Operation>(uint32))
@@ -59,7 +59,7 @@ public:
           m_minimumKeySize(keySubstring.size() + m_keySubstringOffset), m_permittedOperationArray(operationArray) {}
 
     /*
-     * Getters
+     * Accessors
      */
     inline bool tlsRequired() const {return m_tlsRequired;}
     inline const std::string& keySubstring() const {return m_keySubstring;}
@@ -82,6 +82,9 @@ private:
     const OperationSizedBoolArray   m_permittedOperationArray;  //!< Indicates the operations that the user is permitted to perform
 };
 
+/*
+ * Access Scope List
+ */
 typedef std::list<AccessScope> AccessScopeList;
 
 #endif

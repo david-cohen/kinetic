@@ -12,6 +12,8 @@
 
 /*
  * Listener Interface
+ *
+ * Interface for a socket listener (for new connections).
  */
 class ListenerInterface {
 

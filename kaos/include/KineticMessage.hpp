@@ -22,8 +22,8 @@
 /*
  * Kinetic Message
  *
- * This class is a wrapper for a Kinetic protocol buffer message and its assoicated object value.
- * Although the protocol buffer has many substructures, at the top level, it is made up of a
+ * This class is a wrapper for a Kinetic protocol buffer message and its associated object value.
+ * Although the protocol buffer has many substructure, at the top level, it is made up of a
  * encoded command and authentication information (authentication type and HMAC authentication
  * parameters or PIN authentication parameters).  In addition to combining the message with the
  * value, it also provides an interface to the decode command.
@@ -107,9 +107,9 @@ private:
     /*
      * Private Data Members
      */
-    std::shared_ptr<com::seagate::kinetic::proto::Message> m_protoMessage;
-    std::shared_ptr<com::seagate::kinetic::proto::Command> m_command;
-    std::string                                            m_value;
+    std::shared_ptr<com::seagate::kinetic::proto::Message> m_protoMessage;  //!< The kinetic message
+    std::shared_ptr<com::seagate::kinetic::proto::Command> m_command;       //!< The message command (which is inside in the message)
+    std::string                                            m_value;         //!< Kinetic message value (which is outside the message)
 
     DISALLOW_COPY_AND_ASSIGN(KineticMessage);
 };

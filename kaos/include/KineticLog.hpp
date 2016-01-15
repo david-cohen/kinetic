@@ -11,8 +11,12 @@
 #include <string>
 #include "Kinetic.pb.hpp"
 
-/*
+/**
  * Kinetic Log
+ *
+ * Provides the information needed for the various Kinetic get log requests (which includes
+ * configuration, statistics, capacities, temperatures, utilizations, system limits, and message
+ * logs).
  */
 class KineticLog {
 public:

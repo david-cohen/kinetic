@@ -40,6 +40,10 @@ public:
     /*
      * Public Accessors
      */
+    inline bool locked() { return m_locked;}
+    inline void setLocked(bool locked) {m_locked = locked;}
+    inline bool debugEnabled() { return m_debugEnabled;}
+    inline void setDebugEnabled(bool debugEnabled) {m_debugEnabled = debugEnabled;}
     inline std::string defaultPidFileName() {return m_defaultPidFileName;}
     inline std::string databaseDirectory() {return m_databaseDirectory;}
     inline std::string serverSettingsFile() {return m_serverSettingsFile;}
@@ -97,6 +101,8 @@ private:
     /*
      * Private Data Members
      */
+    bool                 m_locked;
+    bool                 m_debugEnabled;
     std::string          m_defaultPidFileName;
     std::string          m_databaseDirectory;
     std::string          m_serverSettingsFile;

@@ -8,21 +8,12 @@
 #include <string>
 #include <sstream>
 #include "Hmac.hpp"
+#include "Common.hpp"
 #include "Translator.hpp"
 #include "Kinetic.pb.hpp"
 #include "ObjectStore.hpp"
 #include "Settings.pb.hpp"
 #include "AccessScope.hpp"
-
-/*
- * Convenience Template for convert binary values into strings
- */
-template<typename T>
-std::string convertToString(T value) {
-    std::stringstream stream;
-    stream << value;
-    return stream.str();
-}
 
 /**
  * Translate HMAC Algorithm From Settings Format
@@ -91,9 +82,8 @@ Translator::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
         case kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY:
             return Operation::SECURITY;
         default:
-            break;
+            return Operation::INVALID;
     }
-    return Operation::INVALID;
 }
 
 /**
@@ -123,9 +113,8 @@ Translator::toSettingsFormat(Operation operation) {
         case Operation::SECURITY:
             return kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY;
         default:
-            break;
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG;
     }
-    return kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG;
 }
 
 /**
@@ -258,7 +247,6 @@ Translator::toString(Algorithm algorithm) {
         case Algorithm::Command_Algorithm_INVALID_ALGORITHM:
             return "Invalid";
         case Algorithm::Command_Algorithm_SHA1:
-//        case com::seagate::kinetic::proto::SHA1:
             return "SHA1";
         case Algorithm::Command_Algorithm_SHA2:
             return "SHA2";
@@ -269,7 +257,7 @@ Translator::toString(Algorithm algorithm) {
         case Algorithm::Command_Algorithm_CRC64:
             return "CRC64";
         default:
-            return "Unsupported Algorithm (" + convertToString<uint32_t>(algorithm) + ")";
+            return "Unsupported Algorithm (" + ::toString<uint32_t>(algorithm) + ")";
     }
 }
 
@@ -295,7 +283,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpTyp
         case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_INVALID_PINOP:
             return "Invalid PIN Operation";
         default:
-            return "Unsupported PIN Operation (" + convertToString<uint32_t>(pinop) + ")";
+            return "Unsupported PIN Operation (" + ::toString<uint32_t>(pinop) + ")";
     }
 }
 
@@ -315,7 +303,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgo
         case com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1:
             return "HMAC-SHA1";
         default:
-            return "Unsupported HMAC Algorithm (" + convertToString<uint32_t>(algorithm) + ")";
+            return "Unsupported HMAC Algorithm (" + ::toString<uint32_t>(algorithm) + ")";
     }
 }
 
@@ -339,7 +327,7 @@ Translator::toString(com::seagate::kinetic::proto::Message_AuthType authType) {
         case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_UNSOLICITEDSTATUS:
             return "Unsolicited Status";
         default:
-            return "Unsupported Authentication Type (" + convertToString<uint32_t>(authType) + ")";
+            return "Unsupported Authentication Type (" + ::toString<uint32_t>(authType) + ")";
     }
 }
 
@@ -431,7 +419,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageTy
         case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_ABORT_BATCH_RESPONSE:
             return "Abort Batch Response";
         default:
-            return "Unsupported Message Type (" + convertToString<uint32_t>(messageType) + ")";
+            return "Unsupported Message Type (" + ::toString<uint32_t>(messageType) + ")";
     }
 }
 
@@ -463,7 +451,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Type type) {
         case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_DEVICE:
             return "Device";
         default:
-            return "Unknown Type (" + convertToString<uint32_t>(type) + ")";
+            return "Unknown Type (" + ::toString<uint32_t>(type) + ")";
     }
 }
 
@@ -497,7 +485,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_Permissi
         case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_INVALID_PERMISSION:
             return "Invalid";
         default:
-            return "Unknown Permission (" + convertToString<uint32_t>(permission) + ")";
+            return "Unknown Permission (" + ::toString<uint32_t>(permission) + ")";
     }
 }
 
@@ -518,7 +506,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Synchronization synch
     else if (synchronization == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
         return "Flush";
 
-    return "Unsupported Synchronization Value (" + convertToString<uint32_t>(synchronization) + ")";
+    return "Unsupported Synchronization Value (" + ::toString<uint32_t>(synchronization) + ")";
 }
 
 /**
@@ -577,7 +565,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Status_StatusCode sta
         case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_INVALID_BATCH:
             return "Invalid Batch";
         default:
-            return "Unknown Status Code (" + convertToString<uint32_t>(statusCode) + ")";
+            return "Unknown Status Code (" + ::toString<uint32_t>(statusCode) + ")";
     }
 }
 

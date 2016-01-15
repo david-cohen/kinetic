@@ -22,7 +22,7 @@
  *
  * The Kinetic Protocol supports restricting the operations that a user (identity) can perform using
  * Access Control Lists (ACLs).  An access control object defines the access of a single user.  All
- * the contents of the object are constants so it is thread safe.
+ * the contents of the access control object are constants so it is thread safe.
  */
 class AccessControl {
 public:

@@ -16,7 +16,6 @@
 #include "Connection.hpp"
 #include "MessageTrace.hpp"
 #include "SystemConfig.hpp"
-#include "SystemControl.hpp"
 #include "KineticMessage.hpp"
 #include "ServerSettings.hpp"
 #include "MessageHandler.hpp"
@@ -182,7 +181,7 @@ Connection::receiveRequest(Transaction& transaction) {
             catch (...) {
             }
 
-            if (systemControl.debugEnabled())
+            if (systemConfig.debugEnabled())
                 MessageTrace::outputContents(messageFraming, transaction.request.get());
 
             throw runtime_error("message size too large");
@@ -202,7 +201,7 @@ Connection::receiveRequest(Transaction& transaction) {
             if (!transaction.request->deserializeData(messageBuffer.get(), messageSize))
                 throw runtime_error("invalid message format");
 
-            if (systemControl.debugEnabled())
+            if (systemConfig.debugEnabled())
                 MessageTrace::outputContents(messageFraming, transaction.request.get());
 
             transaction.error = ConnectionError::VALUE_TOO_BIG;
@@ -221,7 +220,7 @@ Connection::receiveRequest(Transaction& transaction) {
         if (!transaction.request->deserializeData(messageBuffer.get(), messageSize))
             throw runtime_error("invalid message format");
 
-        if (systemControl.debugEnabled())
+        if (systemConfig.debugEnabled())
             MessageTrace::outputContents(messageFraming, transaction.request.get());
 
         transaction.error = ConnectionError::NONE;
@@ -257,7 +256,7 @@ Connection::sendResponse(Transaction& transaction) {
         if (!transaction.response->value().empty())
             m_stream->write(transaction.response->value().c_str(), transaction.response->value().size());
 
-        if (systemControl.debugEnabled())
+        if (systemConfig.debugEnabled())
             MessageTrace::outputContents(messageFraming, transaction.response.get());
     }
     catch (std::exception& ex) {

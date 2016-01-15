@@ -9,18 +9,15 @@
  * Include Files
  */
 #include <stdint.h>
-#include <sys/stat.h>
 #include <list>
 #include <string>
-#include <memory>
-#include <fstream>
-#include "Settings.pb.hpp"
-#include "Hmac.hpp"
 #include "Common.hpp"
 #include "AccessControl.hpp"
 
 /**
  * Server Settings
+ *
+ * Maintains the user controlled settings for the server.
  */
 class ServerSettings {
 
@@ -40,7 +37,7 @@ public:
     void updateAccessControl(std::list<AccessControlPtr> newAccessControlList);
 
     /*
-     * Public Inline Getters amd Setters
+     * Public Accessors
      */
     inline int64_t clusterVersion() {return m_clusterVersion;}
     inline std::string lockPin() {return m_lockPin;}

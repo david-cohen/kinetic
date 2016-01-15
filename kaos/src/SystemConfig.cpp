@@ -43,6 +43,8 @@ static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
 static const char* DATABASE_DIRECTORY("/export/dfs/objectDatabase");
 static const char* SERVER_SETTINGS_FILE("/export/dfs/serverSettings");
 static const LogFacility KAOS_LOG_FACILITY(LOCAL0);
+static const bool DEFAULT_LOCKED(false);
+static const bool DEFAULT_DEBUG_ENABLED(false);
 
 /*
  * Object Store Settings
@@ -129,7 +131,9 @@ createFlushDataKey() {
  * Initializes the attributes which the user can not set.
  */
 SystemConfig::SystemConfig()
-    : m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
+    : m_locked(DEFAULT_LOCKED),
+      m_debugEnabled(DEFAULT_DEBUG_ENABLED),
+      m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
       m_databaseDirectory(DATABASE_DIRECTORY),
       m_serverSettingsFile(SERVER_SETTINGS_FILE),
       m_vendor(VENDOR),

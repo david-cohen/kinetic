@@ -17,7 +17,6 @@
 #include "SslControl.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
-#include "SystemControl.hpp"
 #include "ServerSettings.hpp"
 #include "MessageStatistics.hpp"
 #include "CommunicationsManager.hpp"
@@ -26,7 +25,6 @@
  * Global Variable
  */
 SystemConfig systemConfig;
-SystemControl systemControl;
 ServerSettings serverSettings(systemConfig.serverSettingsFile());
 SslControl sslControl;
 MessageStatistics messageStatistics;
@@ -93,7 +91,7 @@ int32_t main(int argc, char** argv) {
             pidFileName.assign(optarg);
         }
         else if (opt == 'd') {
-            systemControl.setDebugEnabled(true);
+            systemConfig.setDebugEnabled(true);
         }
         else if (opt == 'f') {
             background = false;
@@ -104,7 +102,7 @@ int32_t main(int argc, char** argv) {
         }
     }
 
-    LOG_INIT(nullptr, systemConfig.kaosLogFacility(), systemControl.debugEnabled());
+    LOG_INIT(nullptr, systemConfig.kaosLogFacility(), systemConfig.debugEnabled());
 
     /*
      * If the daemon is to run in the background, daemonize the process. That causes the process to

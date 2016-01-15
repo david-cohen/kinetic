@@ -21,7 +21,10 @@
 #include "ServerSettings.hpp"
 
 /*
- * Server Settings
+ * Server Settings Constructor
+ *
+ * If possible, load the setting from persistent store.  Otherwise, set the settings to their
+ * default values.
  */
 ServerSettings::ServerSettings(std::string filename)
     : m_filename(filename) {
@@ -30,12 +33,28 @@ ServerSettings::ServerSettings(std::string filename)
         setDefaults();
 }
 
+/**
+ * Access Control
+ *
+ * @param identity  the identity of the user of access control is being requested
+ *
+ * @return Pointer to the access control for the specified user
+ *
+ * Get the access control for the identity specified.
+ */
 AccessControlPtr
 ServerSettings::accessControl(int64_t identity) {
     AccessControlMap::const_iterator iter = m_accessControlMap.find(identity);
     return iter == m_accessControlMap.end() ? nullptr : iter->second;
 }
 
+/**
+ * Update Access Control
+ *
+ * @param newAccessControlList  New access control to use
+ *
+ * Replaces the previous access control with the new one.
+ */
 void
 ServerSettings::updateAccessControl(std::list<AccessControlPtr> newAccessControlList) {
     for (auto accessControl : newAccessControlList) {
@@ -45,6 +64,11 @@ ServerSettings::updateAccessControl(std::list<AccessControlPtr> newAccessControl
     }
 }
 
+/**
+ * Save
+ *
+ * Save the in memory server settings to persistence storage.
+ */
 void
 ServerSettings::save() {
     std::unique_ptr<kaos::Settings> settings(new kaos::Settings());
@@ -75,6 +99,11 @@ ServerSettings::save() {
     out.close();
 }
 
+/**
+ * Set Defaults
+ *
+ * Set the values in the server settings to their default values.
+ */
 void
 ServerSettings::setDefaults() {
 
@@ -104,7 +133,7 @@ ServerSettings::setDefaults() {
 /*
  * Load
  *
- * Need to add multiple copies and add hash of their value
+ * Load the settings into memory from their persistent storage.
  */
 bool
 ServerSettings::load() {

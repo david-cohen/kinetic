@@ -20,15 +20,10 @@
 #include "SystemConfig.hpp"
 #include "HeartbeatProvider.hpp"
 
-/*
- * Used Namespaces
- */
-using std::string;
-
 /**
  * HeartbeatProvider Constructor
  *
- * Initailize the structure used to broadcast messages.
+ * Initialize the structure used to broadcast messages.
  */
 HeartbeatProvider::HeartbeatProvider()
     : m_active(false), m_thread(nullptr), m_socketFd(-1) {
@@ -67,7 +62,7 @@ HeartbeatProvider::start() {
  *
  * @exception  a runtime error exception is thrown if the socket could not be opened and configured successfully
  *
- * Causes a datagram socket on which to send multicast messages to be opened.
+ * Opens a datagram socket for sending multicast messages.
  */
 void
 HeartbeatProvider::openSocket() {
@@ -120,7 +115,7 @@ HeartbeatProvider::sendHeartbeatMessage() {
             stream << ",";
     }
     stream << "]}";
-    string message = stream.str();
+    std::string message = stream.str();
 
     if (sendto(m_socketFd, message.c_str(), message.length(), 0, (struct sockaddr*) &m_address, sizeof(m_address)) < 0)
         throw std::runtime_error("Failed to send multicast message");

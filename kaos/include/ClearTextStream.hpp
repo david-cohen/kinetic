@@ -14,8 +14,7 @@
 /**
  * Clear Text Stream
  *
- * A stream that transfers data "in the clear", not utilization any encrption or
- * authentication.
+ * A stream that transfers data "in the clear", not utilization any encryption or authentication.
  */
 class ClearTextStream : public StreamInterface {
 public:
@@ -38,7 +37,7 @@ private:
     /*
      * Private Data Members
      */
-    int32_t m_streamFd;  //!< File descrption of the stream's socket
+    int32_t m_streamFd;  //!< File descriptor for the stream's socket
 };
 
 #endif

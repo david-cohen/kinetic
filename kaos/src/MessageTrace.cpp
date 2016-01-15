@@ -1,11 +1,10 @@
 /*
-    Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
-*/
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ */
 
 /*
-    Include Files
-*/
-
+ * Include Files
+ */
 #include <stdint.h>
 #include <string>
 #include <iomanip>
@@ -14,17 +13,19 @@
 #include "MessageTrace.hpp"
 
 /**
-    Output Contents
-
-    @param  messageFraming  the Kinetic message's framing data
-    @param  message         the Kinetic message to display
-*/
-
+ * Output Contents
+ *
+ * @param   messageFraming  the Kinetic message's framing data
+ * @param   message         the Kinetic message to display
+ *
+ * Outputs the contents of a Kinetic message.
+ */
 void
 MessageTrace::outputContents(KineticMessageFraming& messageFraming, KineticMessage* message) {
 
+    const uint32_t BYTE_MASK(0xff);
     std::cout << std::endl << "Kinetic PDU {" << std::endl;
-    std::cout << "  Magic Number: " << ((uint32_t) messageFraming.magicNumber() & 0xff) << std::endl;
+    std::cout << "  Magic Number: " << ((uint32_t) messageFraming.magicNumber() & BYTE_MASK) << std::endl;
     std::cout << "  Message Size: " << messageFraming.messageSize() << std::endl;
     std::cout << "  Value Size: " << messageFraming.valueSize() << std::endl;
 
@@ -74,11 +75,12 @@ MessageTrace::outputContents(KineticMessageFraming& messageFraming, KineticMessa
 }
 
 /**
-    Output Header
-
-    @param  header the protocol buffer header message
-*/
-
+ * Output Header
+ *
+ * @param   header the protocol buffer header message
+ *
+ * Outputs the contents of the Kinetic Command_Header field.
+ */
 void
 MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Header& header) {
 
@@ -105,11 +107,12 @@ MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Header& h
 }
 
 /**
-    Output KeyValue
-
-    @param  keyvalue the protocol buffer keyvalue message
-*/
-
+ * Output KeyValue
+ *
+ * @param   keyvalue the protocol buffer keyvalue message
+ *
+ * Outputs the contents of the Kinetic Command_KeyValue field.
+ */
 void
 MessageTrace::outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValue& keyvalue) {
 
@@ -136,11 +139,12 @@ MessageTrace::outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValu
 }
 
 /**
-    Output Range
-
-    @param  range   the protocol buffer range message
-*/
-
+ * Output Range
+ *
+ * @param   range   the protocol buffer range message
+ *
+ * Outputs the contents of the Kinetic Command_Range field.
+ */
 void
 MessageTrace::outputRange(const com::seagate::kinetic::proto::Command_Range& range) {
 
@@ -173,11 +177,12 @@ MessageTrace::outputRange(const com::seagate::kinetic::proto::Command_Range& ran
 }
 
 /**
-    Output Configuration
-
-    @param  configuration   the protocol buffer configuration message
-*/
-
+ * Output Configuration
+ *
+ * @param   configuration   the protocol buffer configuration message
+ *
+ * Outputs the contents of the Kinetic Command_GetLog_Configuration field.
+ */
 void
 MessageTrace::outputConfiguration(const com::seagate::kinetic::proto::Command_GetLog_Configuration& configuration) {
 
@@ -192,11 +197,12 @@ MessageTrace::outputConfiguration(const com::seagate::kinetic::proto::Command_Ge
 }
 
 /**
-    Output Statistics
-
-    @param  getLog  the protocol buffer getLog message (which contains the statistics)
-*/
-
+ * Output Statistics
+ *
+ * @param   getLog  the protocol buffer getLog message (which contains the statistics)
+ *
+ * Outputs the contents of the Kinetic Command_GetLog_Statistics fields.
+ */
 void
 MessageTrace::outputStatistics(const com::seagate::kinetic::proto::Command_GetLog& getLog) {
 
@@ -211,11 +217,12 @@ MessageTrace::outputStatistics(const com::seagate::kinetic::proto::Command_GetLo
 }
 
 /**
-    Output Capacity
-
-    @param  capacity  the protocol buffer capacity message
-*/
-
+ * Output Capacity
+ *
+ * @param   capacity  the protocol buffer capacity message
+ *
+ * Outputs the contents of the Kinetic Command_GetLog_Capacity field.
+ */
 void
 MessageTrace::outputCapacity(const com::seagate::kinetic::proto::Command_GetLog_Capacity& capacity) {
 
@@ -224,42 +231,45 @@ MessageTrace::outputCapacity(const com::seagate::kinetic::proto::Command_GetLog_
 }
 
 /**
-    Output Limits
-
-    @param  limits  the protocol buffer limits message
-*/
-
+ * Output Limits
+ *
+ * @param   limits  the protocol buffer limits message
+ *
+ * Outputs the contents of the Kinetic Command_GetLog_Limits field.
+ */
 void
 MessageTrace::outputLimits(const com::seagate::kinetic::proto::Command_GetLog_Limits& limits) {
 
-    if (limits.maxkeysize() != 0xffffffff)
+    const ::google::protobuf::uint32 UNSUPPORTED_LIMIT(0xffffffff);
+    if (limits.maxkeysize() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Key Size: " << limits.maxkeysize() << std::endl;
-    if (limits.maxvaluesize() != 0xffffffff)
+    if (limits.maxvaluesize() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Value Size: " << limits.maxvaluesize() << std::endl;
-    if (limits.maxversionsize() != 0xffffffff)
+    if (limits.maxversionsize() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Version Size: " << limits.maxversionsize() << std::endl;
-    if (limits.maxtagsize() != 0xffffffff)
+    if (limits.maxtagsize() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Tag Size: " << limits.maxtagsize() << std::endl;
-    if (limits.maxkeyrangecount() != 0xffffffff)
+    if (limits.maxkeyrangecount() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Key Range Count: " << limits.maxkeyrangecount() << std::endl;
-    if (limits.maxconnections() != 0xffffffff)
+    if (limits.maxconnections() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Connections: " << limits.maxconnections() << std::endl;
-    if (limits.maxoutstandingreadrequests() != 0xffffffff)
+    if (limits.maxoutstandingreadrequests() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Outstanding Read Requests: " << limits.maxoutstandingreadrequests() << std::endl;
-    if (limits.maxoutstandingwriterequests() != 0xffffffff)
+    if (limits.maxoutstandingwriterequests() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Outstanding Write Requests: " << limits.maxoutstandingwriterequests() << std::endl;
-    if (limits.maxmessagesize() != 0xffffffff)
+    if (limits.maxmessagesize() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Message Size: " << limits.maxmessagesize() << std::endl;
-    if (limits.maxidentitycount() != 0xffffffff)
+    if (limits.maxidentitycount() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Identity Count: " << limits.maxidentitycount() << std::endl;
 }
 
 /**
-    Output GetLog
-
-    @param  getLog  the protocol buffer getLog message
-*/
-
+ * Output GetLog
+ *
+ * @param   getLog  the protocol buffer getLog message
+ *
+ * Outputs the contents of the Kinetic Command_GetLog field.
+ */
 void
 MessageTrace::outputGetLog(const com::seagate::kinetic::proto::Command_GetLog& getLog) {
 
@@ -312,11 +322,12 @@ MessageTrace::outputGetLog(const com::seagate::kinetic::proto::Command_GetLog& g
 }
 
 /**
-    Output Setup
-
-    @param  setup   the protocol buffer setup message
-*/
-
+ * Output Setup
+ *
+ * @param   setup   the protocol buffer setup message
+ *
+ * Outputs the contents of the Kinetic Command_Setup field.
+ */
 void
 MessageTrace::outputSetup(const com::seagate::kinetic::proto::Command_Setup& setup) {
 
@@ -328,11 +339,12 @@ MessageTrace::outputSetup(const com::seagate::kinetic::proto::Command_Setup& set
 }
 
 /**
-    Output Security
-
-    @param  security    the protocol buffer security message
-*/
-
+ * Output Security
+ *
+ * @param   security    the protocol buffer security message
+ *
+ * Outputs the contents of the Kinetic Command_Security field.
+ */
 void
 MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Security& security) {
 
@@ -371,11 +383,12 @@ MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Securit
 }
 
 /**
-    Output PIN Operation
-
-    @param  security    the protocol buffer PIN operation message
-*/
-
+ * Output PIN Operation
+ *
+ * @param   security    the protocol buffer PIN operation message
+ *
+ * Outputs the contents of the Kinetic Command_PinOperation field.
+ */
 void
 MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOperation& pinop) {
 
@@ -384,11 +397,12 @@ MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOperati
 }
 
 /**
-    Output Batch
-
-    @param  security    the protocol buffer PIN operation message
-*/
-
+ * Output Batch
+ *
+ * @param   security    the protocol buffer PIN operation message
+ *
+ * Outputs the contents of the Kinetic Command_Batch field.
+ */
 void
 MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch& batch) {
 
@@ -407,11 +421,12 @@ MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch& bat
 }
 
 /**
-    Output Body
-
-    @param  body    the protocol buffer body message
-*/
-
+ * Output Body
+ *
+ * @param   body    the protocol buffer body message
+ *
+ * Outputs the contents of the Kinetic Command_Body field.
+ */
 void
 MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& body) {
 
@@ -457,11 +472,12 @@ MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& body)
 }
 
 /**
-    Output Status
-
-    @param  status  the protocol buffer status message
-*/
-
+ * Output Status
+ *
+ * @param   status  the protocol buffer status message
+ *
+ * Outputs the contents of the Kinetic Command_Status field.
+ */
 void
 MessageTrace::outputStatus(const com::seagate::kinetic::proto::Command_Status& status) {
 
@@ -474,20 +490,22 @@ MessageTrace::outputStatus(const com::seagate::kinetic::proto::Command_Status& s
 }
 
 /**
-    Output Hex Bytes
-
-    @param  data    the data to output in hex
-    @param  newLine true if a newline is to be output at the end
-*/
-
+ * Output Hex Bytes
+ *
+ * @param  data     the data to output in hex
+ * @param  newLine  true if a newline is to be output at the end
+ *
+ * Outputs the specified data in hexadecimal.
+ */
 void
 MessageTrace::outputHexBytes(const std::string& data, bool newLine) {
 
+    const uint32_t BYTE_MASK(0xff);
     if (data.size() > 0)
         std::cout << "0x";
 
     for (uint32_t index = 0; index < data.size(); index++) {
-        uint32_t value = ((uint32_t)data[index]) & 0xff;
+        uint32_t value = ((uint32_t)data[index]) & BYTE_MASK;
         std::cout << std::setw(2) << std::setfill('0') << std::hex << value;
     }
     std::cout << std::dec;
@@ -496,15 +514,14 @@ MessageTrace::outputHexBytes(const std::string& data, bool newLine) {
 }
 
 /**
-    Output String
-
-    @param  data    the string data to output
-    @param  newLine true if a newline is to be output after the string
-
-    If the string contains non-ASCII alpha-numeric values (or dashes or underscores),  then output
-    the contents of the string in hex.
-*/
-
+ * Output String
+ *
+ * @param   data    the string data to output
+ * @param   newLine true if a newline is to be output after the string
+ *
+ * If the string contains non-ASCII alpha-numeric values (or dashes or underscores),  then output
+ * the contents of the string in hex.
+ */
 void
 MessageTrace::outputString(const std::string& data, bool newLine) {
 

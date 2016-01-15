@@ -14,10 +14,13 @@
 
 /**
  * Message Trace
+ *
+ * Allows the contents of a Kinetic message to be output to standard-out for debugging purposes.
 */
 class MessageTrace {
 public:
     static void outputContents(KineticMessageFraming& messageFraming, KineticMessage* message);
+private:
     static void outputHeader(const com::seagate::kinetic::proto::Command_Header& header);
     static void outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValue& keyvalue);
     static void outputRange(const com::seagate::kinetic::proto::Command_Range& range);

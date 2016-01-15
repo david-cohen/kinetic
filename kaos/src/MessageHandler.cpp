@@ -21,7 +21,6 @@
 #include "KineticLog.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
-#include "SystemControl.hpp"
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
 #include "KineticMessage.hpp"
@@ -242,9 +241,9 @@ MessageHandler::processRequest(Transaction& transaction) {
 #endif
         }
 
-        if (systemControl.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
-                                        && ((transaction.request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
-                                            || (transaction.request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
+        if (systemConfig.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
+                                       && ((transaction.request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
+                                           || (transaction.request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
 
             throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED);
         }
@@ -1056,7 +1055,7 @@ MessageHandler::processPinOpRequest(Transaction& transaction) {
                         throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 1");
                 }
 
-                systemControl.setLocked(true);
+                systemConfig.setLocked(true);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
@@ -1087,7 +1086,7 @@ MessageHandler::processPinOpRequest(Transaction& transaction) {
                         throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 2");
                 }
 
-                systemControl.setLocked(false);
+                systemConfig.setLocked(false);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP:

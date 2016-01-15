@@ -14,8 +14,8 @@
 /*
  * Kinetic Message Framing
  *
- * This class contains the framing data for a Kinetic Message. Its three data members are the first
- * nine bytes of a Kinetic PDU.
+ * Contains the framing data for a Kinetic Message. Its three data members are the first nine bytes
+ * of a Kinetic PDU.
  */
 class KineticMessageFraming {
 public:
@@ -53,6 +53,9 @@ private:
     uint32_t    m_valueSize;    //!< Number of bytes for the optional get/put value
 } __attribute__((packed));
 
+/*
+ * Value used to identify the start of a message frame.
+ */
 const uint8_t KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER(0x46);
 
 #endif

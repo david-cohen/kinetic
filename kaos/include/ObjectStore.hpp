@@ -50,6 +50,8 @@ enum class ReturnStatus {
 
 /*
  * Object Store
+ *
+ * Provides a Kinetic friendly wrapper for the levelDB database.
  */
 class ObjectStore {
 
@@ -97,8 +99,8 @@ private:
     /*
      * Private Data Members
      */
-    leveldb::DB*        m_database;
-    const std::string   m_databaseDirectory;
+    leveldb::DB*        m_database;             //!< Actual levelDB database
+    const std::string   m_databaseDirectory;    //!< Directory where database files reside
 
     DISALLOW_COPY_AND_ASSIGN(ObjectStore);
 };

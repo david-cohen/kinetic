@@ -38,6 +38,10 @@ AccessControl::AccessControl(int64_t identity, std::string hmacKey, HmacAlgorith
  *
  * @return true if the operation has be performed, false otherwise
  *
+ * Determine if the specified operation is permitted to be performed by checking the access control
+ * settings.  Kinetic's access settings indicate what operations are permitted and if the operation
+ * is permitted and involves a key, a further restriction may be specify that the key (for commands
+ * with keys) contain a specified substring at a specified offset.
  */
 bool
 AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey, const ::com::seagate::kinetic::proto::Command_Body& commandBody) const {
@@ -68,6 +72,10 @@ AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey
  * @param  filterOperation the operation which the scope list is to be built for
  *
  * @return a list of scopes that only apply to the specified operation
+ *
+ * Build a list that describes the permitted access for the commands that perform the specified
+ * operation.  This allows for a fast access check for the given operation (by not having to search
+ * through access descriptors that don't apply to the operation being checked.
  */
 AccessScopeList
 AccessControl::getFilteredScopeList(Operation filterOperation) const {
@@ -84,6 +92,9 @@ AccessControl::getFilteredScopeList(Operation filterOperation) const {
  * Get TLS Required Array
  *
  * @return an array that describes which operations (if any) require TLS/SSL)
+ *
+ * Based on the access settings, a look-up-table is build to allow for a quick check if the
+ * operation requires TLS/SSL.
  */
 OperationSizedBoolArray
 AccessControl::getTlsRequiredArray() const {
@@ -108,6 +119,9 @@ AccessControl::getTlsRequiredArray() const {
  * @param  scopeList   operation specific list of scopes
  *
  * @return true if the key can be used for the operation
+ *
+ * Determines if the operation can be performed with the specified key (by checking the specified
+ * access settings that correspond to operation being requested).
  */
 bool
 AccessControl::permissionToPerformOperation(const std::string& key, const AccessScopeList& scopeList) const {

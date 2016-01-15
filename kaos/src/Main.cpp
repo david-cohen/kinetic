@@ -32,7 +32,7 @@ ObjectStorePtr objectStore;
 CommunicationsManager communicationsManager;
 
 /*
- * Privae Variables
+ * Private Variables
  */
 static std::mutex daemonMutex;
 static std::unique_lock<std::mutex> daemonLock(daemonMutex);
@@ -48,10 +48,10 @@ static std::condition_variable daemonTerminated;
 void terminateProgram(int signum) {
 
     /*
-     * Eliminate the unused args warning for signum.
+     * Signal the daemon to terminate (and eliminate the unused args warning for signum).
      */
-    static_cast<void>(signum);
     daemonTerminated.notify_one();
+    static_cast<void>(signum);
 }
 
 /**
@@ -61,6 +61,10 @@ void terminateProgram(int signum) {
  * @param    argv  array of command line arguments
  *
  * @return   EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
+ *
+ * Starts the Kinetic object store application, which normally runs as a daemon but can be
+ * instructed to run in the foreground.  The application will run until receiving a SIGTERM
+ * (normally send by the kaos start/stop script called to stop).
  */
 int32_t main(int argc, char** argv) {
 
@@ -146,7 +150,7 @@ int32_t main(int argc, char** argv) {
     }
 
     /*
-     * Start the communications;
+     * Start the communications and then wait for the application to be signaled to terminate.
      */
     communicationsManager.start();
 

@@ -10,17 +10,26 @@
  */
 #include <map>
 #include <mutex>
-#include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "KineticMessage.hpp"
 
-/*
- * Message Statistics Class
+/**
+ * Message Statistics
+ *
+ * The keeper of message statistics, which maintains for each message type the number of time the
+ * message type has been processed and the number of bytes transferred to process it (for both the
+ * request and response messages).  This information is reported through a Kinetic get log request.
  */
 class MessageStatistics {
 
-    class Stats {
-    public:
+    /**
+     * Private Stats Record (plain old data)
+     *
+     * Maintains the count for number of times a message type has been processed and the number of
+     * bytes transferred for the request and response messages.  There is one stats object for every
+     * message type.
+     */
+    struct Stats {
         Stats() : count(0), byteCount(0) {}
         uint32_t    count;         //!< Number of times message has been processed
         uint64_t    byteCount;     //!< Number of bytes received and send in processing of message
@@ -30,6 +39,11 @@ class MessageStatistics {
 
 public:
 
+    /**
+     * Message Statistics Constructor
+     *
+     * Initializes the tables that maintains the stats for each message type.
+     */
     MessageStatistics()
         : m_statsTable({
         {com::seagate::kinetic::proto::Command_MessageType_PUT,           {new Stats()}},
@@ -47,9 +61,23 @@ public:
         {com::seagate::kinetic::proto::Command_MessageType_FLUSHALLDATA,  {new Stats()}},
         {com::seagate::kinetic::proto::Command_MessageType_PINOP,         {new Stats()}},
         {com::seagate::kinetic::proto::Command_MessageType_MEDIASCAN,     {new Stats()}},
-        {com::seagate::kinetic::proto::Command_MessageType_MEDIAOPTIMIZE, {new Stats()}}
+        {com::seagate::kinetic::proto::Command_MessageType_MEDIAOPTIMIZE, {new Stats()}},
+        {com::seagate::kinetic::proto::Command_MessageType_START_BATCH,   {new Stats()}},
+        {com::seagate::kinetic::proto::Command_MessageType_END_BATCH,     {new Stats()}},
+        {com::seagate::kinetic::proto::Command_MessageType_ABORT_BATCH,   {new Stats()}}
     }) {}
 
+    /**
+     * Update
+     *
+     * @param requestMessage    a processed request message
+     * @param responseMessage   the associated response
+     *
+     * Updates the number times this operation has been performed and the number of bytes
+     * transferred for its request and response.  Some operations have no response (such as a
+     * batched put).  In those cases, there is still a response message, but it is unused and will
+     * have a message size of zero.
+     */
     void update(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage) {
 
         std::unique_lock<std::mutex> scopedLock(m_mutex);
@@ -61,6 +89,13 @@ public:
         }
     }
 
+    /**
+     * Get
+     *
+     * @param response  pointer to where the statistics are to be set
+     *
+     * Sets the statistic values for all the message types.
+     */
     void get(com::seagate::kinetic::proto::Command_GetLog* response) {
 
         std::unique_lock<std::mutex> scopedLock(m_mutex);
@@ -74,8 +109,11 @@ public:
 
 private:
 
-    std::mutex  m_mutex;        //!< Mutex to make class thread safe
-    StatsMap    m_statsTable;   //!< Message statistics for each message type
+    /*
+     * Private Data Members
+     */
+    std::mutex  m_mutex;        //!< Mutex to make the class thread safe
+    StatsMap    m_statsTable;   //!< Statistics for all message types
 };
 
 extern MessageStatistics messageStatistics;

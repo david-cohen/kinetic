@@ -31,6 +31,7 @@ public:
     void blackHoleRead(size_t byteCount);
     void write(const char* const buffer, size_t byteCount);
     void close();
+    Security security() {return Security::NONE;}
 
 private:
 

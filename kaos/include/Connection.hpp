@@ -17,51 +17,21 @@
 #include <memory>
 #include <atomic>
 #include "Common.hpp"
-#include "TcpTransport.hpp"
-#include "AccessControl.hpp"
+#include "Transaction.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
+#include "ClientServerConnectionInfo.hpp"
 
+/*
+ * Batch List Pointer and Map.
+ */
 typedef std::shared_ptr<KineticMessageList> BatchListPtr;
 typedef std::map<uint32_t, BatchListPtr> BatchListMap;
-
-/*
- * Transport Security
- */
-enum class Security {
-    NONE = 0,
-    SSL  = 1,
-};
-
-enum class ConnectionError {
-    NONE          = 0,
-    VALUE_TOO_BIG = 1,
-    IO_ERROR      = 2,
-};
-
-/*
- * Incomplete Class Definitions (to avoid cirular dependancies)
- */
-class MessageHandler;
-class Connection;
-
-class Transaction {
-public:
-    Connection* const   connection;
-    KineticMessagePtr   request;
-    KineticMessagePtr   response;
-    ConnectionError     error;
-    std::string         errorMessage;
-    AccessControlPtr    accessControl;
-
-    explicit Transaction(Connection* transactionConnection)
-        : connection(transactionConnection), request(new KineticMessage()), response(new KineticMessage()), error(ConnectionError::NONE) {}
-};
 
 /**
  * Connection
  *
- * Used to manage a single connection.
+ * Describes a single Kinetic connection.
  */
 class Connection {
 public:
@@ -77,14 +47,20 @@ public:
      */
     bool sendResponse(Transaction& transaction);
 
+    /*
+     * Public Accessors
+     */
     inline int64_t connectionId() {return m_connectionId;}
     inline int64_t previousSequence() {return m_previousSequence;}
     inline bool processedFirstRequest() {return m_processedFirstRequest;}
     inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
     inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
     inline uint32_t batchCount() {return m_batchListMap.size();}
-    inline Security security() {return m_security;}
+    inline Security security() {return m_stream->security();}
 
+    /*
+     * Batch Functions
+     */
     inline bool createBatchList(uint32_t batchId) {
         std::unique_lock<std::mutex> m_scopedLock(m_mutex);
         if (m_batchListMap.find(batchId) != m_batchListMap.end())
@@ -110,6 +86,9 @@ public:
 
 private:
 
+    /*
+     * Private Member Functions
+     */
     void receiveRequest(Transaction& transaction);
     void sendUnsolicitedStatusMessage();
     void run();
@@ -117,18 +96,18 @@ private:
     /*
      * Private Data Member
      */
-    Security                    m_security;
-    StreamInterface* const      m_stream;               //!< I/O Stream
-    const uint32_t              m_serverPort;           //!< Server's TCP port number
-    const std::string           m_serverIpAddress;      //!< Server's IP address
-    const uint32_t              m_clientPort;           //!< Client's TCP port number
-    const std::string           m_clientIpAddress;      //!< Client's IP address
-    std::thread* const          m_thread;               //!< Thread that receives messages
-    const int64_t               m_connectionId;
-    std::atomic<int64_t>        m_previousSequence;
-    std::atomic_bool            m_processedFirstRequest;
-    BatchListMap                m_batchListMap;
-    std::mutex                  m_mutex;
+    Security                    m_security;                 //!< Connection's security (SSL or None)
+    StreamInterface* const      m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
+    const uint32_t              m_serverPort;               //!< Server's TCP port number
+    const std::string           m_serverIpAddress;          //!< Server's IP address
+    const uint32_t              m_clientPort;               //!< Client's TCP port number
+    const std::string           m_clientIpAddress;          //!< Client's IP address
+    std::thread* const          m_thread;                   //!< Thread that receives messages
+    const int64_t               m_connectionId;             //!< Identification number for connection
+    std::atomic<int64_t>        m_previousSequence;         //!< Last request message sequence number
+    std::atomic_bool            m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
+    BatchListMap                m_batchListMap;             //!< Lists of batch commands indexed by batch ID
+    std::mutex                  m_mutex;                    //!< Mutex used to make class thread safe
 
     DISALLOW_COPY_AND_ASSIGN(Connection);
 };

@@ -9,35 +9,16 @@
  * Include Files
  */
 #include <stdint.h>
-#include <list>
 #include <string>
 #include "Common.hpp"
 #include "Connection.hpp"
-#include "AccessControl.hpp"
-#include "KineticMessage.hpp"
-
-typedef struct {
-
-    const com::seagate::kinetic::proto::Command_MessageType  m_requestType;             //!< Type of message
-    const Operation                                          m_operation;               //!< Operation to be performed for this request
-    const bool                                               m_operationInvolvesKey;
-
-    void (*perform)(Transaction& transaction);     //!< Function to process message type
-
-    inline Operation operation() {return m_operation;}
-    inline com::seagate::kinetic::proto::Command_MessageType responseType() {
-        return static_cast<com::seagate::kinetic::proto::Command_MessageType>(m_requestType - 1);
-    }
-    inline bool operationInvolvesKey() {return m_operationInvolvesKey;}
-    inline com::seagate::kinetic::proto::Message_AuthType requiredAuthenticationType() {
-        return m_requestType == com::seagate::kinetic::proto::Command_MessageType_PINOP
-               ? com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH
-               : com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH;
-    }
-} OperationInfo;
+#include "Kinetic.pb.hpp"
+#include "Transaction.hpp"
 
 /*
  * Message Handler
+ *
+ * Provides a message handler for every Kinetic message type.
  */
 class MessageHandler {
 public:

@@ -9,7 +9,6 @@
  * Include Files
  */
 #include <string>
-#include <sstream>
 #include <exception>
 #include "KineticMessage.hpp"
 
@@ -25,7 +24,7 @@ class MessageException: public std::exception {
 public:
 
     /*
-     * Constructor/Destructor
+     * Constructors/Destructor
      */
     MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode, const std::string& message)
         : m_statusCode(statusCode), m_message(message) {}
@@ -33,13 +32,10 @@ public:
     explicit MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode)
         : m_statusCode(statusCode), m_message() {}
 
-    MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode, std::ostream& messageStream)
-        : m_statusCode(statusCode), m_message(buildMessage(messageStream)) {}
-
     ~MessageException() throw() {}
 
     /*
-     * Public Member Function
+     * Public Accessors
      */
     inline com::seagate::kinetic::proto::Command_Status_StatusCode statusCode() {return m_statusCode;}
     inline const std::string& statusMessage() {return m_message;}
@@ -47,17 +43,11 @@ public:
 
 private:
 
-    std::string buildMessage(std::ostream& messageStream) {
-        std::stringstream stream;
-        stream << messageStream.rdbuf();
-        return stream.str();
-    }
-
     /*
      * Private Data Members
      */
-    const com::seagate::kinetic::proto::Command_Status_StatusCode m_statusCode;     //!< Enum that indicates category of error
-    const std::string                                             m_message;        //!< Text description of specific error
+    const com::seagate::kinetic::proto::Command_Status_StatusCode m_statusCode;     //!< Numeric indicator or error
+    const std::string                                             m_message;        //!< Text description of error
 };
 
 #endif

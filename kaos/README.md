@@ -35,5 +35,6 @@ A Linux userspace application that performs the functions of a Kinetic Device, w
 ##Check-in Requirements
 1.  make conform must be run with its changes applied to the files to be checked in
 2.  make check must be run without any warnings being reported
+3.  make all must be run without any warnings being reported
 3.  make run-tests must be run with all the unit tests passing successfully
 4.  The Kinetic conformance test must be run with all of its tests passing successfully

@@ -29,9 +29,7 @@ typedef std::shared_ptr<KineticMessageList> BatchListPtr;
 typedef std::map<uint32_t, BatchListPtr> BatchListMap;
 
 /**
- * Connection
- *
- * Describes a single Kinetic connection.
+ * Describes a single Kinetic network connection between the server and a client.
  */
 class Connection {
 public:

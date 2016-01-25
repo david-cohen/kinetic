@@ -16,12 +16,12 @@
 #include "AccessControl.hpp"
 
 /**
- * Access Control Constructor
+ * Intializes the Access Control object.
  *
- * @param  identity        value of identity for new access control
- * @param  hmacKey         HMAC key of new access control
- * @param  hmacAlgorithm   HMAC algorithm of new access control
- * @param  scopeList       List of access scope for new access control
+ * @param   identity        Value of identity for new access control
+ * @param   hmacKey         HMAC key of new access control
+ * @param   hmacAlgorithm   HMAC algorithm of new access control
+ * @param   scopeList       List of access scope for new access control
  */
 AccessControl::AccessControl(int64_t identity, std::string hmacKey, HmacAlgorithm hmacAlgorithm, AccessScopeList scopeList)
     : m_identity(identity), m_hmacKey(hmacKey), m_hmacAlgorithm(hmacAlgorithm), m_scopeList(scopeList),
@@ -30,18 +30,15 @@ AccessControl::AccessControl(int64_t identity, std::string hmacKey, HmacAlgorith
 }
 
 /**
- * Operation Permitted
+ * Determines if the specified operation is permitted to be performed according to the access
+ * control settings. Kinetic's access control settings indicate what operations are permitted and
+ * optional restrictions on key values (for key-based commands).
  *
- * @param  operation               the operation to be performed
- * @param  operationInvolvesKey    True if the operation uses a key
- * @param  commandBody             body of the request (used to get key if it has one)
+ * @param   operation               The operation to be performed
+ * @param   operationInvolvesKey    True if the operation uses a key
+ * @param   commandBody             Body of the request (used to get key if it has one)
  *
- * @return true if the operation has be performed, false otherwise
- *
- * Determine if the specified operation is permitted to be performed by checking the access control
- * settings.  Kinetic's access settings indicate what operations are permitted and if the operation
- * is permitted and involves a key, a further restriction may be specify that the key (for commands
- * with keys) contain a specified substring at a specified offset.
+ * @return  True if the operation has be performed, false otherwise
  */
 bool
 AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey, const ::com::seagate::kinetic::proto::Command_Body& commandBody) const {
@@ -67,15 +64,14 @@ AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey
 }
 
 /**
- * Get Filtered Scope List
+ * Builds a list that describes the permitted access for commands that perform the specified
+ * operation (for example commands 'Get Next' and 'Get Previous' use the 'read' operation).  The
+ * created list provides a fast access check for the specific operation (by not having to search
+ * through access descriptors that don't apply to the operation being checked).
  *
- * @param  filterOperation the operation which the scope list is to be built for
+ * @param   filterOperation     The operation which the scope list is to be built for
  *
- * @return a list of scopes that only apply to the specified operation
- *
- * Build a list that describes the permitted access for the commands that perform the specified
- * operation.  This allows for a fast access check for the given operation (by not having to search
- * through access descriptors that don't apply to the operation being checked.
+ * @return  A list of scopes that only apply to the specified operation
  */
 AccessScopeList
 AccessControl::getFilteredScopeList(Operation filterOperation) const {
@@ -89,12 +85,10 @@ AccessControl::getFilteredScopeList(Operation filterOperation) const {
 }
 
 /**
- * Get TLS Required Array
- *
- * @return an array that describes which operations (if any) require TLS/SSL)
- *
- * Based on the access settings, a look-up-table is build to allow for a quick check if the
+ * Builds a look-up-table (that is based on the access settings) to allow for a quick check if an
  * operation requires TLS/SSL.
+ *
+ * @return  An array that describes which operations (if any) require TLS/SSL)
  */
 OperationSizedBoolArray
 AccessControl::getTlsRequiredArray() const {
@@ -113,15 +107,13 @@ AccessControl::getTlsRequiredArray() const {
 }
 
 /**
- * Permission To Perform Operation
+ * Determines if the operation with the specified key can be performed by checking the access
+ * settings.
  *
- * @param  key         the key to use for operation
- * @param  scopeList   operation specific list of scopes
+ * @param   key         The key to use for operation
+ * @param   scopeList   Operation specific list of scopes
  *
- * @return true if the key can be used for the operation
- *
- * Determines if the operation can be performed with the specified key (by checking the specified
- * access settings that correspond to operation being requested).
+ * @return  True if the key can be used for the operation
  */
 bool
 AccessControl::permissionToPerformOperation(const std::string& key, const AccessScopeList& scopeList) const {

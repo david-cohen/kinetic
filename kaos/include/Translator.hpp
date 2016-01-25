@@ -18,8 +18,6 @@
 #include "Settings.pb.hpp"
 
 /**
- * Translator Class
- *
  * Provides functionality to convert values between formats (such as between Kinetic Message enum
  * and an internal enum or between an enum and a string).
  */

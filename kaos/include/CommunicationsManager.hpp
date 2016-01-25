@@ -16,9 +16,7 @@
 #include "HeartbeatProvider.hpp"
 
 /**
- * Communications Manager Class
- *
- * This class provides management of the daemon's communications with clients.
+ * Manages the daemon's communications with clients.
  */
 class CommunicationsManager {
 

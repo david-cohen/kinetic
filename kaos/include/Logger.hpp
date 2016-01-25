@@ -40,23 +40,19 @@ enum LogFacility {
 namespace _InternalUseOnly_ {
 
 /*
- * Log Entry
- *
  * Describes a single event log entry.
  */
 class LogEntry {
 public:
 
     /**
-     * LogEntry Constructor
+     * Creates an event log entry and sets the message with its severity level and where it was
+     * logged from (filename, function name and line number).
      *
      * @param  level       Severity level of event
      * @param  filename    Name of the file the event was logged from
      * @param  lineNumber  The line number that the event was logged from
      * @param  function    The function that the event was logged from
-     *
-     * Creates an event log entry and sets the message with its severity level and where it was
-     * logged from (filename, function name and line number).
      */
     LogEntry(LogLevel level, std::string filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
         captureLevel(level);
@@ -64,19 +60,15 @@ public:
     }
 
     /**
-     * LogEntry Constructor
+     * Creates an event log entry and sets the message with its severity level.
      *
      * @param  level       Severity level of event
-     *
-     * Creates an event log entry and sets the message with its severity level.
      */
     explicit LogEntry(LogLevel level) : m_level(level), m_message(), m_location() {
         captureLevel(level);
     }
 
     /**
-     * LogEntry Destructor
-     *
      * Causes the event to be recorded in the syslog and, optionally, output to standard out.
     */
     ~LogEntry() {
@@ -85,7 +77,7 @@ public:
     }
 
     /**
-     * Message
+     * Returns the event log message.
      *
      * @return a reference to the events message
      */
@@ -96,13 +88,11 @@ public:
 private:
 
     /**
-     * Capture Location
+     * Records the filename, line number, and function of where the event was logged.
      *
      * @param  filename    Name of the file the event was logged from
      * @param  lineNumber  The line number that the event was logged from
      * @param  function    The function that the event was logged from
-     *
-     * Records the filename, line number, and function of where the event was logged.
      */
     inline void captureLocation(std::string filename, int32_t lineNumber, std::string function) {
         /*
@@ -115,11 +105,9 @@ private:
     }
 
     /**
-     * Capture Level
+     * Records the severity level of the event to its message.
      *
      * @param  level   Severity level of event
-     *
-     * Records the severity level of the event to its message.
      */
     void captureLevel(LogLevel level) {
         std::string levelString;
@@ -140,8 +128,6 @@ private:
 };
 
 /*
- * Log Control
- *
  * Used to open and close the syslog.
  */
 class LogControl {

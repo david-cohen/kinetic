@@ -12,9 +12,7 @@
 #include <string>
 
 /**
- * Client Server Connection Information
- *
- * Maintains the IP address and port for both the client and the server in a connection.
+ * Maintains the IP address and port information for both the client and the server in a connection.
  */
 class ClientServerConnectionInfo {
 public:
@@ -41,7 +39,7 @@ private:
     /*
      * Private Data Members
      */
-    int32_t         m_socketDescriptor;     //!< File descrption of the connection's socket
+    int32_t         m_socketDescriptor;     //!< File description of the connection's socket
     uint32_t        m_serverPort;           //!< Port number of the server
     std::string     m_serverIpAddress;      //!< IP address of the server
     uint32_t        m_clientPort;           //!< Port number of the client

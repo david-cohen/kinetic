@@ -13,12 +13,10 @@
 #include "MessageTrace.hpp"
 
 /**
- * Output Contents
- *
- * @param   messageFraming  the Kinetic message's framing data
- * @param   message         the Kinetic message to display
- *
  * Outputs the contents of a Kinetic message.
+ *
+ * @param   messageFraming  The Kinetic message's framing data
+ * @param   message         The Kinetic message to display
  */
 void
 MessageTrace::outputContents(KineticMessageFraming& messageFraming, KineticMessage* message) {
@@ -75,11 +73,9 @@ MessageTrace::outputContents(KineticMessageFraming& messageFraming, KineticMessa
 }
 
 /**
- * Output Header
- *
- * @param   header the protocol buffer header message
- *
  * Outputs the contents of the Kinetic Command_Header field.
+ *
+ * @param   header  The protocol buffer header message
  */
 void
 MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Header& header) {
@@ -107,11 +103,9 @@ MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Header& h
 }
 
 /**
- * Output KeyValue
- *
- * @param   keyvalue the protocol buffer keyvalue message
- *
  * Outputs the contents of the Kinetic Command_KeyValue field.
+ *
+ * @param   keyvalue    The protocol buffer keyvalue message
  */
 void
 MessageTrace::outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValue& keyvalue) {
@@ -139,11 +133,9 @@ MessageTrace::outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValu
 }
 
 /**
- * Output Range
- *
- * @param   range   the protocol buffer range message
- *
  * Outputs the contents of the Kinetic Command_Range field.
+ *
+ * @param   range   The protocol buffer range message
  */
 void
 MessageTrace::outputRange(const com::seagate::kinetic::proto::Command_Range& range) {
@@ -177,11 +169,9 @@ MessageTrace::outputRange(const com::seagate::kinetic::proto::Command_Range& ran
 }
 
 /**
- * Output Configuration
- *
- * @param   configuration   the protocol buffer configuration message
- *
  * Outputs the contents of the Kinetic Command_GetLog_Configuration field.
+ *
+ * @param   configuration   The protocol buffer configuration message
  */
 void
 MessageTrace::outputConfiguration(const com::seagate::kinetic::proto::Command_GetLog_Configuration& configuration) {
@@ -197,11 +187,9 @@ MessageTrace::outputConfiguration(const com::seagate::kinetic::proto::Command_Ge
 }
 
 /**
- * Output Statistics
- *
- * @param   getLog  the protocol buffer getLog message (which contains the statistics)
- *
  * Outputs the contents of the Kinetic Command_GetLog_Statistics fields.
+ *
+ * @param   getLog  The protocol buffer getLog message (which contains the statistics)
  */
 void
 MessageTrace::outputStatistics(const com::seagate::kinetic::proto::Command_GetLog& getLog) {
@@ -217,11 +205,9 @@ MessageTrace::outputStatistics(const com::seagate::kinetic::proto::Command_GetLo
 }
 
 /**
- * Output Capacity
- *
- * @param   capacity  the protocol buffer capacity message
- *
  * Outputs the contents of the Kinetic Command_GetLog_Capacity field.
+ *
+ * @param   capacity    The protocol buffer capacity message
  */
 void
 MessageTrace::outputCapacity(const com::seagate::kinetic::proto::Command_GetLog_Capacity& capacity) {
@@ -231,11 +217,9 @@ MessageTrace::outputCapacity(const com::seagate::kinetic::proto::Command_GetLog_
 }
 
 /**
- * Output Limits
- *
- * @param   limits  the protocol buffer limits message
- *
  * Outputs the contents of the Kinetic Command_GetLog_Limits field.
+ *
+ * @param   limits  The protocol buffer limits message
  */
 void
 MessageTrace::outputLimits(const com::seagate::kinetic::proto::Command_GetLog_Limits& limits) {
@@ -264,11 +248,9 @@ MessageTrace::outputLimits(const com::seagate::kinetic::proto::Command_GetLog_Li
 }
 
 /**
- * Output GetLog
- *
- * @param   getLog  the protocol buffer getLog message
- *
  * Outputs the contents of the Kinetic Command_GetLog field.
+ *
+ * @param   getLog  The protocol buffer getLog message
  */
 void
 MessageTrace::outputGetLog(const com::seagate::kinetic::proto::Command_GetLog& getLog) {
@@ -322,11 +304,9 @@ MessageTrace::outputGetLog(const com::seagate::kinetic::proto::Command_GetLog& g
 }
 
 /**
- * Output Setup
- *
- * @param   setup   the protocol buffer setup message
- *
  * Outputs the contents of the Kinetic Command_Setup field.
+ *
+ * @param   setup   The protocol buffer setup message
  */
 void
 MessageTrace::outputSetup(const com::seagate::kinetic::proto::Command_Setup& setup) {
@@ -339,11 +319,9 @@ MessageTrace::outputSetup(const com::seagate::kinetic::proto::Command_Setup& set
 }
 
 /**
- * Output Security
- *
- * @param   security    the protocol buffer security message
- *
  * Outputs the contents of the Kinetic Command_Security field.
+ *
+ * @param   security    The protocol buffer security message
  */
 void
 MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Security& security) {
@@ -383,11 +361,9 @@ MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Securit
 }
 
 /**
- * Output PIN Operation
- *
- * @param   security    the protocol buffer PIN operation message
- *
  * Outputs the contents of the Kinetic Command_PinOperation field.
+ *
+ * @param   security    The protocol buffer PIN operation message
  */
 void
 MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOperation& pinop) {
@@ -397,11 +373,9 @@ MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOperati
 }
 
 /**
- * Output Batch
- *
- * @param   security    the protocol buffer PIN operation message
- *
  * Outputs the contents of the Kinetic Command_Batch field.
+ *
+ * @param   security    The protocol buffer PIN operation message
  */
 void
 MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch& batch) {
@@ -421,11 +395,9 @@ MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch& bat
 }
 
 /**
- * Output Body
- *
- * @param   body    the protocol buffer body message
- *
  * Outputs the contents of the Kinetic Command_Body field.
+ *
+ * @param   body    The protocol buffer body message
  */
 void
 MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& body) {
@@ -472,11 +444,9 @@ MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& body)
 }
 
 /**
- * Output Status
- *
- * @param   status  the protocol buffer status message
- *
  * Outputs the contents of the Kinetic Command_Status field.
+ *
+ * @param   status  The protocol buffer status message
  */
 void
 MessageTrace::outputStatus(const com::seagate::kinetic::proto::Command_Status& status) {
@@ -490,12 +460,10 @@ MessageTrace::outputStatus(const com::seagate::kinetic::proto::Command_Status& s
 }
 
 /**
- * Output Hex Bytes
- *
- * @param  data     the data to output in hex
- * @param  newLine  true if a newline is to be output at the end
- *
  * Outputs the specified data in hexadecimal.
+ *
+ * @param   data        The data to output in hex
+ * @param   newLine     True if a newline is to be output at the end
  */
 void
 MessageTrace::outputHexBytes(const std::string& data, bool newLine) {
@@ -514,13 +482,11 @@ MessageTrace::outputHexBytes(const std::string& data, bool newLine) {
 }
 
 /**
- * Output String
+ * Outputs the specified string.  If the string contains non-ASCII alpha-numeric values (or dashes
+ * or underscores),  then output the contents of the string in hex.
  *
- * @param   data    the string data to output
- * @param   newLine true if a newline is to be output after the string
- *
- * If the string contains non-ASCII alpha-numeric values (or dashes or underscores),  then output
- * the contents of the string in hex.
+ * @param   data        The string data to output
+ * @param   newLine     True if a newline is to be output after the string
  */
 void
 MessageTrace::outputString(const std::string& data, bool newLine) {

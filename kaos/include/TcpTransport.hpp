@@ -14,8 +14,6 @@
 #include "ClientServerConnectionInfo.hpp"
 
 /**
- * TCP Transport
- *
  * Provides functions to establish new TCP connections for a server or client.
  */
 class TcpTransport {

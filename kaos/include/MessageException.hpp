@@ -13,8 +13,6 @@
 #include "KineticMessage.hpp"
 
 /**
- * Message Exception
- *
  * An exception thrown due to an error encountered while processing a Kinetic Message.  The error
  * information is recorded as a status code and status message so it can be used to populate the
  * status fields of a Kinetic response message.

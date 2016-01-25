@@ -19,13 +19,13 @@
 #include "SystemConfig.hpp"
 
 /**
- * Server Setup
+ * Sets up the server by creating the listening socket for it to use to detect new connections.
  *
- * @param port  The port number the server is to listen on for new connections
+ * @param   port  The port number the server is to listen on for new connections
  *
- * @return the listening port socket's file descriptor
+ * @return  The listening port socket's file descriptor
  *
- * Create the listening socket for the server to use to detect new connections.
+ * @throws  A runtime error if the setup fails
  */
 int32_t TcpTransport::serverSetup(uint32_t port) {
 
@@ -62,10 +62,15 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
 }
 
 /**
- * Server Connect
+ * Attempts to connect to a client by listening on a specific port.  If successful, it will return
+ * server and client connection information.
  *
- * This function is called by the thread that will manage the TCP transport.  It listens for
- * client connections and creates a connection handler for each new connection.
+ * @param   serverPort                  The server's TCP port number
+ * @param   listeningSocketDescriptor   The file descriptor of the socket to listen on
+ *
+ * @return  The IP address and port number of both the client and the server for the connection
+ *
+ * @throws  A runtime error if a connection fails
  */
 ClientServerConnectionInfo TcpTransport::serverConnect(uint32_t serverPort, int32_t listeningSocketDescriptor) {
 
@@ -101,29 +106,24 @@ ClientServerConnectionInfo TcpTransport::serverConnect(uint32_t serverPort, int3
 }
 
 /**
- * Server Shutdown
+ * Shuts down the server socket, closing it.
  *
- * @param socketDescriptor  File descriptor of socket to shutdown
- *
- * Close the specified socket.
+ * @param   socketDescriptor  File descriptor of socket to shutdown
  */
 void TcpTransport::serverShutdown(int32_t socketDescriptor) {
     shutdown(socketDescriptor, SHUT_RDWR);
 }
 
 /**
- * Client Connect
+ * Attempts to connect to a server with the specified IP address and port.  If successful, it will
+ * return the socket descriptor for the new connection.
  *
- * @param ipAddress     The IP address of the server that the client wants to connect to
- * @param port          The port number of the server that the client wants to connect to
+ * @param   ipAddress   The IP address of the server that the client wants to connect to
+ * @param   port        The port number of the server that the client wants to connect to
  *
- * @return  the socket descriptor for the client connection
+ * @return  The socket descriptor for the client connection
  *
- * @throw runtime_error for socket creation or connection failure
- *
- * This function is called by a client attempt to connect to a server with the specified IP address
- * and port.  If successful, it will return the socket descriptor for the new connection.
- * handler for each new connection.
+ * @throws  A runtime error if socket or connection creation fails
  */
 int32_t TcpTransport::clientConnect(std::string ipAddress, uint32_t port) {
 

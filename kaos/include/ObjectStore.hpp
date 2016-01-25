@@ -48,10 +48,9 @@ enum class ReturnStatus {
     MAX_KEYS_RETURNED_COUNT_TOO_LARGE = 16,
 };
 
-/*
- * Object Store
- *
- * Provides a Kinetic friendly wrapper for the levelDB database.
+/**
+ * Object database of the Kinetic server.  It provides a Kinetic friendly interface to the levelDB
+ * database.
  */
 class ObjectStore {
 
@@ -67,6 +66,7 @@ public:
      * Public Member Functions
      */
     ReturnStatus open();
+    ReturnStatus close();
     ReturnStatus erase();
     ReturnStatus flush();
     ReturnStatus put(const std::string& key, const std::string& value, const std::string& newVersion,

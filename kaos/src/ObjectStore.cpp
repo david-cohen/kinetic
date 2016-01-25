@@ -32,6 +32,7 @@ static leveldb::WriteOptions asyncWriteOptions;
 static leveldb::WriteOptions syncWriteOptions;
 static leveldb::WriteOptions flushWriteOptions;
 static leveldb::ReadOptions defaultReadOptions;
+static leveldb::Options databaseOptions;
 
 inline leveldb::WriteOptions getWriteOptions(PersistOption option) {
     return option == PersistOption::Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
@@ -41,7 +42,7 @@ inline bool validPersistOption(PersistOption option) {
     return ((static_cast<int32_t>(option) >= static_cast<int32_t>(PersistOption::Command_Synchronization_WRITETHROUGH))
             && (static_cast<int32_t>(option) <= static_cast<int32_t>(PersistOption::Command_Synchronization_FLUSH)));
 }
-
+/*
 class KineticComparator : public leveldb::Comparator {
 public:
 
@@ -69,6 +70,7 @@ public:
 };
 
 static KineticComparator kineticComparator;
+*/
 
 /**
  * ObjectStore Constructor
@@ -85,7 +87,7 @@ ObjectStore::ObjectStore(std::string databaseDirectory)
  * ObjectStore Destructor
  */
 ObjectStore::~ObjectStore() {
-    delete m_database;
+    close();
 }
 
 /**
@@ -102,13 +104,12 @@ ObjectStore::open() {
     defaultReadOptions.verify_checksums = false;
     defaultReadOptions.fill_cache = true;
 
-    leveldb::Options options;
-    options.create_if_missing = true;
-    options.block_cache = leveldb::NewLRUCache(64 * 1048576);
-    options.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
-    options.comparator = &kineticComparator;
 
-    leveldb::Status status = leveldb::DB::Open(options, m_databaseDirectory, &m_database);
+    databaseOptions.create_if_missing = true;
+    databaseOptions.block_cache = leveldb::NewLRUCache(64 * 1048576);
+    databaseOptions.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+
+    leveldb::Status status = leveldb::DB::Open(databaseOptions, m_databaseDirectory, &m_database);
     if (!status.ok()) {
         LOG(ERROR) << "Failed to open database, status: " << status.ToString() << std::endl;
         return ReturnStatus::FAILURE;
@@ -117,18 +118,36 @@ ObjectStore::open() {
     return ReturnStatus::SUCCESS;
 }
 
+/*
+ * ObjectStore Destructor
+ */
+
+ReturnStatus
+ObjectStore::close() {
+
+    if (m_database == nullptr) {
+        LOG(ERROR) << "Attempted to close a database that was already closed" << std::endl;
+        return ReturnStatus::FAILURE;
+    }
+    else {
+        delete m_database;
+        m_database = nullptr;
+        return ReturnStatus::SUCCESS;
+    }
+}
 
 /**
  * Erase
  *
  * @return the completion status of the operations (success of failure)
+ *
+ * Completely erases the existing contents of the database.
  */
 ReturnStatus
 ObjectStore::erase() {
 
-    delete m_database;
-    leveldb::Options options;
-    DestroyDB(m_databaseDirectory, options);
+    close();
+    DestroyDB(m_databaseDirectory, databaseOptions);
     open();
     return ReturnStatus::SUCCESS;
 }

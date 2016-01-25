@@ -19,7 +19,7 @@ const int32_t  STATUS_SUCCESS(0);
 const int32_t  STATUS_FAILURE(-1);
 
 /**
- * To String
+ * Converts a variable value to a string format
  *
  * @param T         type of variable whose value is to be converted
  * @param value     value to be converted into a string

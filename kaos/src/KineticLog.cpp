@@ -5,10 +5,12 @@
 /*
  * Include Files
  */
+#include <errno.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
 #include <string>
+#include "Logger.hpp"
 #include "Kinetic.pb.hpp"
 #include "KineticLog.hpp"
 #include "ObjectStore.hpp"
@@ -16,9 +18,9 @@
 #include "MessageStatistics.hpp"
 
 /**
- * Get Configuration
+ * Builds the response with the requested configuration information.
  *
- * @param response     pointer to the get log response to be populated
+ * @param   response    Pointer to the get log response to be populated
  */
 void
 KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response) {
@@ -45,41 +47,14 @@ KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* respo
 }
 
 /**
- * Get Temperatures
+ * Build the response with the requested limit information.
  *
- * @param response     pointer to the get log response to be populated
- */
-void
-KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* response) {
-
-    com::seagate::kinetic::proto::Command_GetLog_Temperature* temperature(response->add_temperatures());
-    temperature->set_name("HDA");
-    temperature->set_current(75);
-    temperature->set_target(25);
-    temperature->set_minimum(5);
-    temperature->set_maximum(100);
-}
-
-/**
- * Get Statistics
- *
- * @param response     pointer to the get log response to be populated
- */
-void
-KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response) {
-    messageStatistics.get(response);
-}
-
-/**
- * Get Limits
- *
- * @param response     pointer to the get log response to be populated
+ * @param   response    Pointer to the get log response to be populated
  */
 void
 KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Limits* limits(response->mutable_limits());
-
     limits->set_maxkeysize(systemConfig.maxKeySize());
     limits->set_maxvaluesize(systemConfig.maxValueSize());
     limits->set_maxversionsize(systemConfig.maxVersionSize());
@@ -96,22 +71,60 @@ KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
 }
 
 /**
- * Get Message
+ * Builds the response with the requested statistics information.
  *
- * @param response     pointer to the get log response to be populated
+ * @param   response    Pointer to the get log response to be populated
+ */
+void
+KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response) {
+    messageStatistics.get(response);
+}
+
+/**
+ * Builds the response with the requested capacity information, which is taken from the total and
+ * available capacity of the data partition.
+ *
+ * @param   response    Pointer to the get log response to be populated
+ */
+void
+KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response) {
+
+    struct statvfs fiData;
+    memset(&fiData, 0, sizeof(fiData));
+    std::string mountPoint = objectStore->getDatabaseDirectory();
+
+    float totalCapacity(0);
+    float remainingCapacity(0);
+
+    if ((statvfs(mountPoint.c_str(), &fiData)) != STATUS_SUCCESS) {
+        LOG(ERROR) << "Failed to get file system information for mount point " << mountPoint << ", error_code=" << errno << ", description=" << strerror(errno);
+    }
+    else {
+        totalCapacity = static_cast<float>(fiData.f_bsize) * static_cast<float>(fiData.f_blocks);
+        remainingCapacity = static_cast<float>(fiData.f_bsize) * static_cast<float>(fiData.f_bfree);
+    }
+
+    com::seagate::kinetic::proto::Command_GetLog_Capacity* capacity(response->mutable_capacity());
+    capacity->set_nominalcapacityinbytes(totalCapacity);
+    capacity->set_portionfull((totalCapacity - remainingCapacity) / totalCapacity);
+}
+
+/**
+ * Builds the response with the requested message information.
+ *
+ * @param   response    Pointer to the get log response to be populated
  */
 void
 KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* response) {
 
     std::string* message = response->mutable_messages();
     message->assign("System started");
-    // todo - make real
 }
 
 /**
- * Get Device
+ * Builds the response with the requested device information.
  *
- * @param response     pointer to the get log response to be populated
+ * @param   response    Pointer to the get log response to be populated
  */
 void
 KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& request, std::string& responseValue) {
@@ -129,45 +142,25 @@ KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& reques
 }
 
 /**
- * Get Capacities
+ * Builds the response with the requested temperature information.
  *
- * @param response     pointer to the get log response to be populated
+ * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* response) {
 
-    struct statvfs fiData;
-    memset(&fiData, 0, sizeof(fiData));
-
-    std::string mountPoint = objectStore->getDatabaseDirectory();
-
-    float totalCapacity(0);
-    float remainingCapacity(0);
-
-    if ((statvfs(mountPoint.c_str(), &fiData)) == STATUS_SUCCESS) {
-        totalCapacity = static_cast<float>(fiData.f_bsize) * static_cast<float>(fiData.f_blocks);
-        remainingCapacity = static_cast<float>(fiData.f_bsize) * static_cast<float>(fiData.f_bfree);
-        /*
-                std::cout << "mountPoint " << mountPoint << std::endl;
-                std::cout << "fiData.f_bsize " << fiData.f_bsize << std::endl;
-                std::cout << "fiData.f_blocks " << fiData.f_blocks << std::endl;
-                std::cout << "fiData.f_bfree " << fiData.f_bfree << std::endl;
-                std::cout << "totalCapacity " << (uint64_t)totalCapacity << std::endl;
-                std::cout << "remainingCapacity " << (uint64_t)remainingCapacity << std::endl;
-        */
-    }
-//    else
-//        logEvent(ERROR_EVENT, "Failed to get file system information: mount_point=\"" + mountPoint + "\"");
-
-    com::seagate::kinetic::proto::Command_GetLog_Capacity* capacity(response->mutable_capacity());
-    capacity->set_nominalcapacityinbytes(totalCapacity);
-    capacity->set_portionfull((totalCapacity - remainingCapacity) / totalCapacity);
+    com::seagate::kinetic::proto::Command_GetLog_Temperature* temperature(response->add_temperatures());
+    temperature->set_name("HDA");
+    temperature->set_current(75);
+    temperature->set_target(25);
+    temperature->set_minimum(5);
+    temperature->set_maximum(100);
 }
 
 /**
- * Get Utilizations
+ * Builds the response with the requested utilization information.
  *
- * @param response     pointer to the get log response to be populated
+ * @param   response    Pointer to the get log response to be populated
  */
 void
 KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* response) {

@@ -21,9 +21,7 @@
 #include "HeartbeatProvider.hpp"
 
 /**
- * HeartbeatProvider Constructor
- *
- * Initialize the structure used to broadcast messages.
+ * Initializes the Heartbeat Provider object.
  */
 HeartbeatProvider::HeartbeatProvider()
     : m_active(false), m_thread(nullptr), m_socketFd(-1) {
@@ -35,12 +33,10 @@ HeartbeatProvider::HeartbeatProvider()
 }
 
 /**
- * Start
- *
- * @return true if the thread was successfully created
- *
  * Starts the heartbeat provider thread, which sends out a heartbeat message at a recurring interval
  * (around five seconds).
+ *
+ * @return  True if the thread was successfully created
  */
 bool
 HeartbeatProvider::start() {
@@ -58,11 +54,9 @@ HeartbeatProvider::start() {
 }
 
 /**
- * Open Socket
- *
- * @exception  a runtime error exception is thrown if the socket could not be opened and configured successfully
- *
  * Opens a datagram socket for sending multicast messages.
+ *
+ * @throws  A runtime error if a socket could not be opened or configured successfully
  */
 void
 HeartbeatProvider::openSocket() {
@@ -82,12 +76,10 @@ HeartbeatProvider::openSocket() {
 }
 
 /**
- * Send Heartbeat Message
+ * Send a Kinetic heartbeat message to the multicast address.  Since some of the values in the
+ * message can change, it is built from the latest values before sending.
  *
- * @exception  a runtime error exception is thrown if the message wasn't sent successfully
- *
- * Send a kinetic heartbeat message to the multicast address.  Since some of the values in the
- * message can change, it must be built with the latest values before sending.
+ * @throws  A runtime error if the message wasn't sent successfully
  */
 void
 HeartbeatProvider::sendHeartbeatMessage() {

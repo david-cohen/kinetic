@@ -15,10 +15,9 @@
 #include "Kinetic.pb.hpp"
 #include "Transaction.hpp"
 
-/*
- * Message Handler
- *
- * Provides a message handler for every Kinetic message type.
+/**
+ * A message handler for Kinetic messages.  A message handler is called for each Kinetic request
+ * received.
  */
 class MessageHandler {
 public:

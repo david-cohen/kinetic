@@ -16,11 +16,11 @@
 #include "AccessScope.hpp"
 
 /**
- * Translate HMAC Algorithm From Settings Format
+ * Translates HMAC algorithm from settings format.
  *
- * @param  hmacAlgorithm   the algorithm in the persisted settings format
+ * @param   hmacAlgorithm   The algorithm in the persisted settings format
  *
- * @return     the algorithm in the internal format
+ * @return  The algorithm in the internal format
  */
 HmacAlgorithm
 Translator::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSetting) {
@@ -28,11 +28,11 @@ Translator::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSet
 }
 
 /**
- * Translate HMAC Algorithm To Settings Format
+ * Translates HMAC algorithm to settings format.
  *
- * @param  hmacAlgorithm   the algorithm in the internal format
+ * @param   hmacAlgorithm   The algorithm in the internal format
  *
- * @return     the algorithm in the persisted settings format
+ * @return  The algorithm in the persisted settings format
  */
 kaos::Settings_ACL_HmacAlgorithm
 Translator::toSettingsFormat(HmacAlgorithm hmacAlgorithm) {
@@ -41,11 +41,11 @@ Translator::toSettingsFormat(HmacAlgorithm hmacAlgorithm) {
 }
 
 /**
- * Translate HMAC Algorithm To Message Format
+ * Translates HMAC algorithm to message format.
  *
- * @param  hmacAlgorithm   the HMAC algorithm in message format
+ * @param   hmacAlgorithm   The HMAC algorithm in message format
  *
- * @return     the HMAC algorithm in the internal format
+ * @return  The HMAC algorithm in the internal format
  */
 HmacAlgorithm
 Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm hmacAlgorithm) {
@@ -56,11 +56,11 @@ Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL
 }
 
 /**
- * Translate Operation From Settings Format
+ * Translates operation from settings format.
  *
- * @param  operation   the operation in the persisted settings format
+ * @param   operation   The operation in the persisted settings format
  *
- * @return     the operation in the internal format
+ * @return  The operation in the internal format
  */
 Operation
 Translator::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
@@ -87,11 +87,11 @@ Translator::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
 }
 
 /**
- * Translate Operation To Settings Format
+ * Translates operation to settings format.
  *
- * @param  operation   the operation in the internal format
+ * @param  operation    The operation in the internal format
  *
- * @return     the operation in the persisted settings format
+ * @return  The operation in the persisted settings format
  */
 kaos::Settings_ACL_Operation
 Translator::toSettingsFormat(Operation operation) {
@@ -118,11 +118,11 @@ Translator::toSettingsFormat(Operation operation) {
 }
 
 /**
- * Translate Operation From Message Format
+ * Translates operation from message format.
  *
- * @param  permission  the operation in message format
+ * @param   permission  The operation in message format
  *
- * @return     the operation in the internal format
+ * @return  The operation in the internal format
  */
 Operation
 Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
@@ -149,10 +149,10 @@ Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL
 }
 
 /**
- * Set Message Status
+ * Sets the message status fields, which contains a code and status message.
  *
- * @param  messageStatus   the message status to be set
- *         returnStatus    the status to be converted into message status
+ * @param   messageStatus   The message status to be set
+ *          returnStatus    The status to be converted into message status
  */
 void
 Translator::setMessageStatus(com::seagate::kinetic::proto::Command_Status* messageStatus, ReturnStatus returnStatus) {
@@ -205,7 +205,7 @@ Translator::setMessageStatus(com::seagate::kinetic::proto::Command_Status* messa
             break;
         case ReturnStatus::ALGORITHM_SIZE_TOO_LARGE:
             messageStatus->set_code(com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST);
-            messageStatus->set_statusmessage("Algorihtm size too large");
+            messageStatus->set_statusmessage("Algorithm size too large");
             break;
         case ReturnStatus::MAX_KEYS_RETURNED_COUNT_TOO_LARGE:
             messageStatus->set_code(com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST);
@@ -222,11 +222,11 @@ Translator::setMessageStatus(com::seagate::kinetic::proto::Command_Status* messa
 }
 
 /**
- * To String (bool)
+ * Converts a boolean to a string.
  *
- * @param  boolValue  the boolean value (true/false) to be converted to a string
+ * @param   boolValue  The boolean value (true/false) to be converted to a string
  *
- * @return the boolean value in string form
+ * @return  The boolean value in string form
  */
 std::string
 Translator::toString(bool boolValue) {
@@ -234,7 +234,7 @@ Translator::toString(bool boolValue) {
 }
 
 /**
- * To String (Algorithm)
+ * Converts an algorithm enum to a string.
  *
  * @param  algorithm  the protocol buffer algorithm enum to be converted to a string
  *
@@ -262,7 +262,7 @@ Translator::toString(Algorithm algorithm) {
 }
 
 /**
- * To String (PIN Operation Type)
+ * Converts a PIN operation enum to a string.
  *
  * @param  pinop  the protocol buffer PIN operation type enum to be converted to a string
  *
@@ -288,7 +288,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpTyp
 }
 
 /**
- * To String (HMAC Algorithm)
+ * Converts an HMAC Algorithm enum to a string.
  *
  * @param  algorithm  the protocol buffer HMAC algorithm enum to be converted to a string
  *
@@ -308,9 +308,9 @@ Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgo
 }
 
 /**
- * To String (Authentication Type)
+ * Converts an authentication type enum to a string.
  *
- * @param  authType  the authentication type specified in the message
+ * @param  authType  the protocol buffer authentication type enum to be converted to a string
  *
  * @return the authentication type in string form
  */
@@ -332,7 +332,7 @@ Translator::toString(com::seagate::kinetic::proto::Message_AuthType authType) {
 }
 
 /**
- * To String (Message Type)
+ * Converts a message type enum to a string.
  *
  * @param  messageType  the protocol buffer message type enum to be converted to a string
  *
@@ -424,7 +424,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageTy
 }
 
 /**
- * To String (GetLog Type)
+ * Converts a log type enum to a string.
  *
  * @param  synchronization  the protocol buffer type enum to be converted to a string
  *
@@ -456,7 +456,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Type type) {
 }
 
 /**
- * To String (ACL Permission)
+ * Converts a permission enum to a string.
  *
  * @param  synchronization  the protocol buffer permission enum to be converted to a string
  *
@@ -490,7 +490,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_Permissi
 }
 
 /**
- * To String (Synchronization)
+ * Converts a synchronization enum to a string.
  *
  * @param  synchronization  the protocol buffer synchronization enum to be converted to a string
  *
@@ -510,7 +510,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Synchronization synch
 }
 
 /**
- * To String (Status Code)
+ * Converts a status code enum to a string.
  *
  * @param  statusCode  the protocol buffer statusCode enum to be converted to a string
  *

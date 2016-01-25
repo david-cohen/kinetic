@@ -11,9 +11,7 @@
 #include <memory>
 
 /*
- * Listener Interface
- *
- * Interface for a socket listener (for new connections).
+ * Interface for a socket listener (used for new connections).
  */
 class ListenerInterface {
 

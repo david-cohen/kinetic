@@ -3,6 +3,7 @@
 BASE_DIR	:= $(shell pwd)
 TIMESTAMP   := $(shell date)
 SOURCE_HASH := $(shell ./tools/create-source-hash.sh)
+PACKAGE_NAME = wdc-kinetic
 
 # Cross Compile for ARM and native compile for everything else
 
@@ -22,6 +23,8 @@ APP_SRC_DIR 	= $(BASE_DIR)/src
 INCLUDE_DIR 	= $(BASE_DIR)/include
 PROTO_DIR   	= $(BASE_DIR)/proto
 TEST_SRC_DIR	= $(BASE_DIR)/test
+PACKAGE_DIR 	= $(BASE_DIR)/package
+CONF_DIR 		= $(BASE_DIR)/conf
 
 # Build Output Directories
 
@@ -31,6 +34,8 @@ BUILD_APP_OBJ_DIR   = $(BUILD_DIR)/obj/app
 BUILD_PROTO_DIR 	= $(BUILD_DIR)/proto
 BUILD_TEST_BIN_DIR  = $(BUILD_DIR)/bin/test
 BUILD_TEST_OBJ_DIR  = $(BUILD_DIR)/obj/test
+BUILD_PACKAGE_DIR   = $(BUILD_DIR)/package
+BUILD_DOXYGEN_DIR   = $(BUILD_DIR)/doxygen
 
 # Dependencies Library Directories
 
@@ -52,10 +57,11 @@ PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
 
 # Compiler/Linker Parameters
+# Optional CXX_APP_FLAGS arguments: -DLOG_EVENT_LOCATION -DWORK_WITH_JAVA_SMOKE_TEST
 
 CC  			= $(COMPILER_PREFIX)gcc
 CXX 			= $(COMPILER_PREFIX)g++
-CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DLOG_EVENT_LOCATION -DWORK_WITH_JAVA_SMOKE_TEST -DTIMESTAMP="\"$(TIMESTAMP)\"" -DSOURCE_HASH="\"$(SOURCE_HASH)\"" 
+CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DWORK_WITH_JAVA_SMOKE_TEST -DTIMESTAMP="\"$(TIMESTAMP)\"" -DSOURCE_HASH="\"$(SOURCE_HASH)\""
 CXX_TEST_FLAGS  = $(CXX_APP_FLAGS) -DUNIT_TEST -DTIMESTAMP="\"$(TIMESTAMP)\""
 APP_INCLUDES	= -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(LEVELDB_DIR)/include -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
 APP_LIBRARIES   = $(LEVELDB_LIBRARY) $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
@@ -224,24 +230,41 @@ lint:
 	sed -i '6151i \ \ \ \ pass' $(LINT_DIR)/cpplint.py
 	sed -i '5297,5302d' $(LINT_DIR)/cpplint.py
 
+# Install the coding style app
+
 astyle:
 	wget -P $(DEPENDENCIES_DIR) http://sourceforge.net/projects/astyle/files/astyle/astyle%202.04/astyle_2.04_linux.tar.gz
 	tar -zxf $(DEPENDENCIES_DIR)/astyle_2.04_linux.tar.gz -C $(DEPENDENCIES_DIR)
 	rm $(DEPENDENCIES_DIR)/astyle_2.04_linux.tar.gz
 	cd $(DEPENDENCIES_DIR)/astyle/build/gcc && make
 
+# Build doxygen documentation
+
+doxygen:
+	rm -rf $(BUILD_DOXYGEN_DIR)
+	doxygen $(CONF_DIR)/Doxyfile
+
+# Build a Debian package for kaos
+package:
+	rm -rf $(BUILD_PACKAGE_DIR)
+	mkdir -p $(BUILD_PACKAGE_DIR)
+	cp -r $(PACKAGE_DIR) $(BUILD_PACKAGE_DIR)/$(PACKAGE_NAME)
+	cp $(BUILD_APP_BIN_DIR)/kaos $(BUILD_PACKAGE_DIR)/$(PACKAGE_NAME)/usr/sbin
+	cd $(BUILD_PACKAGE_DIR) && dpkg-deb --build $(PACKAGE_NAME)
+	rm -rf $(BUILD_PACKAGE_DIR)/$(PACKAGE_NAME)
+
 # Remove any build artifacts
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-# Build main application and associated tests
+# Build the main application, its associated tests, and its package
 
-all:	clean kaos test
+all:	clean kaos test package doxygen
 
 # Identify the targets that are not files
 
-.PHONY: all clean astyle lint googletest protobuf openssl leveldb boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
+.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
 
 # Build kaos application
 

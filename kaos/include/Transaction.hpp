@@ -27,10 +27,9 @@ enum class ConnectionError {
 };
 
 /**
- * Transaction (Plain old data)
- *
- * Describes a Kinetic transaction, which includes of the request message, the optional response
- * message, and other context information such as the connection and access control.
+ * Describes a Kinetic transaction (in a passive data structure), which includes of the request
+ * message, the optional response message, and other context information such as the connection and
+ * access control.
  */
 struct Transaction {
     explicit Transaction(Connection* transactionConnection)

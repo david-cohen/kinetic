@@ -12,9 +12,8 @@
 #include "StreamInterface.hpp"
 
 /**
- * Clear Text Stream
- *
- * A stream that transfers data "in the clear", not utilization any encryption or authentication.
+ * A text stream object that transfers data "in the clear", not utilization any encryption or
+ * authentication.
  */
 class ClearTextStream : public StreamInterface {
 public:

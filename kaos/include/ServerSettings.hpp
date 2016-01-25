@@ -15,9 +15,7 @@
 #include "AccessControl.hpp"
 
 /**
- * Server Settings
- *
- * Maintains the user controlled settings for the server.
+ * Contains the user specified settings for the server.
  */
 class ServerSettings {
 

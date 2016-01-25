@@ -34,7 +34,7 @@ using std::string;
  */
 static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
-static const char* VERSION("0.0.2");
+static const char* VERSION("1.0.0-FOR-EVAL-ONLY");
 
 /*
  * Daemon Related Settings
@@ -42,7 +42,7 @@ static const char* VERSION("0.0.2");
 static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
 static const char* DATABASE_DIRECTORY("/export/dfs/objectDatabase");
 static const char* SERVER_SETTINGS_FILE("/export/dfs/serverSettings");
-static const LogFacility KAOS_LOG_FACILITY(LOCAL0);
+static const LogFacility KAOS_LOG_FACILITY(LOCAL2);
 static const bool DEFAULT_LOCKED(false);
 static const bool DEFAULT_DEBUG_ENABLED(false);
 
@@ -109,12 +109,11 @@ static const char* ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING("");
 static const uint32_t ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING_OFFSET(0);
 
 /**
- * Create Flush Data Key
+ * Creates a flush data key (a key used to purge the database of write-back data).  The key must not
+ * be a valid user key, which is accomplished by making it larger than the maximum size of a user
+ * key.
  *
- * @return the key used to perform a flush write on the database
- *
- * The flush data key must not be a valid user key, which is accomplished by making it larger than
- * the maximum size of a user key.
+ * @return  The key used to perform a flush write on the database
  */
 static std::string
 createFlushDataKey() {
@@ -126,9 +125,8 @@ createFlushDataKey() {
 }
 
 /**
- * System Config Constructor
- *
- * Initializes the attributes which the user can not set.
+ * Initializes the system configuration object, which contains the attributes that a user can not
+ * set.
  */
 SystemConfig::SystemConfig()
     : m_locked(DEFAULT_LOCKED),

@@ -13,9 +13,7 @@
 #include "KineticMessageFraming.hpp"
 
 /**
- * Message Trace
- *
- * Allows the contents of a Kinetic message to be output to standard-out for debugging purposes.
+ * Debug utility that allows the contents of a Kinetic message to be output to standard-out.
 */
 class MessageTrace {
 public:

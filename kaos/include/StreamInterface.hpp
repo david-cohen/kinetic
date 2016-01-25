@@ -19,8 +19,6 @@ enum class Security {
 };
 
 /**
- * Stream Interface
- *
  * Defines the interface for various the data streams (such as encrypted or non-encrypted) used in
  * Kinetic communications.
  */

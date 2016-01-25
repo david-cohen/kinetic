@@ -21,12 +21,14 @@ A Linux userspace application that performs the functions of a Kinetic Device, w
 7.  run make all (to build kaos application and associated unit tests)
 
 ###Make Options
-* make all - will perform a clean build of the Kinetic object storage application and associated tests
+* make all - will perform a clean build of the kaos application, unit tests, documentation, and Debian package
 * make check - will run google lint to check for suspicious software usage
 * make clean - will delete all the kaos and unit test build artifacts
 * make conform - will run astyle and covert the code to adhere to the chosen style conventions
 * make dependencies - will download and build the needed libraries
+* make doxygen - will create documentation from annotations in the source code
 * make kaos - will build the Kinetic object storage application
+* make package - will create a Debian package containing the application and supporting files
 * make proto - will create protocol buffer source files from the proto config files
 * make run-tests - will run the unit tests (which takes about a minute)
 * make shush - this is KAOS, we don't shush here

@@ -14,11 +14,10 @@
 #include "KineticMessage.hpp"
 
 /**
- * Message Statistics
- *
- * The keeper of message statistics, which maintains for each message type the number of time the
- * message type has been processed and the number of bytes transferred to process it (for both the
- * request and response messages).  This information is reported through a Kinetic get log request.
+ * Maintains statistics on the messages processed.  For each message type, the number of time
+ * the message type has been processed and the number of bytes transferred for the request and
+ * response messages are maintained.  This information is reported through a Kinetic get log
+ * request.
  */
 class MessageStatistics {
 

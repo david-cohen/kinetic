@@ -12,27 +12,37 @@
 #include "KineticMessage.hpp"
 #include "Kinetic.pb.hpp"
 
+/*
+ * Request Handler Function Type.
+ */
+typedef void (* RequestHandler)(Transaction& transaction);
+
 /**
- * Operation Information (Plain old data)
- *
+ * Contains operation information (one for each operation), which is used to process requests.
  */
 struct OperationInfo {
 
-    const com::seagate::kinetic::proto::Command_MessageType  m_requestType;             //!< Type of message
-    const Operation                                          m_operation;               //!< Operation to be performed for this request
-    const bool                                               m_operationInvolvesKey;
+    const com::seagate::kinetic::proto::Command_MessageType requestType;                        //!< Type of request message
+    const com::seagate::kinetic::proto::Command_MessageType responseType;                       //!< Type of corresponding response message
+    const Operation                                         operation;                          //!< Operation to be performed for this request
+    const bool                                              operationInvolvesKey;               //!< True if this is a key-based operation
+    const RequestHandler                                    processRequest;                     //!< Function to process message type
+    const com::seagate::kinetic::proto::Message_AuthType    requiredAuthenticationType;         //!< Authentication required for this type of message
 
-    void (*perform)(Transaction& transaction);     //!< Function to process message type
-
-    inline Operation operation() {return m_operation;}
-    inline com::seagate::kinetic::proto::Command_MessageType responseType() {
-        return static_cast<com::seagate::kinetic::proto::Command_MessageType>(m_requestType - 1);
-    }
-    inline bool operationInvolvesKey() {return m_operationInvolvesKey;}
-    inline com::seagate::kinetic::proto::Message_AuthType requiredAuthenticationType() {
-        return m_requestType == com::seagate::kinetic::proto::Command_MessageType_PINOP
-               ? com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH
-               : com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH;
+    /**
+     * Constructor
+     *
+     * @param p_requestType             Specified Kinetic request type
+     * @param p_operation               Type of operation being performed
+     * @param p_processRequest          Function to process request
+     * @param p_operationInvolvesKey    True if the operation is key-based (such as a get)
+     */
+    OperationInfo(com::seagate::kinetic::proto::Command_MessageType p_requestType, Operation p_operation, RequestHandler p_processRequest, bool p_operationInvolvesKey)
+        : requestType(p_requestType), responseType(static_cast<com::seagate::kinetic::proto::Command_MessageType>(p_requestType - 1)),
+          operation(p_operation), operationInvolvesKey(p_operationInvolvesKey), processRequest(p_processRequest),
+          requiredAuthenticationType(p_requestType == com::seagate::kinetic::proto::Command_MessageType_PINOP
+                                     ? com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH :
+                                     com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH) {
     }
 };
 

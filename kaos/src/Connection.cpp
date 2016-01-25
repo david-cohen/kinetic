@@ -27,10 +27,10 @@
 static std::atomic<int64_t> nextConnectionId(1);
 
 /**
- * Connection Constructor
+ * Initializes the Connection object.
  *
- * @param stream                       stream to be used for this connection
- * @param clientServerConnectionInfo   information about the client and server in the connection
+ * @param   stream                      Data stream to be used for this connection
+ * @param   clientServerConnectionInfo  Information about the client and server in the connection
  */
 Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
     : m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()), m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
@@ -41,7 +41,7 @@ Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clien
 }
 
 /*
- * Connection Destructor
+ * Frees the allocated resources from the Connection object.
  */
 Connection::~Connection() {
     delete m_stream;
@@ -49,10 +49,8 @@ Connection::~Connection() {
 }
 
 /**
- * Run
- *
- * This is the code the Connection Handler's thread executes.  The thread blocks waiting to receive
- * a message, and when it does, it calls a message handler thread to process it.
+ * Performs the work of the Connection handler (with a dedicated thread).  It blocks waiting to
+ * receive a message, and when it does, it calls a message handler to process it.
  */
 void
 Connection::run() {
@@ -100,10 +98,8 @@ Connection::run() {
 }
 
 /**
- * Send Unsolicited Status Message
- *
- * When a connection is first established, the Kinetic device is to send an unsolicited status
- * messages to the client.  This function builds and sends that message.
+ * Sends an Unsolicited Status Message when a connection is first established (following the Kinetic
+ * protocol).
  */
 void
 Connection::sendUnsolicitedStatusMessage() {
@@ -126,15 +122,13 @@ Connection::sendUnsolicitedStatusMessage() {
 }
 
 /**
- * Receive Request
+ * Receives and deserializes a Kinetic Request.  It performs a blocking read from the stream and
+ * returns when a complete message has been received (or an error is encountered).  It's
+ * understanding of the Kinetic protocol is limited to the framing of the message.
  *
- * @param transaction       maintains a request and response message
+ * @param   transaction     Object where the received message will be put
  *
- * @return a pointer to the request message received
- *
- * This function performing a blocking read using the provided transport.  It understands the
- * framing of the request message and uses that knowledge to determine when a complete request
- * message has been received.
+ * @throws  A runtime error if an error is encountered
  */
 void
 Connection::receiveRequest(Transaction& transaction) {
@@ -228,13 +222,13 @@ Connection::receiveRequest(Transaction& transaction) {
 }
 
 /**
- * Send Response
+ * Sends a Kinetic response (serializing and framing the message before sending).
  *
- * @param transaction       maintains a request and response message
+ * @param   transaction     Object containing the response to be sent
  *
- * @return true if the operation was successful, false otherwise
+ * @return  True if the operation was successful, false otherwise
  *
- * Serializes and frames the message before sending.
+ * @throws  A runtime error if an error is encountered
  */
 bool
 Connection::sendResponse(Transaction& transaction) {

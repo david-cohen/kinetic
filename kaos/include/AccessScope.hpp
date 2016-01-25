@@ -39,14 +39,12 @@ const uint32_t NUMBER_OF_OPERATIONS = OPERATION_TO_UINT32(Operation::INVALID);
 typedef std::array<bool, NUMBER_OF_OPERATIONS> OperationSizedBoolArray;
 
 /**
- * Access Scope
- *
- * The operations that a user has permission to perform on a Kinetic device is defined by one or
- * more access scopes.  Each scope can also indicate (optional) additional requirements needed to
- * perform the permitted operations.  The additional requirements are: using secure communications
- * (TLS/SSL) or only accessing objects whose key contains a specified substring at a specified
- * offset in the key.  This object is based on the Kinetic Scope protocol buffer message.  All of
- * its contents are constants so it is thread safe.
+ * Describes the operations that a user has permission to perform on a Kinetic device as well as
+ * some optional additional requirements needed to perform the permitted operations.  The additional
+ * requirements are: using secure communications (TLS/SSL) or only accessing objects whose key
+ * contains a specified substring at a specified offset in the key.  This object is based on the
+ * Kinetic Scope protocol buffer message. A user access can be defined by more than one access
+ * scope.
  */
 class AccessScope {
 public:

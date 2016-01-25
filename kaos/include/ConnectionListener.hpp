@@ -18,9 +18,7 @@
 #include "CommunicationsManager.hpp"
 
 /**
- * Connection Listener
- *
- * The stream agnostic connection listener for Kinetic clients.  Kinetic support both encrypted and
+ * A stream agnostic connection listener for Kinetic clients.  Kinetic support both encrypted and
  * clear text data streams for its connections.  This listener is used for both.  When a client is
  * discovered through the listening port, a connection is created with the proper data stream.
  */

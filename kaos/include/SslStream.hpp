@@ -13,9 +13,7 @@
 #include "StreamInterface.hpp"
 
 /**
- * SSL Stream
- *
- * A stream that transfers encryption data using SSL/TLS.
+ * A stream object that transfers data encrypted using SSL/TLS.
  */
 class SslStream : public StreamInterface {
 public:

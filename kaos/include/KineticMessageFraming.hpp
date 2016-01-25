@@ -12,8 +12,6 @@
 #include <arpa/inet.h>
 
 /*
- * Kinetic Message Framing
- *
  * Contains the framing data for a Kinetic Message. Its three data members are the first nine bytes
  * of a Kinetic PDU.
  */

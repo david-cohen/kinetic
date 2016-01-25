@@ -19,9 +19,7 @@ enum class HmacAlgorithm {
 };
 
 /**
- *   HMAC
- *
- *   Provides a method to compute an HMAC on a block of data.
+ * Provides a method to compute an HMAC on a block of data.
  */
 class Hmac {
 public:

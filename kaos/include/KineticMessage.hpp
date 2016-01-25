@@ -19,14 +19,12 @@
 #include "MessageException.hpp"
 #include "KineticMessageFraming.hpp"
 
-/*
- * Kinetic Message
- *
- * This class is a wrapper for a Kinetic protocol buffer message and its associated object value.
+/**
+ * Contains the contents of a Kinetic protocol buffer message and its associated object value.
  * Although the protocol buffer has many substructure, at the top level, it is made up of a
  * encoded command and authentication information (authentication type and HMAC authentication
  * parameters or PIN authentication parameters).  In addition to combining the message with the
- * value, it also provides an interface to the decode command.
+ * value, it also provides an interface to the decoded command.
  */
 class KineticMessage {
 public:

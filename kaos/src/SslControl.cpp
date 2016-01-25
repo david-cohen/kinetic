@@ -18,9 +18,7 @@
 const int32_t SSL_SUCCESS(1);
 
 /**
- * SSL Control Constructor
- *
- * Attempts to load the needed libraries as well as the SSL certificate and private key.
+ * Initializes the SSL Control object.
  */
 SslControl::SslControl()
     : m_operational(false), m_context(nullptr) {
@@ -61,9 +59,7 @@ SslControl::SslControl()
 }
 
 /**
- * SSL Control Destructor
- *
- * Frees the allocated resources.
+ * Frees the allocated resources from the control object.
  */
 SslControl::~SslControl() {
 
@@ -75,11 +71,11 @@ SslControl::~SslControl() {
 }
 
 /**
- * Create Connection
- *
- * @param socketFd     file descriptor of the socket
- *
  * Attempts to create a SSL/TLS connection.
+ *
+ * @param   socketFd    File descriptor of the socket
+ *
+ * @throws  A runtime error if a connection could not be created
  */
 SSL* SslControl::createConnection(int socketFd) {
 

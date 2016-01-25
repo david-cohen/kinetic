@@ -14,8 +14,6 @@
 #include <unordered_map>
 
 /**
- * Network Interface
- *
  * Describes the attributes of a network interface.
  */
 class NetworkInterface {

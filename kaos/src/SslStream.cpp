@@ -18,17 +18,17 @@
 /**
  * SSL Stream Constructor
  *
- * @param  socketDescriptor     Stream socket's file descrptor
+ * @param   socketDescriptor    Stream socket's file descriptor
  */
 SslStream::SslStream(int32_t socketDescriptor)
     : m_streamFd(socketDescriptor), m_ssl(sslControl.createConnection(socketDescriptor)) {
 }
 
 /**
- * Read
+ * Reads the specified number of bytes into the specified buffer.
  *
- * @param  buffer      Pointer to the buffer the data is to be read into
- * @param  byteCount   the number of bytes to be read
+ * @param   buffer      Pointer to the buffer the data is to be read into
+ * @param   byteCount   The number of bytes to be read
  */
 void SslStream::read(char* buffer, size_t byteCount) {
 
@@ -59,11 +59,9 @@ void SslStream::read(char* buffer, size_t byteCount) {
 }
 
 /**
- * Black Hole Read
+ * Reads and discards the specified number of bytes.
  *
- * @param  byteCount   the number of bytes to be read
- *
- * Read and discard the specified number of bytes.
+ * @param   byteCount   The number of bytes to be read
  */
 void SslStream::blackHoleRead(size_t byteCount) {
 
@@ -95,13 +93,10 @@ void SslStream::blackHoleRead(size_t byteCount) {
 }
 
 /**
- * Write
+ * Writes the specified number of bytes from the specified buffer.
  *
- * @param  buffer      Pointer to the buffer the data is to be written to
- * @param  byteCount   the number of bytes to be written
- *
- * Write the number of bytes specified from the buffer specified.
- *
+ * @param   buffer      Pointer to the buffer the data is to be written to
+ * @param   byteCount   The number of bytes to be written
  */
 void SslStream::write(const char* const buffer, size_t byteCount) {
     /*
@@ -131,7 +126,7 @@ void SslStream::write(const char* const buffer, size_t byteCount) {
 }
 
 /**
- * Close
+ * Closes the stream.
  */
 void SslStream::close() {
 

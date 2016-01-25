@@ -15,10 +15,7 @@
 #include "Common.hpp"
 
 /**
- * Heartbeat Provider
- *
- * Sends a Kinetic heartbeat message to a UDP multicast address at regular intervals (around five
- * seconds).
+ * Responsible for sending Kinetic heartbeat messages to the Kinetic UDP multicast address.
  */
 class HeartbeatProvider {
 public:

@@ -5,10 +5,10 @@
 /*
  * Include Files
  */
+#include <getopt.h>
 #include <signal.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <getopt.h>
 #include <mutex>
 #include <string>
 #include <iostream>
@@ -39,11 +39,9 @@ static std::unique_lock<std::mutex> daemonLock(daemonMutex);
 static std::condition_variable daemonTerminated;
 
 /**
- * Terminate Program
+ * Terminates the program due to being signalled to exit (using SIGTERM).
  *
- * @param    signum    signal sent to process
- *
- * This function is called when the program has been signalled to exit (using SIGTERM).
+ * @param   signum  Signal number sent to process
  */
 void terminateProgram(int signum) {
 
@@ -55,16 +53,14 @@ void terminateProgram(int signum) {
 }
 
 /**
- * Main
+ * Entry point of the Kinetic object store application, which normally runs as a daemon but can be
+ * instructed to run in the foreground.  The application will run until receiving a SIGTERM, which
+ * is normally sent by the kaos start/stop script when called to stop.
  *
- * @param    argc  number of command line arguments
- * @param    argv  array of command line arguments
+ * @param   argc    Number of command line arguments
+ * @param   argv    Array of command line arguments
  *
- * @return   EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
- *
- * Starts the Kinetic object store application, which normally runs as a daemon but can be
- * instructed to run in the foreground.  The application will run until receiving a SIGTERM
- * (normally send by the kaos start/stop script called to stop).
+ * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
  */
 int32_t main(int argc, char** argv) {
 
@@ -107,6 +103,7 @@ int32_t main(int argc, char** argv) {
     }
 
     LOG_INIT(nullptr, systemConfig.kaosLogFacility(), systemConfig.debugEnabled());
+    LOG(INFO) << "Starting application";
 
     /*
      * If the daemon is to run in the background, daemonize the process. That causes the process to
@@ -135,9 +132,10 @@ int32_t main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    signal(SIGTERM, terminateProgram);
 
-    if (background) {
+    if (!background)
+        signal(SIGINT, terminateProgram);
+    else {
         FILE* file = fopen(pidFileName.c_str(), "w");
         if (file == nullptr)
             LOG(ERROR) << "Failed to create PID file: error_code=" << errno << ", error_description=" << strerror(errno);
@@ -147,6 +145,7 @@ int32_t main(int argc, char** argv) {
             if (fclose(file) != STATUS_SUCCESS)
                 LOG(ERROR) << "Failed to close PID file: error_code=" << errno << ", error_description=" << strerror(errno);
         }
+        signal(SIGTERM, terminateProgram);
     }
 
     /*
@@ -155,6 +154,7 @@ int32_t main(int argc, char** argv) {
     communicationsManager.start();
 
     daemonTerminated.wait(daemonLock);
+    LOG(INFO) << "Stopping application";
 
     if (background) {
         if (remove(pidFileName.c_str()) != STATUS_SUCCESS)

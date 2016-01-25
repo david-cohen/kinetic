@@ -13,10 +13,9 @@
 #include "CommunicationsManager.hpp"
 
 /**
- * Communications Manager Constructor
- *
- * Initializes the list of connection listeners.  Currently, there are only two - one for encrypted
- * communication (on the SSL port) and one for clear text communications (on the TCP port).
+ * Initializes the Communications Manager object by initializing its list of connection listeners.
+ * Currently, there are only two - one for encrypted communication on the SSL port and one for clear
+ * text communications on the TCP port.
 */
 CommunicationsManager::CommunicationsManager() {
 
@@ -27,10 +26,8 @@ CommunicationsManager::CommunicationsManager() {
 }
 
 /**
- * Start
- *
- * Start the heartbeat message provider, which allows discovery of this Kinetic device.  Also,
- * start the listener threads, which enables client communications.
+ * Starts the heartbeat message provider, which allows discovery of this Kinetic device.  Also,
+ * starts the listener threads, which enables client communications.
  */
 void CommunicationsManager::start() {
 
@@ -41,10 +38,8 @@ void CommunicationsManager::start() {
 }
 
 /**
- * Stop
- *
- * Stop the heartbeat message provider, which prevents discovery of this Kinetic device.  Also, stop
- * the listener threads, which disables client communications.
+ * Stops the heartbeat message provider, which prevents discovery of this Kinetic device.  Also,
+ * stops the listener threads, which disables client communications.
  */
 void CommunicationsManager::stop() {
 
@@ -55,15 +50,13 @@ void CommunicationsManager::stop() {
 }
 
 /**
- * Add Connection
+ * Adds a connection to the manager's database and permits it to be used if the maximum number of
+ * connections hasn't been reached.  Otherwise, it rejects the connection by throwing an exception,
+ * which causes the connection to be closed.
  *
- * @param   connection  the connection being added
+ * @param   connection  The connection being added
  *
- * @throw   runtime_error if the maximum number of connections are already open
- *
- * If the maximum number of connections hasn't been reached, add the connection
- * to the manager's database and permit it to be used.  Otherwise, reject the
- * connection (by throwing an exception), causing it to be closed.
+ * @throws  A runtime error if the maximum number of connections are already open
  */
 void CommunicationsManager::addConnection(Connection* connection) {
 
@@ -75,11 +68,9 @@ void CommunicationsManager::addConnection(Connection* connection) {
 }
 
 /**
- * Remove Connection
+ * Removes the connection from the manager's database.
  *
- * @param   connection  the connection being removed
- *
- * Remove the connection from the manager's database.
+ * @param   connection  The connection being removed
  */
 void CommunicationsManager::removeConnection(Connection* connection) {
 
@@ -89,11 +80,9 @@ void CommunicationsManager::removeConnection(Connection* connection) {
 }
 
 /**
- * Batch Count
+ * Determines the number of outstanding batch commands across all connections.
  *
- * @return  the number of active batch commands
- *
- * Determine the number of outstanding batch commands across all connections.
+ * @return  The number of active batch commands
  */
 uint32_t CommunicationsManager::batchCount() {
 

@@ -22,21 +22,19 @@
 const uint32_t  STATUS_END_OF_STREAM(0);
 
 /**
- * Clear Text Stream Constructor
+ * Initializes the Clear Text Stream object.
  *
- * @param  streamFd    Stream's file descriptor
+ * @param   streamFd    Stream's file descriptor
  */
 ClearTextStream::ClearTextStream(int32_t streamFd)
     : m_streamFd(streamFd) {
 }
 
 /**
- * Read
- *
- * @param  buffer      Pointer to the buffer the data is to be read into
- * @param  byteCount   the number of bytes to be read
- *
  * Reads the specified number of bytes into the specified buffer.
+ *
+ * @param   buffer      Pointer to the buffer the data is to be read into
+ * @param   byteCount   The number of bytes to be read
 */
 void
 ClearTextStream::read(char* buffer, size_t byteCount) {
@@ -72,11 +70,9 @@ ClearTextStream::read(char* buffer, size_t byteCount) {
 }
 
 /**
- * Black Hole Read
+ * Reads and discards the specified number of bytes.
  *
- * @param  byteCount   the number of bytes to be read
- *
- * Read and discard the specified number of bytes.
+ * @param   byteCount   The number of bytes to be read
  */
 void
 ClearTextStream::blackHoleRead(size_t byteCount) {
@@ -113,12 +109,10 @@ ClearTextStream::blackHoleRead(size_t byteCount) {
 }
 
 /**
- * Write
+ * Writes the specified number of bytes from the specified buffer.
  *
- * @param  buffer      Pointer to the buffer the data is to be written to
- * @param  byteCount   the number of bytes to be written
- *
- * Write the number of bytes specified from the buffer specified.
+ * @param   buffer      Pointer to the buffer the data is to be written to
+ * @param   byteCount   The number of bytes to be written
  */
 void
 ClearTextStream::write(const char* const buffer, size_t byteCount) {
@@ -155,9 +149,7 @@ ClearTextStream::write(const char* const buffer, size_t byteCount) {
 }
 
 /**
- * Close
- *
- * Close the stream.
+ * Closes the stream.
  */
 void
 ClearTextStream::close() {

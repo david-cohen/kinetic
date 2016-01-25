@@ -12,9 +12,7 @@
 #include <openssl/ssl.h>
 
 /**
- * SSL Control
- *
- * Used to create SSL connections.
+ * Provides SSL connection creation capabilities.
  */
 class SslControl {
 public:

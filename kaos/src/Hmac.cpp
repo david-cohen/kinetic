@@ -13,19 +13,16 @@
 #include "Hmac.hpp"
 
 /**
- * Compute
+ * Computes a SHA1 HMAC for the specified data using the specified key.  The size of the data can be
+ * optionality prepended to the data before hashing.  Currently, HMAC is only generated using SHA1.
  *
- * @param  data            the data to have an HMAC computed for
- * @param  key             the key to use to generate the HMAC
- * @param  algorithm       the algorithm to use to generate the HMAC (currently ignored because
- *                         only SHA1 is supported)
- * @param  prependSize     true if the data size is to be prepended to the data before hashing
+ * @param   data            The data to have an HMAC computed for
+ * @param   key             The key to use to generate the HMAC
+ * @param   algorithm       The algorithm to use to generate the HMAC (currently ignored because only
+ *                          SHA1 is supported)
+ * @param   prependSize     True if the data size is to be prepended to the data before hashing
  *
- * @return HMAC for the specified data using the specified key
- *
- * This function computes a SHA1 HMAC for the specified data using the specified key.  The size of
- * the data can be optionality prepended to the data before hashing.  Currently, HMAC is only
- * generated using SHA1.
+ * @return  HMAC for the specified data using the specified key
  */
 std::string
 Hmac::compute(const std::string& data, const std::string& key, HmacAlgorithm algorithm, bool prependSize) {

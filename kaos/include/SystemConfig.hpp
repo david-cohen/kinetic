@@ -25,9 +25,7 @@
 typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSet;
 
 /**
- * System Configuration
- *
- * Contains the system attributes/constraints that can not be set by the user.
+ * Contains the system configuration data that can not be set by a user.
  */
 class SystemConfig {
 public:

@@ -1,0 +1,4 @@
+#!/bin/bash
+/etc/init.d/kaos stop
+systemctl disable kaos
+update-rc.d kaos disable

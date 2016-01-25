@@ -1,0 +1,53 @@
+#!/bin/sh
+# Start/stop the Kinetic (kaos) daemon
+# Copyright (c) [2016] Western Digital Technologies, Inc. All rights reserved.
+#
+### BEGIN INIT INFO
+# Provides:          kaos
+# Required-Start:    $network $syslog
+# Required-Stop:     $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Kinetic daemon
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+NAME=kaos
+DAEMON=/usr/sbin/"$NAME"
+PIDFILE=/var/run/"$NAME".pid
+EXTRA_OPTS="--pid $PIDFILE"
+
+. /lib/lsb/init-functions
+
+case "$1" in
+start)
+        log_daemon_msg "Starting Kinetic daemon" "$NAME"
+        start_daemon -p $PIDFILE $DAEMON $EXTRA_OPTS
+        log_end_msg $?
+	;;
+stop)
+        log_daemon_msg "Stopping Kinetic daemon" "$NAME"
+        killproc -p $PIDFILE $DAEMON
+        log_end_msg $?
+        ;;
+restart | force-reload)
+        log_daemon_msg "Restarting Kinetic daemon" "$NAME"
+        $0 stop
+        $0 start
+        ;;
+clean-restart)
+        log_daemon_msg "Cleanly Restarting Kinetic daemon" "$NAME" 
+        $0 stop
+	rm -rf /export/dfs/objectDatabase
+	rm -rf /export/dfs/serverSettings
+        $0 start
+        ;;
+status)
+        status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+        ;;
+*)
+        log_action_msg "Usage: $0 {start|stop|restart|clean-restart|force-reload|status}"
+        exit 2
+        ;;
+esac
+exit 0

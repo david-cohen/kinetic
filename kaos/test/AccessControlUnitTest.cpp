@@ -11,11 +11,16 @@
 #include <climits>
 #include <utility>
 #include "gtest/gtest.h"
+#include "Logger.hpp"
 #include "SystemConfig.hpp"
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
 
+/*
+ * Global Variables
+ */
 SystemConfig systemConfig;
+LogControl logControl;
 
 /**
  * Create Large String

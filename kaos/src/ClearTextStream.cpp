@@ -58,7 +58,7 @@ ClearTextStream::read(char* buffer, size_t byteCount) {
         }
 
         if (byteCountStatus == STATUS_FAILURE) {
-            LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Error Description=" << strerror(errno);
+            LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Description=" << strerror(errno);
             close();
             throw std::runtime_error("failed read");
         }
@@ -98,7 +98,7 @@ ClearTextStream::blackHoleRead(size_t byteCount) {
         }
 
         if (byteCountStatus == STATUS_FAILURE) {
-            LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Error Description=" << strerror(errno);
+            LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Description=" << strerror(errno);
             close();
             throw std::runtime_error("failed read");
         }
@@ -137,7 +137,7 @@ ClearTextStream::write(const char* const buffer, size_t byteCount) {
         }
 
         if (byteCountStatus == STATUS_FAILURE) {
-            LOG(ERROR) << "TCP Write Failure: Error Code=" << errno << ", Error Description=" << strerror(errno);
+            LOG(ERROR) << "TCP Write Failure: Error Code=" << errno << ", Description=" << strerror(errno);
             close();
             throw std::runtime_error("failed write");
         }
@@ -155,6 +155,6 @@ void
 ClearTextStream::close() {
 
     if (::close(m_streamFd) == STATUS_FAILURE) {
-        LOG(ERROR) << "TCP close failure: error_code=" << errno << ", error_description=" << strerror(errno);
+        LOG(ERROR) << "TCP close failure: Error Code=" << errno << ", Description=" << strerror(errno);
     }
 }

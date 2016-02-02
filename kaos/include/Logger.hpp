@@ -12,6 +12,7 @@
 #include <syslog.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 /*
  * Event Log Severity Levels
@@ -37,6 +38,72 @@ enum LogFacility {
     LOCAL7 = LOG_LOCAL7
 };
 
+/*
+ * Manages the event log.
+ */
+class LogControl {
+public:
+    /**
+     * Sets log control to its default state.
+     */
+    LogControl()
+        : m_logLevel(WARNING), m_standardOutEnabled(false) {
+    }
+
+    /**
+     * Opens the event log and sets up its behavior.
+     *
+     * @param   facility    Identifies the event so that it can be directed to the correct logfile
+     * @param   logLevel    Indicates which events will be logged based on severity level
+     */
+    void open(LogFacility facility, LogLevel logLevel) {
+
+        m_logLevel = logLevel;
+        ::openlog(nullptr, 0, facility);
+    }
+
+    /**
+     * Closes the event log.
+     */
+    ~LogControl() {
+        ::closelog();
+    }
+
+    /**
+     * Indicates the selected logging level.
+     *
+     * @return  The selected log level
+     */
+
+    inline LogLevel logLevel() {return m_logLevel;}
+    /**
+     * Indicates if outputting events to standard-out is enabled.
+     *
+     * @return  true if outputting to standard-out is enabled.
+     */
+    inline bool standardOutEnabled() {return m_standardOutEnabled;}
+
+    /**
+     * Sets the logging level
+     *
+     * @param logLevel  The log level
+     */
+    inline void setLogLevel(LogLevel logLevel) {m_logLevel = logLevel;}
+
+    /**
+     * Enable or disable events being output to standard out.
+     *
+     * @param   enabled     True if the events are to be output to standard-out
+     */
+    inline void setStandardOutEnabled(bool enabled) {m_standardOutEnabled = enabled;}
+
+private:
+    LogLevel    m_logLevel;             //!< Indicates the highest level to be logged where ERROR < WARNING < INFO < DEBUG
+    bool        m_standardOutEnabled;   //!< If true, the events are to be output to standard-out
+};
+
+extern LogControl logControl;
+
 namespace _InternalUseOnly_ {
 
 /*
@@ -46,8 +113,8 @@ class LogEntry {
 public:
 
     /**
-     * Creates an event log entry and sets the message with its severity level and where it was
-     * logged from (filename, function name and line number).
+     * Creates an event log entry and sets the message with its severity level.  If debug logging is
+     * enabled, it also logs where the event was logged from (filename, function name and line number).
      *
      * @param  level       Severity level of event
      * @param  filename    Name of the file the event was logged from
@@ -56,24 +123,21 @@ public:
      */
     LogEntry(LogLevel level, std::string filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
         captureLevel(level);
-        captureLocation(filename, lineNumber, function);
+        if (logControl.logLevel() == DEBUG)
+            captureLocation(filename, lineNumber, function);
     }
 
     /**
-     * Creates an event log entry and sets the message with its severity level.
-     *
-     * @param  level       Severity level of event
-     */
-    explicit LogEntry(LogLevel level) : m_level(level), m_message(), m_location() {
-        captureLevel(level);
-    }
-
-    /**
-     * Causes the event to be recorded in the syslog and, optionally, output to standard out.
+     * Causes the event to be recorded in the syslog if the level of the event is allowed to be
+     * logged.
     */
     ~LogEntry() {
-        m_message << m_location.str();
-        syslog(m_level, "%s", m_message.str().c_str());
+        if (m_level <= logControl.logLevel()) {
+            m_message << m_location.str();
+            syslog(m_level, "%s", m_message.str().c_str());
+            if (logControl.standardOutEnabled())
+                std::cout << m_message.str() << std::endl;
+        }
     }
 
     /**
@@ -127,35 +191,11 @@ private:
     std::stringstream   m_location;     //!< File, line, and function of event
 };
 
-/*
- * Used to open and close the syslog.
- */
-class LogControl {
-public:
-    explicit LogControl(const char* name, LogFacility facility, bool logToStandardError) {
-        ::openlog(name, logToStandardError ? LOG_PERROR : 0, facility);
-    }
-    ~LogControl() {
-        ::closelog();
-    }
-};
-
 }  // namespace _InternalUseOnly_
 
 /*
- * Macro to setup logging
+ * Macro to record an entry in the event log (imitates the GLog API)
  */
-#define LOG_INIT(name, facility, logToStandardError) _InternalUseOnly_::LogControl _logControl_(name, facility, logToStandardError)
-
-/*
- * Macro to record an entry in the log (imitates the GLog API)
- */
-#ifdef LOG_EVENT_LOCATION
 #define LOG(level) _InternalUseOnly_::LogEntry(level, __FILE__, __LINE__, __FUNCTION__).message()
-#define LOG_WITHOUT_LOCATION(level) _InternalUseOnly_::LogEntry(level).message()
-#else
-#define LOG(level) _InternalUseOnly_::LogEntry(level).message()
-#define LOG_WITHOUT_LOCATION(level) _InternalUseOnly_::LogEntry(level).message()
-#endif
 
 #endif

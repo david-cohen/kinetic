@@ -74,10 +74,8 @@ static KineticComparator kineticComparator;
 
 /**
  * ObjectStore Constructor
- * @param  databaseDirectory   directory where the database resides
  */
-ObjectStore::ObjectStore(std::string databaseDirectory)
-    : m_databaseDirectory(databaseDirectory) {
+ObjectStore::ObjectStore() {
 
     syncWriteOptions.sync = true;
     asyncWriteOptions.sync = false;
@@ -93,11 +91,15 @@ ObjectStore::~ObjectStore() {
 /**
  * Open
  *
+ * m_databaseDirectory
+ *
  * @return the completion status of the operations (success of failure)
  */
 ReturnStatus
-ObjectStore::open() {
+ObjectStore::open(string databaseDirectory, bool compressionEnabled) {
 
+    m_databaseDirectory = databaseDirectory;
+    m_compressionEnabled = compressionEnabled;
     asyncWriteOptions.sync = false;
     syncWriteOptions.sync = true;
     flushWriteOptions.sync = true;
@@ -107,7 +109,7 @@ ObjectStore::open() {
 
     databaseOptions.create_if_missing = true;
     databaseOptions.block_cache = leveldb::NewLRUCache(64 * 1048576);
-    databaseOptions.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+    databaseOptions.compression = m_compressionEnabled ? leveldb::kSnappyCompression : leveldb::kNoCompression;
 
     leveldb::Status status = leveldb::DB::Open(databaseOptions, m_databaseDirectory, &m_database);
     if (!status.ok()) {
@@ -148,7 +150,7 @@ ObjectStore::erase() {
 
     close();
     DestroyDB(m_databaseDirectory, databaseOptions);
-    open();
+    open(m_databaseDirectory, m_compressionEnabled);
     return ReturnStatus::SUCCESS;
 }
 

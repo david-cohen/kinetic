@@ -59,13 +59,13 @@ public:
     /*
      * Constructor/Destructor
      */
-    explicit ObjectStore(std::string databaseDirectory);
+    ObjectStore();
     ~ObjectStore();
 
     /*
      * Public Member Functions
      */
-    ReturnStatus open();
+    ReturnStatus open(std::string databaseDirectory, bool compressionEnabled);
     ReturnStatus close();
     ReturnStatus erase();
     ReturnStatus flush();
@@ -92,7 +92,6 @@ public:
     ReturnStatus batchDeleteForced(BatchDescriptor& batch, const std::string& key);
     ReturnStatus batchCommit(BatchDescriptor& batch);
     ReturnStatus optimizeMedia();
-    std::string  getDatabaseDirectory() {return m_databaseDirectory;}
 
 private:
 
@@ -100,16 +99,12 @@ private:
      * Private Data Members
      */
     leveldb::DB*        m_database;             //!< Actual levelDB database
-    const std::string   m_databaseDirectory;    //!< Directory where database files reside
+    std::string         m_databaseDirectory;    //!< Directory where database files reside
+    bool                m_compressionEnabled;   //!< True if the database is to use compression
 
     DISALLOW_COPY_AND_ASSIGN(ObjectStore);
 };
 
-/*
- * Shared pointer for ObjectStore
- */
-typedef std::shared_ptr<ObjectStore> ObjectStorePtr;
-
-extern ObjectStorePtr objectStore;
+extern ObjectStore objectStore;
 
 #endif

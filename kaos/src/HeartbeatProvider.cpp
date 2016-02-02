@@ -47,7 +47,7 @@ HeartbeatProvider::start() {
         return true;
     }
     catch (std::exception& e) {
-        LOG(ERROR) << "Failed to create Heartbeat Provider thread: description=" << e.what();
+        LOG(ERROR) << "Failed to create Heartbeat Provider thread: Description=" << e.what();
         m_thread = nullptr;
         return false;
     }
@@ -65,12 +65,12 @@ HeartbeatProvider::openSocket() {
     m_socketFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (m_socketFd == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to create multicast socket: error_code=" << errno << ", description=" << strerror(errno);
+        LOG(ERROR) << "Failed to create multicast socket: Error Code=" << errno << ", Description=" << strerror(errno);
         throw std::runtime_error("Failed to create multicast socket");
     }
 
     if (setsockopt(m_socketFd, IPPROTO_IP, IP_MULTICAST_TTL, &MULTICAST_TTL, sizeof(MULTICAST_TTL)) == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to set socket options IP_MULTICAST_TTL: error_code=" << errno << ", description=" << strerror(errno);
+        LOG(ERROR) << "Failed to set socket options IP_MULTICAST_TTL: Error Code=" << errno << ", Description=" << strerror(errno);
         throw std::runtime_error("Failed to set socket options IP_MULTICAST_TTL");
     }
 }

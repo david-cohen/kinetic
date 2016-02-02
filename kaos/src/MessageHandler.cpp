@@ -681,17 +681,20 @@ MessageHandler::processPutRequest(Transaction& transaction) {
     ReturnStatus returnStatus;
 
     if (params.force())
-        returnStatus = objectStore->putForced(params.key(), transaction.request->value(), params.newversion(),
-                                              params.tag(), params.algorithm(), params.synchronization());
+        returnStatus = objectStore.putForced(params.key(), transaction.request->value(), params.newversion(),
+                                             params.tag(), params.algorithm(), params.synchronization());
     else
-        returnStatus = objectStore->put(params.key(), transaction.request->value(), params.newversion(),
-                                        params.dbversion(), params.tag(), params.algorithm(), params.synchronization());
+        returnStatus = objectStore.put(params.key(), transaction.request->value(), params.newversion(),
+                                       params.dbversion(), params.tag(), params.algorithm(), params.synchronization());
 
     Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
 }
 
 /**
  * Processes a get request.
+ * Get the object store entry associated with the specified key.  The entry contains the key, value,
+ * and metadata (version, tag, and algorithm).  If no entry was found associated with the specified
+ * key, then null is returned.
  *
  * @param   transaction     Contains the request and response message
  */
@@ -708,17 +711,16 @@ MessageHandler::processGetRequest(Transaction& transaction) {
 
     const Command_KeyValue& request = transaction.request->command()->body().keyvalue();
     const string& key = request.key();
-    bool metadataOnly = request.metadataonly();
 
     string version;
     string tag;
     Algorithm algorithm;
 
     ReturnStatus returnStatus;
-    if (!metadataOnly)
-        returnStatus = objectStore->get(key, transaction.response->value(), version, tag, algorithm);
+    if (!request.metadataonly())
+        returnStatus = objectStore.get(key, transaction.response->value(), version, tag, algorithm);
     else
-        returnStatus = objectStore->getMetadata(key, version, tag, algorithm);
+        returnStatus = objectStore.getMetadata(key, version, tag, algorithm);
 
     Translator::setMessageStatus(status, returnStatus);
     transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
@@ -738,9 +740,9 @@ MessageHandler::processGetRequest(Transaction& transaction) {
     string algorithm;
     ReturnStatus returnStatus;
     if (!request.metadataonly())
-        returnStatus = objectStore->get(request.key(), transaction.response->value(), *response->mutable_dbversion(), *response->mutable_tag(), algorithm);
+        returnStatus = objectStore.get(request.key(), transaction.response->value(), *response->mutable_dbversion(), *response->mutable_tag(), algorithm);
     else
-        returnStatus = objectStore->getMetadata(request.key(), *response->mutable_dbversion(), *response->mutable_tag(), algorithm);
+        returnStatus = objectStore.getMetadata(request.key(), *response->mutable_dbversion(), *response->mutable_tag(), algorithm);
 
     if (returnStatus == ReturnStatus::SUCCESS)
         response->set_algorithm(Translator::toMessageFormat(algorithm));
@@ -773,7 +775,7 @@ MessageHandler::processGetNextRequest(Transaction& transaction) {
     string nextTag;
     Algorithm nextAlgorithm;
 
-    ReturnStatus returnStatus = objectStore->getNext(key, nextKey, transaction.response->value(), nextVersion, nextTag, nextAlgorithm);
+    ReturnStatus returnStatus = objectStore.getNext(key, nextKey, transaction.response->value(), nextVersion, nextTag, nextAlgorithm);
 
     Translator::setMessageStatus(status, returnStatus);
     transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
@@ -827,7 +829,7 @@ MessageHandler::processGetPreviousRequest(Transaction& transaction) {
     string previousTag;
     Algorithm previousAlgorithm;
 
-    ReturnStatus returnStatus = objectStore->getPrevious(key, previousKey, transaction.response->value(), previousVersion, previousTag, previousAlgorithm);
+    ReturnStatus returnStatus = objectStore.getPrevious(key, previousKey, transaction.response->value(), previousVersion, previousTag, previousAlgorithm);
 
     Translator::setMessageStatus(status, returnStatus);
     transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
@@ -880,7 +882,7 @@ MessageHandler::processGetVersionRequest(Transaction& transaction) {
     string tag;
     Algorithm algorithm;
 
-    ReturnStatus returnStatus = objectStore->getMetadata(key, version, tag, algorithm);
+    ReturnStatus returnStatus = objectStore.getMetadata(key, version, tag, algorithm);
 
     Translator::setMessageStatus(status, returnStatus);
     transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
@@ -925,10 +927,10 @@ MessageHandler::processGetKeyRangeRequest(Transaction& transaction) {
 #endif
 
     if (!params.reverse())
-        returnStatus = objectStore->getKeyRange(params.startkey(), params.startkeyinclusive(), params.endkey(),
-                                                params.endkeyinclusive(), params.maxreturned(), keyList, accessControl);
+        returnStatus = objectStore.getKeyRange(params.startkey(), params.startkeyinclusive(), params.endkey(),
+                                               params.endkeyinclusive(), params.maxreturned(), keyList, accessControl);
     else
-        returnStatus = objectStore->getKeyRangeReversed(params.startkey(), params.startkeyinclusive(), params.endkey(),
+        returnStatus = objectStore.getKeyRangeReversed(params.startkey(), params.startkeyinclusive(), params.endkey(),
                        params.endkeyinclusive(), params.maxreturned(), keyList, accessControl);
 
     Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
@@ -971,9 +973,9 @@ MessageHandler::processDeleteRequest(Transaction& transaction) {
     ReturnStatus returnStatus;
 
     if (params.force())
-        returnStatus = objectStore->deleteForced(params.key(), params.synchronization());
+        returnStatus = objectStore.deleteForced(params.key(), params.synchronization());
     else
-        returnStatus = objectStore->deleteVersioned(params.key(), params.dbversion(), params.synchronization());
+        returnStatus = objectStore.deleteVersioned(params.key(), params.dbversion(), params.synchronization());
 
     Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
 }
@@ -986,7 +988,7 @@ MessageHandler::processDeleteRequest(Transaction& transaction) {
 void
 MessageHandler::processFlushRequest(Transaction& transaction) {
 
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), objectStore->flush());
+    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), objectStore.flush());
 }
 
 /**
@@ -1034,7 +1036,7 @@ MessageHandler::processPinOpRequest(Transaction& transaction) {
                 if ((!serverSettings.erasePin().empty()) && (transaction.request->pinauth().pin().compare(serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                objectStore->erase();
+                objectStore.erase();
                 serverSettings.setDefaults();
                 break;
 
@@ -1043,7 +1045,7 @@ MessageHandler::processPinOpRequest(Transaction& transaction) {
                 if ((!serverSettings.erasePin().empty()) && (transaction.request->pinauth().pin().compare(serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 4");
 
-                objectStore->erase();
+                objectStore.erase();
                 serverSettings.setDefaults();
                 break;
 
@@ -1071,7 +1073,7 @@ MessageHandler::processPinOpRequest(Transaction& transaction) {
 void
 MessageHandler::processOptimizeMediaRequest(Transaction& transaction) {
 
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), objectStore->optimizeMedia());
+    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), objectStore.optimizeMedia());
 }
 
 /**
@@ -1121,7 +1123,7 @@ MessageHandler::processP2pPushRequest(Transaction& transaction) {
         string push_tag;
         Algorithm push_algorithm;
 
-        ReturnStatus returnStatus = objectStore->get(key, push_value, push_old_version, push_tag, push_algorithm);
+        ReturnStatus returnStatus = objectStore.get(key, push_value, push_old_version, push_tag, push_algorithm);
         if (returnStatus == ReturnStatus::SUCCESS) {
             string push_key = newKey.empty() ? key : newKey;
             string push_new_version = !version.empty() ? version : push_old_version;
@@ -1252,17 +1254,17 @@ MessageHandler::processEndBatchRequest(Transaction& transaction) {
 
         if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT) {
             if (params.force())
-                returnStatus = objectStore->batchPutForced(batch, params.key(), batchRequest->value(),
+                returnStatus = objectStore.batchPutForced(batch, params.key(), batchRequest->value(),
                                params.newversion(), params.tag(), params.algorithm());
             else
-                returnStatus = objectStore->batchPut(batch, params.key(), batchRequest->value(), params.newversion(),
-                                                     params.dbversion(), params.tag(), params.algorithm());
+                returnStatus = objectStore.batchPut(batch, params.key(), batchRequest->value(), params.newversion(),
+                                                    params.dbversion(), params.tag(), params.algorithm());
         }
         else if (batchRequest->command()->header().messagetype() == Command_MessageType_DELETE) {
             if (params.force())
-                returnStatus = objectStore->batchDeleteForced(batch, params.key());
+                returnStatus = objectStore.batchDeleteForced(batch, params.key());
             else
-                returnStatus = objectStore->batchDelete(batch, params.key(), params.dbversion());
+                returnStatus = objectStore.batchDelete(batch, params.key(), params.dbversion());
         }
         if (returnStatus != ReturnStatus::SUCCESS) {
             returnBatchInfo->set_failedsequence(batchRequest->command()->header().sequence());
@@ -1274,7 +1276,7 @@ MessageHandler::processEndBatchRequest(Transaction& transaction) {
         }
     }
 
-    objectStore->batchCommit(batch);
+    objectStore.batchCommit(batch);
     transaction.connection->deleteBatchList(batchId);
     transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }

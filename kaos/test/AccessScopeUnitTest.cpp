@@ -9,10 +9,15 @@
 #include <string>
 #include <vector>
 #include "gtest/gtest.h"
+#include "Logger.hpp"
 #include "AccessScope.hpp"
 #include "SystemConfig.hpp"
 
+/*
+ * Global Variables
+ */
 SystemConfig systemConfig;
+LogControl logControl;
 
 /**
  * Create Large String

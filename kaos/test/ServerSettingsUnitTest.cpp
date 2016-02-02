@@ -15,6 +15,7 @@
 #include <string>
 #include <climits>
 #include "gtest/gtest.h"
+#include "Logger.hpp"
 #include "SystemConfig.hpp"
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
@@ -25,7 +26,11 @@
  */
 using std::string;
 
+/*
+ * Global Variables
+ */
 SystemConfig systemConfig;
+LogControl logControl;
 
 /*
  * Constants

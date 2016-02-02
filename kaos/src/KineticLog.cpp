@@ -91,13 +91,13 @@ KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response
 
     struct statvfs fiData;
     memset(&fiData, 0, sizeof(fiData));
-    std::string mountPoint = objectStore->getDatabaseDirectory();
+    std::string mountPoint = systemConfig.databaseDirectory();
 
     float totalCapacity(0);
     float remainingCapacity(0);
 
     if ((statvfs(mountPoint.c_str(), &fiData)) != STATUS_SUCCESS) {
-        LOG(ERROR) << "Failed to get file system information for mount point " << mountPoint << ", error_code=" << errno << ", description=" << strerror(errno);
+        LOG(ERROR) << "Failed to get file system information for mount point " << mountPoint << ", Error Code=" << errno << ", Description=" << strerror(errno);
     }
     else {
         totalCapacity = static_cast<float>(fiData.f_bsize) * static_cast<float>(fiData.f_blocks);

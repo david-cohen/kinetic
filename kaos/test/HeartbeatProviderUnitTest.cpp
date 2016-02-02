@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <sstream>
 #include "gtest/gtest.h"
+#include "Logger.hpp"
 #include "SystemConfig.hpp"
 #include "HeartbeatProvider.hpp"
 
@@ -55,6 +56,7 @@ public:
 /*
  * Data Objects
  */
+LogControl logControl;
 SystemConfig  systemConfig;
 
 /**
@@ -68,22 +70,22 @@ SystemConfig  systemConfig;
 void createConnection(MulticastConnection& connection) {
 
     connection.socketfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    ASSERT_NE(connection.socketfd, STATUS_FAILURE) << "Failed to create socket: error_code=" << errno << ", description=" << strerror(errno);
+    ASSERT_NE(connection.socketfd, STATUS_FAILURE) << "Failed to create socket: Error Code=" << errno << ", Description=" << strerror(errno);
 
     const int OPTION_SET(1);
-    ASSERT_NE(setsockopt(connection.socketfd, SOL_SOCKET, SO_REUSEADDR, &OPTION_SET, sizeof(OPTION_SET)), STATUS_FAILURE) << "Failed to set socket options SO_REUSEADDR: error_code=" << errno << ", description=" << strerror(errno);
+    ASSERT_NE(setsockopt(connection.socketfd, SOL_SOCKET, SO_REUSEADDR, &OPTION_SET, sizeof(OPTION_SET)), STATUS_FAILURE) << "Failed to set socket options SO_REUSEADDR: Error Code=" << errno << ", Description=" << strerror(errno);
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(systemConfig.multicastPort());
-    ASSERT_NE(bind(connection.socketfd, (struct sockaddr*) &server, sizeof(struct sockaddr)), STATUS_FAILURE) << "Failed to bind socket: error_code=" << errno << ", description=" << strerror(errno);
+    ASSERT_NE(bind(connection.socketfd, (struct sockaddr*) &server, sizeof(struct sockaddr)), STATUS_FAILURE) << "Failed to bind socket: Error Code=" << errno << ", Description=" << strerror(errno);
 
     struct ip_mreq group;
     memset(&group, 0, sizeof(group));
     group.imr_multiaddr.s_addr = inet_addr(systemConfig.multicastIpAddress());
-    ASSERT_NE(setsockopt(connection.socketfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group)), STATUS_FAILURE) << "Failed to set socket options IP_ADD_MEMBERSHIP: error_code=" << errno << ", description=" << strerror(errno);
+    ASSERT_NE(setsockopt(connection.socketfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group)), STATUS_FAILURE) << "Failed to set socket options IP_ADD_MEMBERSHIP: Error Code=" << errno << ", Description=" << strerror(errno);
 }
 
 /**

@@ -1,0 +1,18 @@
+# Specify the location where the Kinetic server's database and
+# configuration data is to be stored.  If it is not specified,
+# or the specified location does not exist, then "export/dfs"
+# will be used. 
+
+ROOT_STORAGE_DIRECTORY=/export/dfs
+
+# Indicate if the database is to use compression.
+
+USE_COMPRESSION=false
+
+# Specify the lowest (least important) level of events to be logged.
+# The specified level and all levels above it (most important) will
+# be logged.  The event levels are (from highest to lowest) are:
+# ERROR, WARNING, INFO, and DEBUG".  If the logging level is not
+# specified or unrecognized, then the WARNING level will be used. 
+
+LOGGING_LEVEL=WARN

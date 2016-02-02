@@ -131,6 +131,6 @@ void SslStream::write(const char* const buffer, size_t byteCount) {
 void SslStream::close() {
 
     if (::close(m_streamFd) == STATUS_FAILURE) {
-        LOG(ERROR) << "TCP close failure: error_code=" << errno << ", error_description=" << strerror(errno);
+        LOG(ERROR) << "TCP close failure: Error Code=" << errno << ", Description=" << strerror(errno);
     }
 }

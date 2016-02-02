@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <thread>
 #include "Common.hpp"
+#include "Logger.hpp"
 #include "SystemConfig.hpp"
 #include "TcpTransport.hpp"
 #include "ListenerInterface.hpp"
@@ -61,7 +62,7 @@ public:
             }
         }
         catch (std::exception& e) {
-            LOG(ERROR) << "Failed to create TCP Transport thread: description=" << e.what();
+            LOG(ERROR) << "Failed to create TCP Transport thread: Description=" << e.what();
             m_thread = nullptr;
         }
         return false;

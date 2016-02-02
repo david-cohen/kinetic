@@ -23,12 +23,16 @@
 
 /*
  * Global Variable
+ *
+ * The System Configuration class must be declared first because other classes depend on using its
+ * values.
  */
+LogControl logControl;
 SystemConfig systemConfig;
 ServerSettings serverSettings(systemConfig.serverSettingsFile());
 SslControl sslControl;
 MessageStatistics messageStatistics;
-ObjectStorePtr objectStore;
+ObjectStore objectStore;
 CommunicationsManager communicationsManager;
 
 /*
@@ -64,13 +68,10 @@ void terminateProgram(int signum) {
  */
 int32_t main(int argc, char** argv) {
 
-    bool background(true);
+    bool foreground(true);
     std::string pidFileName = systemConfig.defaultPidFileName();
-    std::string databaseDirectory(systemConfig.databaseDirectory());
     struct option longopts[] = {
-        { "dir",        required_argument, nullptr, 'x' },
         { "pid",        required_argument, nullptr, 'p' },
-        { "debug",      no_argument,       nullptr, 'd' },
         { "foreground", no_argument,       nullptr, 'f' },
         { "help",       no_argument,       nullptr, 'h' },
         { 0, 0, 0, 0 }
@@ -83,26 +84,20 @@ int32_t main(int argc, char** argv) {
     int32_t opt(0);
     int32_t longindex(0);
     const int32_t ALL_ARGS_PROCESSED(-1);
-    while ((opt = getopt_long(argc, argv, "xp:dfh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
-        if (opt == 'x') {
-            databaseDirectory.assign(optarg);
-        }
-        else if (opt == 'p') {
+    while ((opt = getopt_long(argc, argv, "p:fh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
+        if (opt == 'p') {
             pidFileName.assign(optarg);
         }
-        else if (opt == 'd') {
-            systemConfig.setDebugEnabled(true);
-        }
         else if (opt == 'f') {
-            background = false;
+            foreground = true;
+            logControl.setStandardOutEnabled(true);
         }
         else if (opt == 'h') {
-            std::cout << "Usage: " << basename(argv[0]) << " [--dir|-x]|[--debug|-d]|[--pid|-p]|[--foreground|-f]|[--help|-h]" << std::endl;
+            std::cout << "Usage: " << basename(argv[0]) << " [--pid|-p]|[--foreground|-f]|[--help|-h]" << std::endl;
             return (opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE);
         }
     }
 
-    LOG_INIT(nullptr, systemConfig.kaosLogFacility(), systemConfig.debugEnabled());
     LOG(INFO) << "Starting application";
 
     /*
@@ -112,8 +107,8 @@ int32_t main(int argc, char** argv) {
      * to the root directory so that the daemon can't prevent the root file system from being
      * unmounted.
      */
-    if ((background) && (daemon(0, 0) != STATUS_SUCCESS)) {
-        LOG(ERROR) << "Failed to become daemon: error_code=" << errno << ", error_description=" << strerror(errno);
+    if ((!foreground) && (daemon(0, 0) != STATUS_SUCCESS)) {
+        LOG(ERROR) << "Failed to become daemon: Error Code=" << errno << ", Description=" << strerror(errno);
         return EXIT_FAILURE;
     }
 
@@ -124,29 +119,23 @@ int32_t main(int argc, char** argv) {
 
     /*
      * Setup the object store.
-      */
-    objectStore.reset(new ObjectStore(databaseDirectory));
-    ReturnStatus status = objectStore->open();
+     */
+    ReturnStatus status = objectStore.open(systemConfig.databaseDirectory(), systemConfig.objectStoreCompressionEnabled());
     if (status != ReturnStatus::SUCCESS) {
         LOG(ERROR) << "Failed to open object store";
         return EXIT_FAILURE;
     }
 
-
-    if (!background)
-        signal(SIGINT, terminateProgram);
+    FILE* file = fopen(pidFileName.c_str(), "w");
+    if (file == nullptr)
+        LOG(ERROR) << "Failed to create PID file: Error Code=" << errno << ", Description=" << strerror(errno);
     else {
-        FILE* file = fopen(pidFileName.c_str(), "w");
-        if (file == nullptr)
-            LOG(ERROR) << "Failed to create PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-        else {
-            if (fprintf(file, "%i\n", getpid()) < 0)
-                LOG(ERROR) << "Failed to write PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-            if (fclose(file) != STATUS_SUCCESS)
-                LOG(ERROR) << "Failed to close PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-        }
-        signal(SIGTERM, terminateProgram);
+        if (fprintf(file, "%i\n", getpid()) < 0)
+            LOG(ERROR) << "Failed to write PID file: Error Code=" << errno << ", Description=" << strerror(errno);
+        if (fclose(file) != STATUS_SUCCESS)
+            LOG(ERROR) << "Failed to close PID file: Error Code=" << errno << ", Description=" << strerror(errno);
     }
+    signal(SIGTERM, terminateProgram);
 
     /*
      * Start the communications and then wait for the application to be signaled to terminate.
@@ -156,10 +145,8 @@ int32_t main(int argc, char** argv) {
     daemonTerminated.wait(daemonLock);
     LOG(INFO) << "Stopping application";
 
-    if (background) {
-        if (remove(pidFileName.c_str()) != STATUS_SUCCESS)
-            LOG(ERROR) << "Failed to remove PID file: error_code=" << errno << ", error_description=" << strerror(errno);
-    }
+    if (remove(pidFileName.c_str()) != STATUS_SUCCESS)
+        LOG(ERROR) << "Failed to remove PID file: Error Code=" << errno << ", Description=" << strerror(errno);
 
     return EXIT_SUCCESS;
 }

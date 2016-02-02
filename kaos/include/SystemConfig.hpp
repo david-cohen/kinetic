@@ -17,7 +17,6 @@
 #include <unordered_map>
 #include "leveldb/slice.h"
 #include "Hmac.hpp"
-#include "Logger.hpp"
 #include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "NetworkInterface.hpp"
@@ -41,7 +40,6 @@ public:
     inline bool locked() { return m_locked;}
     inline void setLocked(bool locked) {m_locked = locked;}
     inline bool debugEnabled() { return m_debugEnabled;}
-    inline void setDebugEnabled(bool debugEnabled) {m_debugEnabled = debugEnabled;}
     inline std::string defaultPidFileName() {return m_defaultPidFileName;}
     inline std::string databaseDirectory() {return m_databaseDirectory;}
     inline std::string serverSettingsFile() {return m_serverSettingsFile;}
@@ -53,7 +51,6 @@ public:
     inline const char* protocolVersion() {return m_protocolVersion;}
     inline const char* compilationDate() {return m_compilationDate;}
     inline const char* sourceHash() {return m_sourceHash;}
-    inline LogFacility kaosLogFacility() {return m_kaosLogFacility;}
     inline bool objectStoreCompressionEnabled() {return m_objectStoreCompressionEnabled;}
     inline int32_t maxPendingAdminConnections() {return m_maxPendingAdminConnections;}
     inline uint32_t maxActiveAdminConnections() {return m_maxActiveAdminConnections;}
@@ -112,7 +109,6 @@ private:
     const char*          m_protocolVersion;
     const char*          m_compilationDate;
     const char*          m_sourceHash;
-    LogFacility          m_kaosLogFacility;
     bool                 m_objectStoreCompressionEnabled;
     int32_t              m_maxPendingAdminConnections;
     uint32_t             m_maxActiveAdminConnections;

@@ -9,10 +9,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <ifaddrs.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netpacket/packet.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 #include <set>
 #include <string>
 #include <sstream>
@@ -34,15 +37,18 @@ using std::string;
  */
 static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
-static const char* VERSION("1.0.0-FOR-EVAL-ONLY");
+static const char* VERSION("1.0.1-FOR-EVAL-ONLY");
 
 /*
  * Daemon Related Settings
  */
 static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
-static const char* DATABASE_DIRECTORY("/export/dfs/objectDatabase");
-static const char* SERVER_SETTINGS_FILE("/export/dfs/serverSettings");
-static const LogFacility KAOS_LOG_FACILITY(LOCAL2);
+static const char* DEFAULT_CONFIG_FILE_NAME("/etc/default/kaos");
+static const char* DEFAULT_STORAGE_DIRECTORY("/export/dfs");
+static const char* DATABASE_DIRECTORY("objectDatabase");
+static const char* SERVER_SETTINGS_FILE("serverSettings");
+static const LogFacility LOGGING_FACILITY(LOCAL2);
+static const LogLevel DEFAULT_LOGGING_LEVEL(WARNING);
 static const bool DEFAULT_LOCKED(false);
 static const bool DEFAULT_DEBUG_ENABLED(false);
 
@@ -125,6 +131,29 @@ createFlushDataKey() {
 }
 
 /**
+ * Translates log level in string form to the LogLevel format.  If no valid log level is found, then
+ * the default log level will be returned.
+ *
+ * @param   logLevel    String form of the log level
+ *
+ * @return  Enum value of LogLevel
+ */
+static LogLevel
+toLogLevel(std::string logLevel) {
+
+    if (logLevel == "ERROR")
+        return ERROR;
+    else if (logLevel == "WARNING")
+        return WARNING;
+    else if (logLevel == "INFO")
+        return INFO;
+    else if (logLevel == "DEBUG")
+        return DEBUG;
+    else
+        return DEFAULT_LOGGING_LEVEL;
+}
+
+/**
  * Initializes the system configuration object, which contains the attributes that a user can not
  * set.
  */
@@ -132,17 +161,16 @@ SystemConfig::SystemConfig()
     : m_locked(DEFAULT_LOCKED),
       m_debugEnabled(DEFAULT_DEBUG_ENABLED),
       m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
-      m_databaseDirectory(DATABASE_DIRECTORY),
-      m_serverSettingsFile(SERVER_SETTINGS_FILE),
+      m_databaseDirectory(),
+      m_serverSettingsFile(),
       m_vendor(VENDOR),
       m_model(MODEL),
       m_version(VERSION),
-      m_serialNumber(""),
-      m_worldWideName(""),
+      m_serialNumber(),
+      m_worldWideName(),
       m_protocolVersion(PROTOCOL_VERSION),
       m_compilationDate(TIMESTAMP),
       m_sourceHash(SOURCE_HASH),
-      m_kaosLogFacility(KAOS_LOG_FACILITY),
       m_objectStoreCompressionEnabled(OBJECT_STORE_COMPRESSION_ENABLED),
       m_maxPendingAdminConnections(MAX_PENDING_ADMIN_CONNECTIONS),
       m_maxActiveAdminConnections(MAX_ACTIVE_ADMIN_CONNECTIONS),
@@ -189,10 +217,43 @@ SystemConfig::SystemConfig()
     com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS,
     com::seagate::kinetic::proto::Command_GetLog_Type_MESSAGES
 }) {
+
+    /*
+     * Read configuration data from the default configuration file.
+     */
+    boost::property_tree::ptree defaultConfigData;
+    boost::property_tree::ini_parser::read_ini(DEFAULT_CONFIG_FILE_NAME, defaultConfigData);
+
+    /*
+     * Set the logging level first, so that events can be logged correctly fro the beginning.
+     */
+    LogLevel loggingLevel = toLogLevel(defaultConfigData.get<string>("LOGGING_LEVEL", "WARNING"));
+    logControl.open(LOGGING_FACILITY, loggingLevel);
+    m_debugEnabled = loggingLevel == DEBUG;
+
+    /*
+     * Set the location of the database and server settings.
+     */
+    string storageDirectory(DEFAULT_STORAGE_DIRECTORY);
+    string specifiedStorageDirectory = defaultConfigData.get<std::string>("ROOT_STORAGE_DIRECTORY", DEFAULT_STORAGE_DIRECTORY);
+    if (!specifiedStorageDirectory.empty()) {
+        struct stat info;
+        if (stat(specifiedStorageDirectory.c_str(), &info) == STATUS_SUCCESS)
+            storageDirectory = specifiedStorageDirectory;
+        else
+            LOG(ERROR) << "Specified storage directory (" << specifiedStorageDirectory << ") failed stat: Error Code=" << errno << ", Description=" << strerror(errno);
+    }
+
+    m_databaseDirectory = storageDirectory + "/" + DATABASE_DIRECTORY;
+    m_serverSettingsFile = storageDirectory + "/" + SERVER_SETTINGS_FILE;
+
+    /*
+     * Discover the network interfaces.
+     */
     struct ifaddrs* interfaceList(nullptr);
 
     if (getifaddrs(&interfaceList) == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to obtain network interface information: error_code=" << errno << ", description=" << strerror(errno);
+        LOG(ERROR) << "Failed to obtain network interface information: Error Code=" << errno << ", Description=" << strerror(errno);
         return;
     }
 
@@ -246,7 +307,7 @@ SystemConfig::SystemConfig()
      */
     FILE* fp = popen("/sbin/hdparm -I /dev/sda", "r");
     if (fp == nullptr) {
-        LOG(ERROR) << "Failed to obtain drive information: error_code=" << errno << ", description=" << strerror(errno);
+        LOG(ERROR) << "Failed to obtain drive information: Error Code=" << errno << ", Description=" << strerror(errno);
     }
     else {
         char* line = nullptr;

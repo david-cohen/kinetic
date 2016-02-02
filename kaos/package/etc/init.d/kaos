@@ -18,6 +18,7 @@ PIDFILE=/var/run/"$NAME".pid
 EXTRA_OPTS="--pid $PIDFILE"
 
 . /lib/lsb/init-functions
+. /etc/default/kaos
 
 case "$1" in
 start)
@@ -38,8 +39,8 @@ restart | force-reload)
 clean-restart)
         log_daemon_msg "Cleanly Restarting Kinetic daemon" "$NAME" 
         $0 stop
-	rm -rf /export/dfs/objectDatabase
-	rm -rf /export/dfs/serverSettings
+	rm -rf $ROOT_STORAGE_DIRECTORY/objectDatabase
+	rm -rf $ROOT_STORAGE_DIRECTORY/serverSettings
         $0 start
         ;;
 status)

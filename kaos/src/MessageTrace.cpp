@@ -66,8 +66,14 @@ MessageTrace::outputContents(KineticMessageFraming& messageFraming, KineticMessa
 
     std::cout << "  }" << std::endl;
     if (!message->value().empty()) {
+        const uint32_t MAX_VALUE_BYTES(16);
         std::cout << "  Value: ";
-        outputString(message->value());
+        if (message->value().size() <= MAX_VALUE_BYTES)
+            outputString(message->value());
+        else {
+            outputString(message->value().substr(0, MAX_VALUE_BYTES), false);
+            std::cout << "..." << std::endl;
+        }
     }
     std::cout << "}" << std::endl;
 }

@@ -29,7 +29,6 @@ public:
     static kaos::Settings_ACL_Operation toSettingsFormat(Operation operation);
     static HmacAlgorithm fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm hmacAlgorithm);
     static Operation fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission);
-    static void setMessageStatus(com::seagate::kinetic::proto::Command_Status* messageStatus, ReturnStatus returnStatus);
     static std::string toString(bool boolValue);
     static std::string toString(com::seagate::kinetic::proto::Command_Algorithm algorithm);
     static std::string toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpType pinop);

@@ -96,7 +96,7 @@ using com::seagate::kinetic::proto::Message_AuthType;
  */
 static const int DISPATCH_TABLE_SIZE = 24;
 static OperationInfo dispatchTable[DISPATCH_TABLE_SIZE] = {
-    /*    Request Type                              Operation Type       Function Handler                            Involves Key */
+//    Request Type                              Operation Type       Function Handler                             Involves Key
     { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  MessageHandler::processInvalidRequest,       false },
     { Command_MessageType_GET,                  Operation::READ,     MessageHandler::processGetRequest,           true  },
     { Command_MessageType_PUT,                  Operation::WRITE,    MessageHandler::processPutRequest,           true  },
@@ -178,21 +178,13 @@ MessageHandler::processRequest(Transaction& transaction) {
          * Verify that the cluster version is set and correct (for non-pinauth requests, which
          * doesn't require the cluster version).
          */
-
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
         if (transaction.request->authtype() != Message_AuthType::Message_AuthType_PINAUTH) {
-#else
-        {
-#endif
             if (!requestHeader.has_clusterversion()) {
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Header missing Cluster Version");
             }
+            // Note: the smoke test expected the "CLUSTER_VERSION_FAILURE" test.
             else if (requestHeader.clusterversion() != serverSettings.clusterVersion()) {
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
                 throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "CLUSTER_VERSION_FAILURE");
-#else
-                throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "Incorrect Cluster Version");
-#endif
             }
         }
 
@@ -234,12 +226,9 @@ MessageHandler::processRequest(Transaction& transaction) {
             if (transaction.accessControl->tlsRequired(operationInfo.operation) && (transaction.connection->security() != Security::SSL))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Requires TLS connection for request");
 
+            // Note: the smoke test expected the "permission denied" test.
             if (!transaction.accessControl->operationPermitted(operationInfo.operation, operationInfo.operationInvolvesKey, transaction.request->command()->body()))
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
-#else
-                throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "The user does not have permission");
-#endif
         }
 
         if (systemConfig.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
@@ -662,93 +651,75 @@ MessageHandler::processGetLogRequest(Transaction& transaction) {
 void
 MessageHandler::processPutRequest(Transaction& transaction) {
 
+    /*
+     * If the request is a part of batch, defer processing it until the end batch command has been
+     * received.
+     */
     if (transaction.request->command()->header().has_batchid()) {
 
         BatchListPtr batchList = transaction.connection->getBatchList(transaction.request->command()->header().batchid());
 
         if (batchList == nullptr)
-            handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
+            throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
         batchList->push_back(transaction.request);
         transaction.response.reset();
         return;
     }
 
-    /*
-     * If the put is to be forced, it doesn't require the entry version.
-     */
     const Command_KeyValue& params = transaction.request->command()->body().keyvalue();
-    ReturnStatus returnStatus;
 
-    if (params.force())
-        returnStatus = objectStore.putForced(params.key(), transaction.request->value(), params.newversion(),
-                                             params.tag(), params.algorithm(), params.synchronization());
-    else
-        returnStatus = objectStore.put(params.key(), transaction.request->value(), params.newversion(),
-                                       params.dbversion(), params.tag(), params.algorithm(), params.synchronization());
+    /*
+     * Validate the parameters.
+     */
 
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
+    if (params.key().size() > systemConfig.maxKeySize())
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Key size too large");
+
+    if (params.newversion().size() > systemConfig.maxVersionSize())
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Version size too large");
+
+    if (params.tag().size() > systemConfig.maxTagSize())
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Tag size too large");
+
+    /*
+     * Perform the put operation.  If an error is encountered, the function will throw and will be
+     * caught by the calling function.
+     */
+    objectStore.putEntry(params, transaction.request->value());
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
- * Processes a get request.
- * Get the object store entry associated with the specified key.  The entry contains the key, value,
- * and metadata (version, tag, and algorithm).  If no entry was found associated with the specified
- * key, then null is returned.
+ * Processes a get request, which can be for the entire database entry or for just the entry's
+ * metadata.
  *
  * @param   transaction     Contains the request and response message
  */
 void
 MessageHandler::processGetRequest(Transaction& transaction) {
 
-    /*
-     * Ensure that the message contains the get (key/value) parameters.  If not, fail the request.
-     */
-    Command_Status* status = transaction.response->mutable_command()->mutable_status();
-
-    if (!transaction.request->command()->body().has_keyvalue())
-        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Get parameters not specified");
-
     const Command_KeyValue& request = transaction.request->command()->body().keyvalue();
-    const string& key = request.key();
 
-    string version;
-    string tag;
-    Algorithm algorithm;
-
-    ReturnStatus returnStatus;
     if (!request.metadataonly())
-        returnStatus = objectStore.get(key, transaction.response->value(), version, tag, algorithm);
+        objectStore.getEntry(request.key(), transaction.response->value(), transaction.response->mutable_command()->mutable_body()->mutable_keyvalue());
     else
-        returnStatus = objectStore.getMetadata(key, version, tag, algorithm);
+        objectStore.getEntryMetadata(request.key(), false, transaction.response->mutable_command()->mutable_body()->mutable_keyvalue());
 
-    Translator::setMessageStatus(status, returnStatus);
-    transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
+}
+/**
+ * Processes a get version request.
+ *
+ * @param   transaction     Contains the request and response message
+ */
+void
+MessageHandler::processGetVersionRequest(Transaction& transaction) {
 
-    if (returnStatus == ReturnStatus::SUCCESS) {
+    objectStore.getEntryMetadata(transaction.request->command()->body().keyvalue().key(), true,
+                                 transaction.response->mutable_command()->mutable_body()->mutable_keyvalue());
 
-        Command_KeyValue* response = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-        response->set_key(key);
-        response->set_dbversion(version);
-        response->set_tag(tag);
-        response->set_algorithm(algorithm);
-    }
-
-#if 0
-    Command_KeyValue* response = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-
-    string algorithm;
-    ReturnStatus returnStatus;
-    if (!request.metadataonly())
-        returnStatus = objectStore.get(request.key(), transaction.response->value(), *response->mutable_dbversion(), *response->mutable_tag(), algorithm);
-    else
-        returnStatus = objectStore.getMetadata(request.key(), *response->mutable_dbversion(), *response->mutable_tag(), algorithm);
-
-    if (returnStatus == ReturnStatus::SUCCESS)
-        response->set_algorithm(Translator::toMessageFormat(algorithm));
-
-    Translator::setMessageStatus(status, returnStatus);
-#endif
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -759,50 +730,21 @@ MessageHandler::processGetRequest(Transaction& transaction) {
 void
 MessageHandler::processGetNextRequest(Transaction& transaction) {
 
-    /*
-     * Ensure that the message contains the get (key/value) parameters.  If not, fail the request.
-     */
-    Command_Status* status = transaction.response->mutable_command()->mutable_status();
+    Command_KeyValue* returnMetadata = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    if (!transaction.request->command()->body().has_keyvalue())
-        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Get Next parameters not specified");
+    objectStore.getNextEntry(transaction.request->command()->body().keyvalue().key(), transaction.response->value(), returnMetadata);
 
-    const Command_KeyValue& request = transaction.request->command()->body().keyvalue();
-    const string& key = request.key();
+    // why is this check here?
+    if (transaction.request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    string nextKey;
-    string nextVersion;
-    string nextTag;
-    Algorithm nextAlgorithm;
+    AccessControlPtr accessControl = serverSettings.accessControl(transaction.request->hmacauth().identity());
 
-    ReturnStatus returnStatus = objectStore.getNext(key, nextKey, transaction.response->value(), nextVersion, nextTag, nextAlgorithm);
-
-    Translator::setMessageStatus(status, returnStatus);
-    transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-
-    if (returnStatus == ReturnStatus::SUCCESS) {
-
-        if (transaction.request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
-            throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
-
-        AccessControlPtr accessControl = serverSettings.accessControl(transaction.request->hmacauth().identity());
-
-        if (accessControl != nullptr) {
-            if (!accessControl->permissionToRead(nextKey)) {
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
-                throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
-#else
-                throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "The user does not have permission");
-#endif
-            }
-        }
-
-        Command_KeyValue* response = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-        response->set_key(nextKey);
-        response->set_dbversion(nextVersion);
-        response->set_tag(nextTag);
-        response->set_algorithm(nextAlgorithm);
+    // Note: the conformance test expects the "permission denied text.
+    if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
+        throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
     }
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -813,84 +755,21 @@ MessageHandler::processGetNextRequest(Transaction& transaction) {
 void
 MessageHandler::processGetPreviousRequest(Transaction& transaction) {
 
-    /*
-     * Ensure that the message contains the get (key/value) parameters.  If not, fail the request.
-     */
-    Command_Status* status = transaction.response->mutable_command()->mutable_status();
+    Command_KeyValue* returnMetadata = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    if (!transaction.request->command()->body().has_keyvalue())
-        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Get Previous parameters not specified");
+    objectStore.getPreviousEntry(transaction.request->command()->body().keyvalue().key(), transaction.response->value(), returnMetadata);
 
-    const Command_KeyValue& request = transaction.request->command()->body().keyvalue();
-    const string& key = request.key();
+    // why is this check here?
+    if (transaction.request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    string previousKey;
-    string previousVersion;
-    string previousTag;
-    Algorithm previousAlgorithm;
+    AccessControlPtr accessControl = serverSettings.accessControl(transaction.request->hmacauth().identity());
 
-    ReturnStatus returnStatus = objectStore.getPrevious(key, previousKey, transaction.response->value(), previousVersion, previousTag, previousAlgorithm);
-
-    Translator::setMessageStatus(status, returnStatus);
-    transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-
-    if (returnStatus == ReturnStatus::SUCCESS) {
-
-        if (transaction.request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
-            throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
-
-        AccessControlPtr accessControl = serverSettings.accessControl(transaction.request->hmacauth().identity());
-
-        if (accessControl != nullptr) {
-            if (!accessControl->permissionToRead(previousKey)) {
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
-                throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
-#else
-                throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "The user does not have permission");
-#endif
-            }
-        }
-
-        Command_KeyValue* response = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-        response->set_key(previousKey);
-        response->set_dbversion(previousVersion);
-        response->set_tag(previousTag);
-        response->set_algorithm(previousAlgorithm);
+    // Note: the conformance test expects the "permission denied text.
+    if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
+        throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
     }
-}
-
-/**
- * Processes a get version request.
- *
- * @param   transaction     Contains the request and response message
- */
-void
-MessageHandler::processGetVersionRequest(Transaction& transaction) {
-
-    /*
-     * Ensure that the message contains the get (key/value) parameters.  If not, fail the request.
-     */
-    Command_Status* status = transaction.response->mutable_command()->mutable_status();
-
-    if (!transaction.request->command()->body().has_keyvalue())
-        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Get version parameters not specified");
-
-    const Command_KeyValue& request = transaction.request->command()->body().keyvalue();
-    const string& key = request.key();
-
-    string version;
-    string tag;
-    Algorithm algorithm;
-
-    ReturnStatus returnStatus = objectStore.getMetadata(key, version, tag, algorithm);
-
-    Translator::setMessageStatus(status, returnStatus);
-    transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-
-    if (returnStatus == ReturnStatus::SUCCESS) {
-        Command_KeyValue* response = transaction.response->mutable_command()->mutable_body()->mutable_keyvalue();
-        response->set_dbversion(version);
-    }
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -902,8 +781,6 @@ void
 MessageHandler::processGetKeyRangeRequest(Transaction& transaction) {
 
     const com::seagate::kinetic::proto::Command_Range& params(transaction.request->command()->body().range());
-    ReturnStatus returnStatus;
-    list<string> keyList;
 
 #if 0
     int32_t maxReturned = params.maxreturned() > systemConfig.maxKeyRangeCount() ? systemConfig.maxKeyRangeCount() : params.maxreturned();
@@ -926,21 +803,14 @@ MessageHandler::processGetKeyRangeRequest(Transaction& transaction) {
     }
 #endif
 
+    com::seagate::kinetic::proto::Command_Range* response(transaction.response->mutable_command()->mutable_body()->mutable_range());
+
     if (!params.reverse())
-        returnStatus = objectStore.getKeyRange(params.startkey(), params.startkeyinclusive(), params.endkey(),
-                                               params.endkeyinclusive(), params.maxreturned(), keyList, accessControl);
+        objectStore.getKeyRange(params, accessControl, response);
     else
-        returnStatus = objectStore.getKeyRangeReversed(params.startkey(), params.startkeyinclusive(), params.endkey(),
-                       params.endkeyinclusive(), params.maxreturned(), keyList, accessControl);
+        objectStore.getKeyRangeReversed(params, accessControl, response);
 
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
-
-    if ((returnStatus == ReturnStatus::SUCCESS) && (keyList.size() > 0)) {
-        com::seagate::kinetic::proto::Command_Range* response(transaction.response->mutable_command()->mutable_body()->mutable_range());
-
-        for (auto& key : keyList)
-            response->add_keys(key);
-    }
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -959,25 +829,15 @@ MessageHandler::processDeleteRequest(Transaction& transaction) {
         BatchListPtr batchList = transaction.connection->getBatchList(transaction.request->command()->header().batchid());
 
         if (batchList == nullptr)
-            handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
+            throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
         batchList->push_back(transaction.request);
         transaction.response.reset();
         return;
     }
 
-    /*
-     * If the delete is to be forced, it doesn't require the entry version.
-     */
-    const Command_KeyValue& params = transaction.request->command()->body().keyvalue();
-    ReturnStatus returnStatus;
-
-    if (params.force())
-        returnStatus = objectStore.deleteForced(params.key(), params.synchronization());
-    else
-        returnStatus = objectStore.deleteVersioned(params.key(), params.dbversion(), params.synchronization());
-
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
+    objectStore.deleteEntry(transaction.request->command()->body().keyvalue());
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -988,7 +848,8 @@ MessageHandler::processDeleteRequest(Transaction& transaction) {
 void
 MessageHandler::processFlushRequest(Transaction& transaction) {
 
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), objectStore.flush());
+    objectStore.flush();
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -1073,7 +934,8 @@ MessageHandler::processPinOpRequest(Transaction& transaction) {
 void
 MessageHandler::processOptimizeMediaRequest(Transaction& transaction) {
 
-    Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), objectStore.optimizeMedia());
+    objectStore.optimizeMedia();
+    transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
 /**
@@ -1085,92 +947,8 @@ void
 MessageHandler::processP2pPushRequest(Transaction& transaction) {
 
     static_cast<void>(transaction);
-
     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Request not yet supported");
-
-#ifdef SUPPORT_P2P
-
-    /*
-     * Ensure that the message contains the peer-to-peer push parameters.  If not, fail the request.
-     */
-    if (!transaction.request->command()->body().has_p2poperation())
-        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Peer-to-peer operation parameters not specified");
-
-    const com::seagate::kinetic::proto::Command_P2POperation& p2pOperation = transaction.request->command()->body().p2poperation();
-
-    const com::seagate::kinetic::proto::Command_P2POperation::Peer& peer = p2pOperation.peer();
-    std::cout << peer.hostname() << std::endl;
-    std::cout << peer.port() << std::endl;
-    std::cout << peer.tls() << std::endl;
-
-
-    ClientConnection connection = ConnectionFactory.createClientConnection(peer.hostname(), peer.port(), peer.tls()):
-
-                                      connection.waitUntilReady(CLIENT_CONNECTION_READY_TIMEOUT);
-
-
-    for (uint32_t index = 0; p2pOperation.operation_size(); index++) {
-        const com::seagate::kinetic::proto::Command_P2POperation::Operation& operation = p2pOperation.operation(index);
-
-        const string& key = operation.key();
-        const string& newKey = operation.newkey();
-        const string& version = operation.version();
-        const bool force = operation.force();
-
-        string push_key;
-        string push_value;
-        string push_old_version;
-        string push_tag;
-        Algorithm push_algorithm;
-
-        ReturnStatus returnStatus = objectStore.get(key, push_value, push_old_version, push_tag, push_algorithm);
-        if (returnStatus == ReturnStatus::SUCCESS) {
-            string push_key = newKey.empty() ? key : newKey;
-            string push_new_version = !version.empty() ? version : push_old_version;
-
-            connection
-
-#if 0
-            removePut(push_key, push_value, push_new_version, push_old_version, push_tag, push_algorithm);
-            push_entry key, value, version, tag, algorithm
-#endif
-        }
-    }
-#endif
 }
-
-/**
-    Open
-
-    @return true if the socket was successfully open, false otherwise
-*/
-
-/*
-    bool
-    open(string ipAddress, uint32_t port, int32_t &socketFd) {
-
-    const int USE_DEFAULT_PROTOCOL(0);
-    socketFd = socket(AF_INET, SOCK_STREAM, USE_DEFAULT_PROTOCOL);
-
-    if (socketFd == STATUS_FAILURE) {
-        std::cerr << "failed to create socket" << std::endl;
-        return false;
-    }
-
-    struct sockaddr_in server;
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr(ipAddress.c_str());
-    server.sin_port = htons(port);
-
-    if (connect(socketFd, (struct sockaddr *) &server, sizeof(server)) < 0) {
-        std::cout << "failed to connect" << std::endl;
-        return false;
-    }
-
-    return true;
-    }
-*/
 
 /**
  * Processes an invalid request.
@@ -1206,13 +984,13 @@ void
 MessageHandler::processStartBatchRequest(Transaction& transaction) {
 
     if (communicationsManager.batchCount() >= systemConfig.maxBatchCountPerDevice())
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
     if (!transaction.request->command()->header().has_batchid())
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "Start Batch command missing Batch ID");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Start Batch command missing Batch ID");
 
     if (!transaction.connection->createBatchList(transaction.request->command()->header().batchid()))
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "Batch ID already in use");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Batch ID already in use");
 
     transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -1230,7 +1008,7 @@ void
 MessageHandler::processEndBatchRequest(Transaction& transaction) {
 
     if (!transaction.request->command()->header().has_batchid())
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "End Batch command missing Batch ID");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "End Batch command missing Batch ID");
 
     /*
      * Handle this differently depending on if it had been aborted (see Kinetic java simulator)
@@ -1239,7 +1017,7 @@ MessageHandler::processEndBatchRequest(Transaction& transaction) {
     BatchListPtr batchList = transaction.connection->getBatchList(batchId);
 
     if (batchList == nullptr)
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
     com::seagate::kinetic::proto::Command_Batch* returnBatchInfo(transaction.response->mutable_command()->mutable_body()->mutable_batch());
 
@@ -1249,29 +1027,20 @@ MessageHandler::processEndBatchRequest(Transaction& transaction) {
 
     BatchDescriptor batch;
     for (auto batchRequest : *batchList) {
-        const Command_KeyValue& params = batchRequest->command()->body().keyvalue();
-        ReturnStatus returnStatus;
 
-        if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT) {
-            if (params.force())
-                returnStatus = objectStore.batchPutForced(batch, params.key(), batchRequest->value(),
-                               params.newversion(), params.tag(), params.algorithm());
-            else
-                returnStatus = objectStore.batchPut(batch, params.key(), batchRequest->value(), params.newversion(),
-                                                    params.dbversion(), params.tag(), params.algorithm());
+        try {
+            if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT)
+                objectStore.batchedPutEntry(batch, batchRequest->command()->body().keyvalue(), batchRequest->value());
+
+            else if (batchRequest->command()->header().messagetype() == Command_MessageType_DELETE)
+                objectStore.batchedDeleteEntry(batch, batchRequest->command()->body().keyvalue());
         }
-        else if (batchRequest->command()->header().messagetype() == Command_MessageType_DELETE) {
-            if (params.force())
-                returnStatus = objectStore.batchDeleteForced(batch, params.key());
-            else
-                returnStatus = objectStore.batchDelete(batch, params.key(), params.dbversion());
-        }
-        if (returnStatus != ReturnStatus::SUCCESS) {
+        catch (MessageException& messageException) {
             returnBatchInfo->set_failedsequence(batchRequest->command()->header().sequence());
-            Translator::setMessageStatus(transaction.response->mutable_command()->mutable_status(), returnStatus);
-            // overwrite the descriptive error with the generic invalid batch
+            Command_Status* status = transaction.response->mutable_command()->mutable_status();
+            status->set_code(Command_Status_StatusCode_INVALID_BATCH);
+            status->set_statusmessage(messageException.statusMessage());
             transaction.connection->deleteBatchList(batchId);
-            transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_INVALID_BATCH);
             return;
         }
     }
@@ -1290,21 +1059,11 @@ void
 MessageHandler::processAbortBatchRequest(Transaction& transaction) {
 
     if (!transaction.request->command()->header().has_batchid())
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "Abort Batch command missing Batch ID");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Abort Batch command missing Batch ID");
 
     if (!transaction.connection->deleteBatchList(transaction.request->command()->header().batchid()))
-        handleInvalidBatchRequest(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
     transaction.response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
-void
-MessageHandler::handleInvalidBatchRequest(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode, const std::string& message) {
-
-    /*
-     * Eliminate the unused args warning.
-     */
-    static_cast<void>(statusCode);
-    static_cast<void>(message);
-    throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Invalid batch request");
-}

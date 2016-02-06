@@ -120,8 +120,7 @@ int32_t main(int argc, char** argv) {
     /*
      * Setup the object store.
      */
-    ReturnStatus status = objectStore.open(systemConfig.databaseDirectory(), systemConfig.objectStoreCompressionEnabled());
-    if (status != ReturnStatus::SUCCESS) {
+    if (!objectStore.open()) {
         LOG(ERROR) << "Failed to open object store";
         return EXIT_FAILURE;
     }

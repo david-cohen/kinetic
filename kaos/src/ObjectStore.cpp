@@ -18,160 +18,101 @@
 #include "Entry.pb.hpp"
 #include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
+#include "MessageException.hpp"
 
 /*
  * Used Namespaces
  */
 using std::string;
 using std::unique_ptr;
+using com::seagate::kinetic::proto::Command_KeyValue;
 
 /*
  * Constants
  */
 static leveldb::WriteOptions asyncWriteOptions;
 static leveldb::WriteOptions syncWriteOptions;
-static leveldb::WriteOptions flushWriteOptions;
 static leveldb::ReadOptions defaultReadOptions;
 static leveldb::Options databaseOptions;
 
-inline leveldb::WriteOptions getWriteOptions(PersistOption option) {
-    return option == PersistOption::Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
-}
-
-inline bool validPersistOption(PersistOption option) {
-    return ((static_cast<int32_t>(option) >= static_cast<int32_t>(PersistOption::Command_Synchronization_WRITETHROUGH))
-            && (static_cast<int32_t>(option) <= static_cast<int32_t>(PersistOption::Command_Synchronization_FLUSH)));
-}
-/*
-class KineticComparator : public leveldb::Comparator {
-public:
-
-    int Compare(const leveldb::Slice& left, const leveldb::Slice& right) const {
-        int leftSize = left.size();
-        int rightSize = right.size();
-
-        int len = leftSize < rightSize ? leftSize : rightSize;
-
-        for (int i = 0; i < len; i++) {
-            int a = (left[i] & 0xff);
-            int b = (right[i] & 0xff);
-            if (a != b) {
-                return a - b;
-            }
-        }
-
-        return leftSize - rightSize;
-    }
-
-    // Ignore the following methods for now:
-    const char* Name() const { return "KineticComparator"; }
-    void FindShortestSeparator(std::string*, const leveldb::Slice&) const { }
-    void FindShortSuccessor(std::string*) const { }
-};
-
-static KineticComparator kineticComparator;
-*/
-
 /**
- * ObjectStore Constructor
+ * Initializes the object store.
  */
 ObjectStore::ObjectStore() {
-
     syncWriteOptions.sync = true;
     asyncWriteOptions.sync = false;
 }
 
 /*
- * ObjectStore Destructor
+ * Tears down the object store.
  */
 ObjectStore::~ObjectStore() {
     close();
 }
 
 /**
- * Open
+ * Opens the database in the specified directory.
  *
- * m_databaseDirectory
- *
- * @return the completion status of the operations (success of failure)
+ * @return  true if the database was opened successfully
  */
-ReturnStatus
-ObjectStore::open(string databaseDirectory, bool compressionEnabled) {
+bool
+ObjectStore::open() {
 
-    m_databaseDirectory = databaseDirectory;
-    m_compressionEnabled = compressionEnabled;
-    asyncWriteOptions.sync = false;
-    syncWriteOptions.sync = true;
-    flushWriteOptions.sync = true;
     defaultReadOptions.verify_checksums = false;
     defaultReadOptions.fill_cache = true;
-
-
     databaseOptions.create_if_missing = true;
-    databaseOptions.block_cache = leveldb::NewLRUCache(64 * 1048576);
-    databaseOptions.compression = m_compressionEnabled ? leveldb::kSnappyCompression : leveldb::kNoCompression;
-
-    leveldb::Status status = leveldb::DB::Open(databaseOptions, m_databaseDirectory, &m_database);
-    if (!status.ok()) {
+    databaseOptions.block_cache = leveldb::NewLRUCache(systemConfig.objectStoreCacheSize());
+    databaseOptions.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+    leveldb::Status status = leveldb::DB::Open(databaseOptions, systemConfig.databaseDirectory(), &m_database);
+    if (!status.ok())
         LOG(ERROR) << "Failed to open database, status: " << status.ToString() << std::endl;
-        return ReturnStatus::FAILURE;
-    }
 
-    return ReturnStatus::SUCCESS;
+    return status.ok();
 }
 
 /*
- * ObjectStore Destructor
+ * Closes the database (if it was open).
  */
-
-ReturnStatus
+void
 ObjectStore::close() {
 
-    if (m_database == nullptr) {
-        LOG(ERROR) << "Attempted to close a database that was already closed" << std::endl;
-        return ReturnStatus::FAILURE;
-    }
-    else {
+    if (m_database != nullptr) {
         delete m_database;
         m_database = nullptr;
-        return ReturnStatus::SUCCESS;
     }
 }
 
 /**
- * Erase
- *
- * @return the completion status of the operations (success of failure)
- *
- * Completely erases the existing contents of the database.
+ * Erases the contents of the database.  This causes the database to temporarily be inaccessible
+ * (because it's closes and then opened).
  */
-ReturnStatus
+void
 ObjectStore::erase() {
 
     close();
-    DestroyDB(m_databaseDirectory, databaseOptions);
-    open(m_databaseDirectory, m_compressionEnabled);
-    return ReturnStatus::SUCCESS;
+    DestroyDB(systemConfig.databaseDirectory(), databaseOptions);
+    open();
 }
 
 /**
- * Flush
- *
- * @return the completion status of the operations (success or the error status)
+ * Flushes all the database data that's in memory to persistent media.
  */
-ReturnStatus
+void
 ObjectStore::flush() {
 
     /*
-     * Make a key that will not match any entry in the database (by making the key size larger than
-     * the that supported by the Kinetic API and setting a unique ID).
+     * Level DB doesn't have a flush command, so we have to perform a write to force a sync.  Since
+     * we don't want to over-write the user's data, we will write a entry whose key is larger that
+     * the maximum sized key that a user can make.  To be cautious, check if an entry with the flush
+     * get is in the database.  If it's not, write it and delete it in one batch command.  If it
+     * exists, don't remove it.  Delete it and re-write it in one batch command.
      */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, systemConfig.flushDataKey(), &serializedEntryData);
     leveldb::WriteBatch batch;
 
     /*
-     * No entry for key. perform no op
+     * Flush key was not found so put and delete it in one batch command.
      */
     if (!status.ok()) {
         leveldb::Slice emptyData;
@@ -180,7 +121,8 @@ ObjectStore::flush() {
     }
 
     /*
-     * entry found, put back after delete - is the delete necessary?
+     * Flush key found.  This should never happen, but if it does, don't remove the data.  So delete
+     * it and put in back in one batch command.
      */
     else {
         leveldb::Slice slicedData(serializedEntryData);
@@ -189,280 +131,428 @@ ObjectStore::flush() {
     }
 
     /*
-     * do batch operation with sync option.
+     * Perform the batch command using the sync option.  Then, flush memory.
      */
     status = m_database->Write(syncWriteOptions, &batch);
     sync();
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
 }
 
 /**
- * Put
- *
- * @param  key             the key of the entry to be put in the object store
- * @param  value           the value of the entry to be put in the object store
- * @param  newVersion      the new version of the entry to be put in the object store
- * @param  oldVersion      the (optional) old version of the entry in the object store
- * @param  tag             the (optional) tag of the entry to be put in the object store
- * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
- * @param  persistOption   indicates how the change to the object store is to be persisted
- *                         (SYNC - before returning status
- *                          ASYNC - after returning status
- *                          FLUSH - before return status and after all data destaged)
- *
- * @return the completion status of the operations (success or the error status)
+ * Optimizes the media by compacting the underlying storage.  It causes deleted and overwritten
+ * versions to be discarded and the data is rearranged to reduce the cost of operations needed to
+ * access the data.
  */
-ReturnStatus
-ObjectStore::put(const string& key, const string& value, const string& newVersion, const string& oldVersion,
-                 const string& tag, Algorithm algorithm, PersistOption persistOption) {
+void
+ObjectStore::optimizeMedia() {
 
     /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
+     * The parameters passed in indicate the starting and ending keys.  However, passing in null
+     * pointers causes the entire database to be compacted.
      */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+    m_database->CompactRange(nullptr, nullptr);
+}
 
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-
-    if (value.size() > systemConfig.maxValueSize())
-        return ReturnStatus::VALUE_SIZE_TOO_LARGE;
-
-    if (newVersion.size() > systemConfig.maxVersionSize())
-        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
-
-    if (tag.size() > systemConfig.maxTagSize())
-        return ReturnStatus::TAG_SIZE_TOO_LARGE;
-
-    if (!validPersistOption(persistOption))
-        return ReturnStatus::INVALID_PERSIST_OPTION;
-#endif
+/**
+ * Attempts to put the specified entry in the database.  A database entry consists of a key, value,
+ * version, tag (a hash of the value), and an algorithm (the algorithm used to create the hash).
+ * A regular put operation where the database already has an entry with same key as the one about to
+ * be put requires the version of the existing entry to be specified.  If the versions don't match,
+ * the operation fails.  However, a "force" parameter can be specified which eliminates the version
+ * check and will always put the new entry.  A persistence option is also specified which indicates
+ * if the operation be performed in write-back, write-through, or write-through followed by a flush.
+ *
+ * @param   params  The entry's metadata, persistence option, and if the put is to be "forced"
+ * @param   value   The value of the entry to be put in the database
+ *
+ * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
+ * @throws  INTERNAL_ERROR if the put failed due to a database error (such as I/O failure)
+ */
+void
+ObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
 
     /*
-     * Validating the version includes checking if an entry with the specified key is already in the
-     * object store.  If it is, the specified version must be the same.
+     * If the request is not "forced", then if the database already has an entry with the same key,
+     * then the specified version must match the version of the existing entry.  If there is not an
+     * existing entry, then the specified version must be empty.
      */
-    string serializedEntryData;
-    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
+    if (!params.force()) {
+        string serializedEntryData;
+        leveldb::Status status = m_database->Get(defaultReadOptions, params.key(), &serializedEntryData);
 
-    if (status.ok()) {
-        unique_ptr<kaos::Entry> entry(new kaos::Entry());
-        entry->ParseFromString(serializedEntryData);
-        if (entry->version() != oldVersion) {
-            return ReturnStatus::VERSION_MISMATCH;
+        if (status.ok()) {
+            unique_ptr<kaos::Entry> entry(new kaos::Entry());
+            entry->ParseFromString(serializedEntryData);
+            if (entry->version() != params.dbversion())
+                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+        }
+        else if (!params.dbversion().empty()) {
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
         }
     }
-    else if (!oldVersion.empty()) {
-        return ReturnStatus::VERSION_MISMATCH;
+
+    /*
+     * Save the specified value and metadata into a database entry structure, serialize the data,
+     * and write it to the database.  Destage all the data in memory to the media if "flush" is
+     * specified.
+     */
+    unique_ptr<kaos::Entry> entry(new kaos::Entry());
+    entry->set_key(params.key());
+    entry->set_value(value);
+    entry->set_version(params.newversion());
+    entry->set_tag(params.tag());
+    entry->set_algorithm(params.algorithm());
+
+    string serializedData;
+    entry->SerializeToString(&serializedData);
+    leveldb::Status status = m_database->Put(getWriteOptions(params.synchronization()), params.key(), serializedData);
+
+    if (!status.ok())
+        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+
+    if (params.synchronization() == PersistOption::Command_Synchronization_FLUSH)
+        sync();
+}
+
+/**
+ * Adds a put request to a "batch", where all the requests in the batch will be performed by the
+ * database atomically. A database entry consists of a key, value, version, tag (a hash of the
+ * value), and an algorithm (the algorithm used to create the hash). A regular put operation where
+ * the database already has an entry with same key as the one about to be put requires the version
+ * of the existing entry to be specified. If the versions don't match, the operation fails. However,
+ * a "force" parameter can be specified which eliminates the version check and will always put the
+ * new entry.  The persistence option is not specified for an individual operation in a batch.  The
+ * entire batch operation has a single persistence option.
+ *
+ * @param   batch   The descriptor for a batched operation
+ * @param   params  The entry's metadata and if the put is to be "forced"
+ * @param   value   The value of the entry to be put in the database
+ *
+ * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
+ */
+void
+ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue& params, const string& value) {
+
+    /*
+     * If the request is not "forced", then if the database already has an entry with the same key,
+     * then the specified version must match the version of the existing entry.  If there is not an
+     * existing entry, then the specified version must be empty.
+     */
+    if (!params.force()) {
+        string serializedEntryData;
+        leveldb::Status status = m_database->Get(defaultReadOptions, params.key(), &serializedEntryData);
+
+        if (status.ok()) {
+            unique_ptr<kaos::Entry> entry(new kaos::Entry());
+            entry->ParseFromString(serializedEntryData);
+            if (entry->version() != params.dbversion())
+                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+        }
+        else if (!params.dbversion().empty()) {
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
+        }
     }
 
     /*
-     * First, create the metadata for the entry set set the write options, then put the entry in the
-     * object store.
+     * Save the specified value and metadata into a database entry structure, serialize the data,
+     * and save the entry to the batch descriptor (to be processed later when the batch is
+     * committed).
      */
     unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->set_key(key);
+    entry->set_key(params.key());
     entry->set_value(value);
-    entry->set_version(newVersion);
-    entry->set_tag(tag);
-    entry->set_algorithm(algorithm);
+    entry->set_version(params.newversion());
+    entry->set_tag(params.tag());
+    entry->set_algorithm(params.algorithm());
 
     string serializedData;
     entry->SerializeToString(&serializedData);
-    status = m_database->Put(getWriteOptions(persistOption), key, serializedData);
-
-    if (status.ok() && (persistOption == PersistOption::Command_Synchronization_FLUSH))
-        sync();
-
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
+    batch.Put(params.key(), serializedData);
 }
 
 /**
- * Put Forced
+ * Attempts to delete the entry in the database with the specified.  A regular delete operation
+ * requires the version of the entry to be deleted to be specified.  If the versions don't match,
+ * the operation fails. However, a "force" parameter can be specified which eliminates the version
+ * check and will always delete the entry.  If the entry for the specified key doesn't exist, a
+ * normal delete will fail, but a "forced" delete will not.  A persistence option is also specified
+ * which indicates if the operation be performed in write-back, write-through, or write-through
+ * followed by a flush.
  *
- * @param  key             the key of the entry to be put in the object store
- * @param  value           the value of the entry to be put in the object store
- * @param  version         the (optional) version of the entry to be put in the object store
- * @param  tag             the (optional) tag of the entry to be put in the object store
- * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
- * @param  persistOption   indicates how the change to the object store is to be persisted
- *                         (SYNC - before returning status
- *                          ASYNC - after returning status
- *                          FLUSH - before return status and after all data destaged)
+ * @param   params  The key of the entry, persistence option, and if the delete is to be "forced"
  *
- * @return the completion status of the operations (success or the error status)
+ * @throws  NOT_FOUND if the entry to be deleted is not in the database (for a non-forced operation)
+ * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
+ * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
-ReturnStatus
-ObjectStore::putForced(const string& key, const string& value, const string& version, const string& tag, Algorithm algorithm, PersistOption persistOption) {
+void
+ObjectStore::deleteEntry(const Command_KeyValue& params) {
+
+    const string& key = params.key();
 
     /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
+     * If the request is not "forced", then the specified version must match the version of the
+     * entry to be deleted.  If they don't match or the entry is not in the database, fail the
+     * operation.
      */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+    if (!params.force()) {
+        string serializedEntryData;
+        leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
+        if (!status.ok()) {
+            if (status.IsNotFound())
+                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+            else
+                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+        }
 
-    if (value.size() > systemConfig.maxValueSize())
-        return ReturnStatus::VALUE_SIZE_TOO_LARGE;
+        unique_ptr<kaos::Entry> entry(new kaos::Entry());
+        entry->ParseFromString(serializedEntryData);
+        if (entry->version() != params.dbversion())
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+    }
 
-    if (version.size() > systemConfig.maxVersionSize())
-        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
+    /*
+     * Delete the entry in the database.  Destage all the data in memory to the media if "flush" is
+     * specified.
+     */
+    leveldb::Status status = m_database->Delete(getWriteOptions(params.synchronization()), key);
 
-    if (tag.size() > systemConfig.maxTagSize())
-        return ReturnStatus::TAG_SIZE_TOO_LARGE;
+    if (!status.ok())
+        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
 
-    if (!validPersistOption(persistOption))
-        return ReturnStatus::INVALID_PERSIST_OPTION;
-#endif
-
-    unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->set_key(key);
-    entry->set_value(value);
-    entry->set_version(version);
-    entry->set_tag(tag);
-    entry->set_algorithm(algorithm);
-
-    string serializedData;
-    entry->SerializeToString(&serializedData);
-    leveldb::Status status = m_database->Put(getWriteOptions(persistOption), key, serializedData);
-
-    if (status.ok() && (persistOption == PersistOption::Command_Synchronization_FLUSH))
+    if (params.synchronization() == PersistOption::Command_Synchronization_FLUSH)
         sync();
-
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
 }
 
 /**
- * Get
+ * Adds a delete request to a "batch", where all the requests in the batch will be performed by the
+ * database atomically.  A regular delete operation requires the version of the entry to be deleted
+ * to be specified.  If the versions don't match, the operation fails. However, a "force" parameter
+ * can be specified which eliminates the version check and will always delete the entry.  If the
+ * entry for the specified key doesn't exist, a normal delete will fail, but a "forced" delete will
+ * not.  The persistence option is not specified for an individual operation in a batch.  The entire
+ * batch operation has a single persistence option.
  *
- * @param  key             the key of the entry in the object store to get
- * @param  value           the value of the entry in the object store
- * @param  version         the version of the entry in the object store
- * @param  tag             the tag of the entry in the object store
- * @param  algorithm       the algorithm of the entry in the object store
+ * @param   params  The key of the entry, persistence option, and if the delete is to be "forced"
  *
- * @return the completion status of the operations (success or the error status)
+ * @throws  NOT_FOUND if the entry to be deleted is not in the database (for a non-forced operation)
+ * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
+ * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
-ReturnStatus
-ObjectStore::get(const string& key, string& value, string& version, string& tag, Algorithm& algorithm) {
+void
+ObjectStore::batchedDeleteEntry(BatchDescriptor& batch, const Command_KeyValue& params) {
 
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
+    const string& key = params.key();
 
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-#endif
+    /*
+     * If the request is not "forced", then the specified version must match the version of the
+     * entry to be deleted.  If they don't match or the entry is not in the database, fail the
+     * operation.
+     */
+    if (!params.force()) {
+        string serializedEntryData;
+        leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
+        if (!status.ok()) {
+            if (status.IsNotFound())
+                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+            else
+                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+        }
+
+        unique_ptr<kaos::Entry> entry(new kaos::Entry());
+        entry->ParseFromString(serializedEntryData);
+        if (entry->version() != params.dbversion())
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+    }
+
+    /*
+     * Add the key of the entry to be deleted in the batch descriptor (to be processed later when
+     * the batch is committed).
+     */
+    batch.Delete(key);
+}
+
+/**
+ * Executes all the operations that were "batched" together, committing them to the database, and
+ * performing the operation atomically.  Currently, the persistence option is not specified, so we
+ * will be cautious and use the sync option.
+ *
+ * @param   batch   Contains all the batched operations to perform
+ *
+ * @throws  INTERNAL_ERROR if the operation failed due to a database error (such as I/O failure)
+ */
+void
+ObjectStore::batchCommit(BatchDescriptor& batch) {
+
+    leveldb::Status status = m_database->Write(syncWriteOptions, &batch);
+    if (!status.ok())
+        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+}
+
+/**
+ * Attempts to retrieve the entry with the specified key from the database.  If there is no entry
+ * with the specified key, the operation will fail.  However, if the entry is in the database, its
+ * value and metadata will be returned.  The metadata consists of a version, tag (a hash of the
+ * value), and an algorithm (the algorithm used to create the hash).
+ *
+ * @param   key             The key of the requested entry
+ * @param   returnValue     The value of the requested entry
+ * @param   returnMetadata  The metadata of the requested entry (version, tag, and algorithm)
+ *
+ * @throws  NOT_FOUND if the entry was not found in the database
+ * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
+ */
+void
+ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+
+    /*
+     * Read the database, failing the operation if the entry could not be found or the database
+     * encountered an error while performing the get (such as an I/O error).
+     */
     string serializedEntryData;
     leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
 
-    if (!status.ok())
-        return ReturnStatus::ENTRY_NOT_FOUND;
+    if (!status.ok()) {
+        if (status.IsNotFound())
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+        else
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+    }
 
+    /*
+     * Deserialize the entry data and save its value and metadata in the specified structures.
+     */
     unique_ptr<kaos::Entry> entry(new kaos::Entry());
     entry->ParseFromString(serializedEntryData);
-    value.assign(entry->value());
-    version.assign(entry->version());
-    tag.assign(entry->tag());
-    algorithm = entry->algorithm();
-
-    return ReturnStatus::SUCCESS;
+    returnValue.assign(entry->value());
+    returnMetadata->set_key(key);
+    returnMetadata->set_dbversion(entry->version());
+    returnMetadata->set_tag(entry->tag());
+    returnMetadata->set_algorithm(entry->algorithm());
 }
 
 /**
- * Get Next
+ * Attempts to retrieve the metadata of the entry with the specified key from the database.  If
+ * there is no entry with the specified key, the operation will fail.  However, if the entry is in
+ * the database, the requested metadata will be returned.  The request can be for all the metadata
+ * (the version, tag, and algorithm) or just the version.
  *
- * @param  key             the key of the entry before the one in the object store to get
- * @param  nextKey         the key of the next entry in the object store to get
- * @param  nextValue       the value of the next entry in the object store
- * @param  nextVersion     the version of the next entry in the object store
- * @param  nextTag         the tag of the next entry in the object store
- * @param  nextAlgorithm   the algorithm of the next entry in the object store
+ * @param   key             The key of the requested entry
+ * @param   returnMetadata  The returned metadata
  *
- * @return the completion status of the operations (success or the error status)
+ * @throws  NOT_FOUND if the entry was not found in the database
+ * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
-ReturnStatus
-ObjectStore::getNext(const string& key, string& nextKey, string& nextValue, string& nextVersion, string& nextTag, Algorithm& nextAlgorithm) {
-
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-#endif
+void
+ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
 
     /*
-     * The seek function will cause the iterator to be positioned at the entry with the requested
-     * key, or at the entry in the database that is next after the requested key (if the entry with
-     * the requested key is not in the database), or the iterator will be invalid (because there are
-     * no entries in the database on or after the requested key).
+     * Read the database, failing the operation if the entry could not be found or the database
+     * encountered an error while performing the get (such as an I/O error).
+     */
+    string serializedEntryData;
+    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
+
+    if (!status.ok()) {
+        if (status.IsNotFound())
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+        else
+            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+    }
+
+    /*
+     * Deserialize the entry data and save the requested metadata in the specified structures.
+     */
+    unique_ptr<kaos::Entry> entry(new kaos::Entry());
+    entry->ParseFromString(serializedEntryData);
+    returnMetadata->set_key(key);
+    returnMetadata->set_dbversion(entry->version());
+    if (!versionOnly) {
+        returnMetadata->set_tag(entry->tag());
+        returnMetadata->set_algorithm(entry->algorithm());
+    }
+}
+
+/**
+ * Attempts to retrieve the entry that following the entry with the specified key from the database.
+ * If there is no entry after the one with the specified key, the operation will fail.  However, if
+ * there is one, its value and metadata will be returned.  The metadata consists of a version, tag
+ * (a hash of the value), and an algorithm (the algorithm used to create the hash).
+ *
+ * @param   key             The key of the entry proceeding the requested entry
+ * @param   returnValue     The value of the requested entry
+ * @param   returnMetadata  The metadata of the requested entry (version, tag, and algorithm)
+ *
+ * @throws  NOT_FOUND if the entry was not found in the database
+ */
+void
+ObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+
+    /*
+     * The seek function will cause the iterator to have one of three positions depending on the
+     * contents of the database.  First, it can be positioned at the entry with the requested key if
+     * that entry is in the database.  Second, it can be position at the entry in the database that
+     * is next after the requested key if the entry with the requested key is not in the database.
+     * Third, the iterator's position can be invalid if there are no entries in the database on or
+     * after the entry with the requested key.
      */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
     iterator->Seek(key);
 
     /*
-     * If the iterator is positioned at the entry of the requested key, advanced to the next entry.
-     * If the iterator is at the entry past the request key, then that's the entry we want (so no
-     * need to advance the iterator).
+     * If the iterator is positioned at the entry with the requested key, advanced it to the next
+     * entry. However, if the iterator is positioned at a valid entry that does not have the request
+     * key, then that's the entry we want (so no need to advance the iterator).
      */
     if (iterator->Valid() && (iterator->key().ToString() == key))
         iterator->Next();
 
     if (!iterator->Valid())
-        return ReturnStatus::ENTRY_NOT_FOUND;
+        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
 
+    /*
+     * Deserialize the entry data and save its value and metadata in the specified structures.
+     */
     unique_ptr<kaos::Entry> entry(new kaos::Entry());
     entry->ParseFromString(iterator->value().ToString());
-    nextKey.assign(iterator->key().ToString());
-    nextValue.assign(entry->value());
-    nextVersion.assign(entry->version());
-    nextTag.assign(entry->tag());
-    nextAlgorithm = entry->algorithm();
-
-    return ReturnStatus::SUCCESS;
+    returnValue.assign(entry->value());
+    returnMetadata->set_key(iterator->key().ToString());
+    returnMetadata->set_dbversion(entry->version());
+    returnMetadata->set_tag(entry->tag());
+    returnMetadata->set_algorithm(entry->algorithm());
 }
 
 /**
- * Get Previous
+ * Attempts to retrieve the entry that precedes the entry with the specified key from the database.
+ * If there is no entry before the one with the specified key, the operation will fail.  However, if
+ * there is one, its value and metadata will be returned.  The metadata consists of a version, tag
+ * (a hash of the value), and an algorithm (the algorithm used to create the hash).
  *
- * @param  key                 the key of the entry after the one in the object store to get
- * @param  previousKey         the key of the previous entry in the object store to get
- * @param  previousValue       the value of the previous entry in the object store
- * @param  previousVersion     the version of the previous entry in the object store
- * @param  previousTag         the tag of the previous entry in the object store
- * @param  previousAlgorithm   the algorithm of the previous entry in the object store
+ * @param   key             The key of the entry that follows the requested entry
+ * @param   returnValue     The value of the requested entry
+ * @param   returnMetadata  The metadata of the requested entry (version, tag, and algorithm)
  *
- * @return the completion status of the operations (success or the error status)
+ * @throws  NOT_FOUND if the entry was not found in the database
  */
-ReturnStatus
-ObjectStore::getPrevious(const string& key, string& previousKey, string& previousValue, string& previousVersion, string& previousTag, Algorithm& previousAlgorithm) {
-
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-#endif
+void
+ObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
 
     /*
-     * The seek function will cause the iterator to be positioned at the entry with the requested
-     * key, or at the entry in the database that is next after the requested key (if the entry with
-     * the requested key is not in the database), or the iterator will be invalid (because there are
-     * no entries in the database on or after the requested key).
+     * The seek function will cause the iterator to have one of three positions depending on the
+     * contents of the database.  First, it can be positioned at the entry with the requested key if
+     * that entry is in the database.  Second, it can be position at the entry in the database that
+     * is next after the requested key if the entry with the requested key is not in the database.
+     * Third, the iterator's position can be invalid if there are no entries in the database on or
+     * after the entry with the requested key.
      */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
     iterator->Seek(key);
 
     /*
-     * If there are no entries on or after the requested key, position the iterator at the last key
-     * in the database because it might be in the requested range.
+     * If there are no entries on or after the requested key, position the iterator at the last
+     * entry in the database because, if it exists, it is the entry that precedes the entry with the
+     * requested key.
      */
     if (!iterator->Valid())
         iterator->SeekToLast();
@@ -475,110 +565,66 @@ ObjectStore::getPrevious(const string& key, string& previousKey, string& previou
         iterator->Prev();
 
     if (!iterator->Valid())
-        return ReturnStatus::ENTRY_NOT_FOUND;
-
-    unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->ParseFromString(iterator->value().ToString());
-    previousKey.assign(iterator->key().ToString());
-    previousValue.assign(entry->value());
-    previousVersion.assign(entry->version());
-    previousTag.assign(entry->tag());
-    previousAlgorithm = entry->algorithm();
-
-    return ReturnStatus::SUCCESS;
-}
-
-/**
- * Get Metadata
- *
- * @param  key             the key of the entry in the object store to get
- * @param  version         the version of the entry in the object store
- * @param  tag             the tag of the entry in the object store
- * @param  algorithm       the algorithm of the entry in the object store
- *
- * @return the completion status of the operations (success or the error status)
- */
-ReturnStatus
-ObjectStore::getMetadata(const string& key, string& version, string& tag, Algorithm& algorithm) {
-
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-#endif
-
-    string serializedEntryData;
-    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
-
-    if (!status.ok())
-        return ReturnStatus::ENTRY_NOT_FOUND;
-
-    unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->ParseFromString(serializedEntryData);
-    version.assign(entry->version());
-    tag.assign(entry->tag());
-    algorithm = entry->algorithm();
-
-    return ReturnStatus::SUCCESS;
-}
-
-/**
- * Get Key Range
- *
- * @param  startKey            the start key in the specified key range
- * @param  startKeyInclusive   true if the start key is inclusive
- * @param  endKey              the end key in the specified key range
- * @param  endKeyInclusive     true if the end key is inclusive
- * @param  maxKeys             the maximum number of keys to return
- * @param  accessControl       access control to be used for this operation
- *
- * @return the completion status of the operations (success or the error status)
- *
- * Note: A zero byte start key is allowed.
- */
-ReturnStatus
-ObjectStore::getKeyRange(const string& startKey, bool startKeyInclusive, const string& endKey, bool endKeyInclusive,
-                         int32_t maxKeys, std::list<string>& keyList, AccessControlPtr& accessControl) {
-
-    if (startKey.size() > systemConfig.maxKeySize())
-        return ReturnStatus::START_KEY_SIZE_TOO_LARGE;
-
-    if (endKey.size() < systemConfig.minKeySize())
-        return ReturnStatus::END_KEY_SIZE_TOO_SMALL;
-
-    if (endKey.size() > systemConfig.maxKeySize())
-        return ReturnStatus::END_KEY_SIZE_TOO_LARGE;
-
-    if (((size_t)maxKeys) > systemConfig.maxKeyRangeCount())
-        return ReturnStatus::MAX_KEYS_RETURNED_COUNT_TOO_LARGE;
+        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
 
     /*
-     * The seek function will cause the iterator to be positioned at the entry with the requested
-     * key, or at the entry in the database that is next after the requested key (if the entry with
-     * the requested key is not in the database), or the iterator will be invalid (because there are
-     * no entries in the database on or after the requested key).
+     * Deserialize the entry data and save its value and metadata in the specified structures.
+     */
+    unique_ptr<kaos::Entry> entry(new kaos::Entry());
+    entry->ParseFromString(iterator->value().ToString());
+    returnValue.assign(entry->value());
+    returnMetadata->set_key(iterator->key().ToString());
+    returnMetadata->set_dbversion(entry->version());
+    returnMetadata->set_tag(entry->tag());
+    returnMetadata->set_algorithm(entry->algorithm());
+}
+
+/**
+ * Attempts to retrieve the keys (in ascending order) of all the entries bounded by the specified
+ * start and end key. The parameters specify if the start and end keys are to be included as well as
+ * a maximum number keys that can be returned.  A user maybe be restricted on what keys they can
+ * access, if those keys are bounded by the start and end keys, they will not be returned to the
+ * user and the operation will terminate when the first one is encountered.
+ *
+ * @param  params           Defines the start key (and if it is to be included), the end key
+ *                          (and if it is to be included), and maximum number of keys to return
+ * @param  accessControl    Describe the keys the user has access to
+ * @param  returnData       Where the list or keys to be returned are saved
+ */
+void
+ObjectStore::getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
+                         com::seagate::kinetic::proto::Command_Range* returnData) {
+
+    /*
+     * The seek function will cause the iterator to have one of three positions depending on the
+     * contents of the database.  First, it can be positioned at the entry with the requested key if
+     * that entry is in the database.  Second, it can be position at the entry in the database that
+     * is next after the requested key if the entry with the requested key is not in the database.
+     * Third, the iterator's position can be invalid if there are no entries in the database on or
+     * after the entry with the requested key.
      */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
-    iterator->Seek(startKey);
+    iterator->Seek(params.startkey());
 
     /*
      * If the iterator is positioned at the start key and the start key is not to be included,
      * advanced to the next entry.
      */
-    if (!startKeyInclusive && iterator->Valid() && (iterator->key().ToString() == startKey))
+    if (!params.startkeyinclusive() && iterator->Valid() && (iterator->key().ToString() == params.startkey()))
         iterator->Next();
 
     /*
-     * Add keys to the list as long as they are less than the end key or equal to the end key if it
-     * is to be included and the number of keys don't exceed the specified maximum keys to return.
+     * Add keys to the list following these conditions:
+     *     the key is less than the end key
+     *     the key is equals to the end key and the end key is to be included
+     *     the user has permission to access the specific key
+     *     the number of keys added are less then the maximum allowed
      */
-    for (int32_t keyCount = 0; iterator->Valid() && (keyCount < maxKeys); iterator->Next()) {
+    for (int32_t keyCount = 0; iterator->Valid() && (keyCount < params.maxreturned()); iterator->Next()) {
         string key = iterator->key().ToString();
         if (accessControl->permissionToGetRange(key)) {
-            if ((key < endKey) || ((endKeyInclusive) && (key == endKey))) {
-                keyList.push_back(key);
+            if ((key < params.endkey()) || ((params.endkeyinclusive()) && (key == params.endkey()))) {
+                returnData->add_keys(key);
                 keyCount++;
             }
             else
@@ -586,54 +632,41 @@ ObjectStore::getKeyRange(const string& startKey, bool startKeyInclusive, const s
         }
 
         /*
-         * keys were already found, stop at the first miss.
+         * Once a key has been added to the response, stop gathering keys after the first key that
+         * the user doesn't have access to is encountered.
          */
         else if (keyCount > 0)
             break;
     }
-
     delete iterator;
-    return ReturnStatus::SUCCESS;
 }
 
 /**
- * Get Key Range Reversed
+ * Attempts to retrieve the keys (in descending order) of all the entries bounded by the specified
+ * start and end key. The parameters specify if the start and end keys are to be included as well as
+ * a maximum number keys that can be returned.  A user maybe be restricted on what keys they can
+ * access, if those keys are bounded by the start and end keys, they will not be returned to the
+ * user and the operation will terminate when the first one is encountered.
  *
- * @param  startKey            the start key in the specified key range
- * @param  startKeyInclusive   true if the start key is inclusive
- * @param  endKey              the end key in the specified key range
- * @param  endKeyInclusive     true if the end key is inclusive
- * @param  maxKeys             the maximum number of keys to return
- * @param  accessControl       access control to be used for this operation
- *
- * @return the completion status of the operations (success or the error status)
- *
- * Note: A zero byte start key is allowed.
+ * @param  params           Defines the start key (and if it is to be included), the end key
+ *                          (and if it is to be included), and maximum number of keys to return
+ * @param  accessControl    Describe the keys the user has access to
+ * @param  returnData       Where the list or keys to be returned are saved
  */
-ReturnStatus
-ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive, const string& endKey, bool endKeyInclusive,
-                                 int32_t maxKeys, std::list<string>& keyList, AccessControlPtr& accessControl) {
-
-    if (startKey.size() > systemConfig.maxKeySize())
-        return ReturnStatus::START_KEY_SIZE_TOO_LARGE;
-
-    if (endKey.size() < systemConfig.minKeySize())
-        return ReturnStatus::END_KEY_SIZE_TOO_SMALL;
-
-    if (endKey.size() > systemConfig.maxKeySize())
-        return ReturnStatus::END_KEY_SIZE_TOO_LARGE;
-
-    if (((size_t)maxKeys) > systemConfig.maxKeyRangeCount())
-        return ReturnStatus::MAX_KEYS_RETURNED_COUNT_TOO_LARGE;
+void
+ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
+                                 com::seagate::kinetic::proto::Command_Range* returnData) {
 
     /*
-     * The seek function will cause the iterator to be positioned at the entry with the requested
-     * key, or at the entry in the database that is next after the requested key (if the entry with
-     * the requested key is not in the database), or the iterator will be invalid (because there are
-     * no entries in the database on or after the requested key).
+     * The seek function will cause the iterator to have one of three positions depending on the
+     * contents of the database.  First, it can be positioned at the entry with the requested key if
+     * that entry is in the database.  Second, it can be position at the entry in the database that
+     * is next after the requested key if the entry with the requested key is not in the database.
+     * Third, the iterator's position can be invalid if there are no entries in the database on or
+     * after the entry with the requested key.
      */
     leveldb::Iterator* iterator = m_database->NewIterator(defaultReadOptions);
-    iterator->Seek(endKey);
+    iterator->Seek(params.endkey());
 
     /*
      * If there are no entries on or after the requested key, position the iterator at the last key
@@ -647,20 +680,21 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
      * If the iterator is positioned at the entry with the last key and it is not to be included,
      * move the iterator to the previous entry.
      */
-    else if (iterator->Valid() && ((iterator->key().ToString() > endKey) || (!endKeyInclusive && (iterator->key().ToString() == endKey))))
+    else if (iterator->Valid() && ((iterator->key().ToString() > params.endkey()) || (!params.endkeyinclusive() && (iterator->key().ToString() == params.endkey()))))
         iterator->Prev();
 
     /*
-     * Add keys to the list as long as they are greater than the start key or equal to the start key
-     * if it is to be included and the number of keys don't exceed the specified maximum keys to
-     * return.
+     * Add keys to the list following these conditions:
+     *     the key is greater than start end key
+     *     the key is equals to the start key and the start key is to be included
+     *     the user has permission to access the specific key
+     *     the number of keys added are less then the maximum allowed
      */
-    for (int32_t keyCount = 0; iterator->Valid() && (keyCount < maxKeys); iterator->Prev()) {
+    for (int32_t keyCount = 0; iterator->Valid() && (keyCount < params.maxreturned()); iterator->Prev()) {
         string key = iterator->key().ToString();
-
         if (accessControl->permissionToGetRange(key)) {
-            if ((key > startKey) || ((startKeyInclusive) && (key == startKey))) {
-                keyList.push_back(key);
+            if ((key > params.startkey()) || ((params.startkeyinclusive()) && (key == params.startkey()))) {
+                returnData->add_keys(key);
                 keyCount++;
             }
             else
@@ -668,340 +702,20 @@ ObjectStore::getKeyRangeReversed(const string& startKey, bool startKeyInclusive,
         }
 
         /*
-         * If keys were already found, stop at the first miss.
+         * Once a key has been added to the response, stop gathering keys after the first key that
+         * the user doesn't have access to is encountered.
          */
         else if (keyCount > 0)
             break;
     }
-
     delete iterator;
-    return ReturnStatus::SUCCESS;
 }
 
 /**
- * Delete Versioned
- *
- * @param  key             the key of the entry to delete
- * @param  version         the version of the entry to delete
- * @param  persistOption   indicates how the change to the object store is to be persisted
- *                         (SYNC - before returning status
- *                          ASYNC - after returning status
- *                          FLUSH - before return status and after all data destaged)
- *
- * @return the completion status of the operations (success or the error status)
- *
- * Delete the entry that is associated with the key specified.
+ * Converts the Kinetic persistence option into a level DB write option.
  */
-ReturnStatus
-ObjectStore::deleteVersioned(const string& key, const string& version, PersistOption persistOption) {
-
-    /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
-     */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-
-    if (version.size() > systemConfig.maxVersionSize())
-        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
-
-    if (!validPersistOption(persistOption))
-        return ReturnStatus::INVALID_PERSIST_OPTION;
-#endif
-
-    /*
-     * Validating the version includes checking if an entry with the specified key is already in
-     * the object store.  If it is, the specified version must be the same.
-     */
-    string serializedEntryData;
-    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
-
-    if (!status.ok())
-        return ReturnStatus::ENTRY_NOT_FOUND;
-
-    if (status.ok()) {
-        unique_ptr<kaos::Entry> entry(new kaos::Entry());
-        entry->ParseFromString(serializedEntryData);
-        if (entry->has_version() && (entry->version() != version)) {
-            return ReturnStatus::VERSION_MISMATCH;
-        }
-    }
-
-    status = m_database->Delete(getWriteOptions(persistOption), key);
-
-    if (status.ok() && (persistOption == PersistOption::Command_Synchronization_FLUSH))
-        sync();
-
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
+inline leveldb::WriteOptions& ObjectStore::getWriteOptions(PersistOption option) {
+    return option == PersistOption::Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
 }
 
-/**
- * Delete Forced
- *
- * @param  key             the key of the entry to delete
- * @param  persistOption   indicates how the change to the object store is to be persisted
- *                         (SYNC - before returning status
- *                          ASYNC - after returning status
- *                          FLUSH - before return status and after all data destaged)
- *
- * @return the completion status of the operations (success or the error status)
- *
- * Delete the entry that is associated with the key specified.
- */
-ReturnStatus
-ObjectStore::deleteForced(const string& key, PersistOption persistOption) {
-
-    /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
-     */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-
-    if (!validPersistOption(persistOption))
-        return ReturnStatus::INVALID_PERSIST_OPTION;
-#endif
-
-    leveldb::Status status = m_database->Delete(getWriteOptions(persistOption), key);
-
-    if (status.ok() && (persistOption == PersistOption::Command_Synchronization_FLUSH))
-        sync();
-
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
-}
-
-/**
- * Batch Put
- *
- * @param  batch           the batch to add an operation to
- * @param  key             the key of the entry to be put in the object store
- * @param  value           the value of the entry to be put in the object store
- * @param  newVersion      the new version of the entry to be put in the object store
- * @param  oldVersion      the (optional) old version of the entry in the object store
- * @param  tag             the (optional) tag of the entry to be put in the object store
- * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
- *
- * @return the status of adding the operation to the batch job
- */
-ReturnStatus
-ObjectStore::batchPut(BatchDescriptor& batch, const string& key, const string& value, const string& newVersion,
-                      const string& oldVersion, const string& tag, Algorithm algorithm) {
-
-    /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
-     */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-
-    if (value.size() > systemConfig.maxValueSize())
-        return ReturnStatus::VALUE_SIZE_TOO_LARGE;
-
-    if (newVersion.size() > systemConfig.maxVersionSize())
-        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
-
-    if (tag.size() > systemConfig.maxTagSize())
-        return ReturnStatus::TAG_SIZE_TOO_LARGE;
-
-#endif
-
-    /*
-     * Validating the version includes checking if an entry with the specified key is already in
-     * the object store.  If it is, the specified version must be the same.
-     */
-    string serializedEntryData;
-    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
-
-    if (status.ok()) {
-        unique_ptr<kaos::Entry> entry(new kaos::Entry());
-        entry->ParseFromString(serializedEntryData);
-        if (entry->version() != oldVersion) {
-            return ReturnStatus::VERSION_MISMATCH;
-        }
-    }
-    else if (!oldVersion.empty()) {
-        return ReturnStatus::VERSION_MISMATCH;
-    }
-
-    /*
-     * First, create the metadata for the entry set set the write options, then put the entry in
-     * the object store.
-     */
-    unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->set_key(key);
-    entry->set_value(value);
-    entry->set_version(newVersion);
-    entry->set_tag(tag);
-    entry->set_algorithm(algorithm);
-
-    string serializedData;
-    entry->SerializeToString(&serializedData);
-    batch.Put(key, serializedData);
-    return ReturnStatus::SUCCESS;
-}
-
-/**
- * Batch Put Forced
- *
- * @param  batch           the batch to add an operation to
- * @param  key             the key of the entry to be put in the object store
- * @param  value           the value of the entry to be put in the object store
- * @param  version         the (optional) version of the entry to be put in the object store
- * @param  tag             the (optional) tag of the entry to be put in the object store
- * @param  algorithm       the (optional) algorithm of the entry to be put in the object store
- *
- * @return the status of adding the operation to the batch job
- */
-ReturnStatus
-ObjectStore::batchPutForced(BatchDescriptor& batch, const string& key, const string& value,
-                            const string& version, const string& tag, Algorithm algorithm) {
-
-    /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
-     */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-
-    if (value.size() > systemConfig.maxValueSize())
-        return ReturnStatus::VALUE_SIZE_TOO_LARGE;
-
-    if (version.size() > systemConfig.maxVersionSize())
-        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
-
-    if (tag.size() > systemConfig.maxTagSize())
-        return ReturnStatus::TAG_SIZE_TOO_LARGE;
-#endif
-
-    unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->set_key(key);
-    entry->set_value(value);
-    entry->set_version(version);
-    entry->set_tag(tag);
-    entry->set_algorithm(algorithm);
-
-    string serializedData;
-    entry->SerializeToString(&serializedData);
-    batch.Put(key, serializedData);
-    return ReturnStatus::SUCCESS;
-}
-
-
-/**
- * Batch Delete
- *
- * @param  batch           the batch to add an operation to
- * @param  key             the key of the entry to delete
- * @param  version         the version of the entry to delete
- *
- * @return the status of adding the operation to the batch job
- *
- * Batches a delete of the entry that is associated with the key specified.
- */
-ReturnStatus
-ObjectStore::batchDelete(BatchDescriptor& batch, const string& key, const string& version) {
-
-    /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
-     */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-
-    if (version.size() > systemConfig.maxVersionSize())
-        return ReturnStatus::VERSION_SIZE_TOO_LARGE;
-#endif
-
-    /*
-     * Validating the version includes checking if an entry with the specified key is already in
-     * the object store.  If it is, the specified version must be the same.
-     */
-    string serializedEntryData;
-    leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
-
-    if (!status.ok())
-        return ReturnStatus::ENTRY_NOT_FOUND;
-
-    if (status.ok()) {
-        unique_ptr<kaos::Entry> entry(new kaos::Entry());
-        entry->ParseFromString(serializedEntryData);
-        if (entry->has_version() && (entry->version() != version)) {
-            return ReturnStatus::VERSION_MISMATCH;
-        }
-    }
-
-    batch.Delete(key);
-    return ReturnStatus::SUCCESS;
-}
-
-/**
- * Batch Delete Forced
- *
- * @param  batch           the batch to add an operation to
- * @param  key             the key of the entry to delete
- *
- * @return the status of adding the operation to the batch job
- *
- * Batches a delete of the entry that is associated with the key specified.
- */
-ReturnStatus
-ObjectStore::batchDeleteForced(BatchDescriptor& batch, const string& key) {
-
-    /*
-     * Ensure that the parameters are valid.  If not, fail the operation.
-     */
-#ifdef CHECK_ALL
-    if (key.size() < systemConfig.minKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_SMALL;
-
-    if (key.size() > systemConfig.maxKeySize())
-        return ReturnStatus::KEY_SIZE_TOO_LARGE;
-#endif
-
-    batch.Delete(key);
-    return ReturnStatus::SUCCESS;
-}
-
-/**
- * Batch Commit
- *
- * @param  batch   contains the batch operations to perform
- *
- * @return the status of the commit operation
- *
- * Performs all the batched operations commiting them to the database.
- */
-ReturnStatus
-ObjectStore::batchCommit(BatchDescriptor& batch) {
-
-    leveldb::Status status = m_database->Write(flushWriteOptions, &batch);
-    return status.ok() ? ReturnStatus::SUCCESS : ReturnStatus::FAILURE;
-}
-
-/**
- * Optimize Media
- *
- * @return the status of the operation
- */
-ReturnStatus
-ObjectStore::optimizeMedia() {
-
-    m_database->CompactRange(nullptr, nullptr);
-    return ReturnStatus::SUCCESS;
-}
 

@@ -52,6 +52,7 @@ public:
     inline const char* compilationDate() {return m_compilationDate;}
     inline const char* sourceHash() {return m_sourceHash;}
     inline bool objectStoreCompressionEnabled() {return m_objectStoreCompressionEnabled;}
+    inline uint32_t objectStoreCacheSize() {return m_objectStoreCacheSize;}
     inline int32_t maxPendingAdminConnections() {return m_maxPendingAdminConnections;}
     inline uint32_t maxActiveAdminConnections() {return m_maxActiveAdminConnections;}
     inline uint32_t tcpPort() {return m_tcpPort;}
@@ -110,6 +111,7 @@ private:
     const char*          m_compilationDate;
     const char*          m_sourceHash;
     bool                 m_objectStoreCompressionEnabled;
+    uint32_t             m_objectStoreCacheSize;
     int32_t              m_maxPendingAdminConnections;
     uint32_t             m_maxActiveAdminConnections;
     uint32_t             m_tcpPort;

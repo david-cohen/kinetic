@@ -56,6 +56,7 @@ static const bool DEFAULT_DEBUG_ENABLED(false);
  * Object Store Settings
  */
 static const bool OBJECT_STORE_COMPRESSION_ENABLED(false);
+static const bool OBJECT_STORE_CACHE_SIZE(67108864);
 static const char* FLUSH_DATA_KEY_PATTERN("04231970_WesternDigital_07913240");
 
 /*
@@ -172,6 +173,7 @@ SystemConfig::SystemConfig()
       m_compilationDate(TIMESTAMP),
       m_sourceHash(SOURCE_HASH),
       m_objectStoreCompressionEnabled(OBJECT_STORE_COMPRESSION_ENABLED),
+      m_objectStoreCacheSize(OBJECT_STORE_CACHE_SIZE),
       m_maxPendingAdminConnections(MAX_PENDING_ADMIN_CONNECTIONS),
       m_maxActiveAdminConnections(MAX_ACTIVE_ADMIN_CONNECTIONS),
       m_tcpPort(TCP_PORT),

@@ -46,7 +46,6 @@ public:
     static void processEndBatchRequest(Transaction& transaction);
     static void processAbortBatchRequest(Transaction& transaction);
     static void processInvalidRequest(Transaction& transaction);
-    static void handleInvalidBatchRequest(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode, const std::string& message);
 
 private:
 

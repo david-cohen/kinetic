@@ -25,29 +25,6 @@ typedef com::seagate::kinetic::proto::Command_Synchronization PersistOption;
 typedef com::seagate::kinetic::proto::Command_Algorithm Algorithm;
 typedef leveldb::WriteBatch BatchDescriptor;
 
-/*
- * Return Status
- */
-enum class ReturnStatus {
-    SUCCESS                           = 0,
-    UNSUPPORTED_MESSAGE               = 1,
-    FAILURE                           = 2,
-    ENTRY_NOT_FOUND                   = 3,
-    VERSION_MISMATCH                  = 4,
-    KEY_SIZE_TOO_SMALL                = 5,
-    KEY_SIZE_TOO_LARGE                = 6,
-    START_KEY_SIZE_TOO_SMALL          = 7,
-    START_KEY_SIZE_TOO_LARGE          = 8,
-    END_KEY_SIZE_TOO_SMALL            = 9,
-    END_KEY_SIZE_TOO_LARGE            = 10,
-    VALUE_SIZE_TOO_LARGE              = 11,
-    VERSION_SIZE_TOO_LARGE            = 12,
-    TAG_SIZE_TOO_LARGE                = 13,
-    ALGORITHM_SIZE_TOO_LARGE          = 14,
-    INVALID_PERSIST_OPTION            = 15,
-    MAX_KEYS_RETURNED_COUNT_TOO_LARGE = 16,
-};
-
 /**
  * Object database of the Kinetic server.  It provides a Kinetic friendly interface to the levelDB
  * database.
@@ -65,42 +42,30 @@ public:
     /*
      * Public Member Functions
      */
-    ReturnStatus open(std::string databaseDirectory, bool compressionEnabled);
-    ReturnStatus close();
-    ReturnStatus erase();
-    ReturnStatus flush();
-    ReturnStatus put(const std::string& key, const std::string& value, const std::string& newVersion,
-                     const std::string& oldVersion, const std::string& tag, Algorithm algorithm, PersistOption persistOption);
-    ReturnStatus putForced(const std::string& key, const std::string& value, const std::string& version,
-                           const std::string& tag, Algorithm algorithm, PersistOption persistOption);
-    ReturnStatus get(const std::string& key, std::string& value, std::string& version, std::string& tag, Algorithm& algorithm);
-    ReturnStatus getNext(const std::string& key, std::string& nextKey, std::string& nextValue, std::string& newVersion, std::string& nextTag, Algorithm& nextAlgorithm);
-    ReturnStatus getPrevious(const std::string& key, std::string& previousKey, std::string& previousValue,
-                             std::string& previousVersion, std::string& previousTag, Algorithm& previousAlgorithm);
-    ReturnStatus getMetadata(const std::string& key, std::string& version, std::string& tag, Algorithm& algorithm);
-    ReturnStatus getKeyRange(const std::string& startKey, bool startKeyInclusive, const std::string& endKey,
-                             bool endKeyInclusive, int32_t maxKeys, std::list<std::string>& keyList, AccessControlPtr& accessControl);
-    ReturnStatus getKeyRangeReversed(const std::string& startKey, bool startKeyInclusive, const std::string& endKey,
-                                     bool endKeyInclusive, int32_t maxKeys, std::list<std::string>& keyList, AccessControlPtr& accessControl);
-    ReturnStatus deleteVersioned(const std::string& key, const std::string& version, PersistOption persistOption);
-    ReturnStatus deleteForced(const std::string& key, PersistOption persistOption);
-    ReturnStatus batchPut(BatchDescriptor& batch, const std::string& key, const std::string& value, const std::string&
-                          newVersion, const std::string& oldVersion, const std::string& tag, Algorithm algorithm);
-    ReturnStatus batchPutForced(BatchDescriptor& batch, const std::string& key, const std::string& value,
-                                const std::string& version, const std::string& tag, Algorithm algorithm);
-    ReturnStatus batchDelete(BatchDescriptor& batch, const std::string& key, const std::string& version);
-    ReturnStatus batchDeleteForced(BatchDescriptor& batch, const std::string& key);
-    ReturnStatus batchCommit(BatchDescriptor& batch);
-    ReturnStatus optimizeMedia();
+    bool open();
+    void close();
+    void erase();
+    void flush();
+    void optimizeMedia();
+    void putEntry(const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
+    void batchedPutEntry(BatchDescriptor& batch, const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
+    void deleteEntry(const com::seagate::kinetic::proto::Command_KeyValue& params);
+    void batchedDeleteEntry(BatchDescriptor& batch, const com::seagate::kinetic::proto::Command_KeyValue& params);
+    void batchCommit(BatchDescriptor& batch);
+    void getEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
+    void getNextEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
+    void getPreviousEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
+    void getEntryMetadata(const std::string& key, bool versionOnly, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
+    void getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl, com::seagate::kinetic::proto::Command_Range* returnData);
+    void getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl, com::seagate::kinetic::proto::Command_Range* returnData);
+    leveldb::WriteOptions& getWriteOptions(PersistOption option);
 
 private:
 
     /*
      * Private Data Members
      */
-    leveldb::DB*        m_database;             //!< Actual levelDB database
-    std::string         m_databaseDirectory;    //!< Directory where database files reside
-    bool                m_compressionEnabled;   //!< True if the database is to use compression
+    leveldb::DB*    m_database;     //!< Actual levelDB database
 
     DISALLOW_COPY_AND_ASSIGN(ObjectStore);
 };

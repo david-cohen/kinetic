@@ -21,6 +21,7 @@ public:
      * Constructor/Destructor
      */
     explicit SslStream(int32_t socketDescriptor);
+    ~SslStream();
 
     /*
      * Public Member Functions

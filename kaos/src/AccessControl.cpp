@@ -16,7 +16,7 @@
 #include "AccessControl.hpp"
 
 /**
- * Intializes the Access Control object.
+ * Initializes the Access Control object.
  *
  * @param   identity        Value of identity for new access control
  * @param   hmacKey         HMAC key of new access control
@@ -40,8 +40,7 @@ AccessControl::AccessControl(int64_t identity, std::string hmacKey, HmacAlgorith
  *
  * @return  True if the operation has be performed, false otherwise
  */
-bool
-AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey, const ::com::seagate::kinetic::proto::Command_Body& commandBody) const {
+bool AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey, const ::com::seagate::kinetic::proto::Command_Body& commandBody) const {
 
     if (operation == Operation::INVALID)
         return true;
@@ -73,8 +72,7 @@ AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey
  *
  * @return  A list of scopes that only apply to the specified operation
  */
-AccessScopeList
-AccessControl::getFilteredScopeList(Operation filterOperation) const {
+AccessScopeList AccessControl::getFilteredScopeList(Operation filterOperation) const {
     AccessScopeList filteredScopeList;
     for (auto scope : m_scopeList) {
         if (scope.operationPermitted(filterOperation)) {
@@ -90,8 +88,7 @@ AccessControl::getFilteredScopeList(Operation filterOperation) const {
  *
  * @return  An array that describes which operations (if any) require TLS/SSL)
  */
-OperationSizedBoolArray
-AccessControl::getTlsRequiredArray() const {
+OperationSizedBoolArray AccessControl::getTlsRequiredArray() const {
     OperationSizedBoolArray tlsRequiredArray;
     tlsRequiredArray.fill(false);
     for (auto scope : m_scopeList) {
@@ -115,8 +112,7 @@ AccessControl::getTlsRequiredArray() const {
  *
  * @return  True if the key can be used for the operation
  */
-bool
-AccessControl::permissionToPerformOperation(const std::string& key, const AccessScopeList& scopeList) const {
+bool AccessControl::permissionToPerformOperation(const std::string& key, const AccessScopeList& scopeList) const {
     for (AccessScope scope : scopeList) {
         std::string requiredKeySubstring = scope.keySubstring();
         if ((requiredKeySubstring.empty()) || ((key.size() >= scope.minimumKeySize())

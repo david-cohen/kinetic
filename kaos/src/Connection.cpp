@@ -215,7 +215,7 @@ Connection::receiveRequest(Transaction& transaction) {
         return;
     }
     catch (std::exception& ex) {
-        if (std::string(ex.what()) != "socket closed")
+        if (std::string(ex.what()) != "Socket closed")
             LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
     }
     transaction.error = ConnectionError::IO_ERROR;

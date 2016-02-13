@@ -36,7 +36,7 @@ SslControl::SslControl()
     m_context = SSL_CTX_new(SSLv23_server_method());
 
     if (m_context == nullptr) {
-        LOG(ERROR) << "Failed to create SSL context" << std::endl;
+        LOG(ERROR) << "Failed to create SSL context";
         return;
     }
 
@@ -44,15 +44,15 @@ SslControl::SslControl()
      * Load the certificate and the private key and then make sure they are consistent.
      */
     if (SSL_CTX_use_certificate_file(m_context, systemConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-        LOG(ERROR) << "Failed to Load Certificate" << std::endl;
+        LOG(ERROR) << "Failed to load certificate";
         return;
     }
     if (SSL_CTX_use_PrivateKey_file(m_context, systemConfig.sslPrivateKeyFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-        LOG(ERROR) << "Failed to Load Private Key" << std::endl;
+        LOG(ERROR) << "Failed to load private key";
         return;
     }
     if (SSL_CTX_check_private_key(m_context) != SSL_SUCCESS) {
-        LOG(ERROR) << "Key Does Not Match Certificate" << std::endl;
+        LOG(ERROR) << "Key does not match certificate";
         return;
     }
     m_operational = true;
@@ -75,6 +75,8 @@ SslControl::~SslControl() {
  *
  * @param   socketFd    File descriptor of the socket
  *
+ * @return  The SSL connection object
+ *
  * @throws  A runtime error if a connection could not be created
  */
 SSL* SslControl::createConnection(int socketFd) {
@@ -83,7 +85,7 @@ SSL* SslControl::createConnection(int socketFd) {
 
     if (ssl == nullptr) {
         LOG(ERROR) << "Failed to create new SSL object";
-        throw std::runtime_error("failed SSL object creation");
+        throw std::runtime_error("Failed SSL object creation");
     }
 
     /*
@@ -95,15 +97,25 @@ SSL* SslControl::createConnection(int socketFd) {
     if (SSL_set_fd(ssl, socketFd) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to associate SSL object with file descriptor";
         SSL_free(ssl);
-        throw std::runtime_error("failed SSL set mode creation");
+        throw std::runtime_error("Failed SSL set mode creation");
     }
 
     int32_t status = SSL_accept(ssl);
     if (status != SSL_SUCCESS) {
         SSL_free(ssl);
-        LOG(ERROR) << "SSL accept failure: return_code=" << status << ", ssl_error=" << SSL_get_error(ssl, status);
-        throw std::runtime_error("failed to perform SSL accept");
+        LOG(ERROR) << "SSL accept failure: return code=" << status << ", SSL error=" << SSL_get_error(ssl, status);
+        throw std::runtime_error("Failed SSL accept");
     }
 
     return ssl;
 }
+
+/**
+ * Frees the resources used for this SSL connection.
+ *
+ * @param   ssl     The SSL connection object to be freed
+ */
+void SslControl::tearDownConnection(SSL* ssl) {
+    SSL_free(ssl);
+}
+

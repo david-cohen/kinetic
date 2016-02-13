@@ -35,9 +35,10 @@ ClearTextStream::ClearTextStream(int32_t streamFd)
  *
  * @param   buffer      Pointer to the buffer the data is to be read into
  * @param   byteCount   The number of bytes to be read
+ *
+ * @throws  A runtime error if a fatal error was encountered
 */
-void
-ClearTextStream::read(char* buffer, size_t byteCount) {
+void ClearTextStream::read(char* buffer, size_t byteCount) {
 
     /*
      * Loop reading from the socket until the requested amount of data has been received.
@@ -54,13 +55,13 @@ ClearTextStream::read(char* buffer, size_t byteCount) {
 
         if (byteCountStatus == STATUS_END_OF_STREAM) {
             close();
-            throw std::runtime_error("socket closed");
+            throw std::runtime_error("Socket closed");
         }
 
         if (byteCountStatus == STATUS_FAILURE) {
-            LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Description=" << strerror(errno);
+            LOG(ERROR) << "Clear text stream read failure: error code=" << errno << ", description=" << strerror(errno);
             close();
-            throw std::runtime_error("failed read");
+            throw std::runtime_error("Failed read");
         }
 
         byteCount -= byteCountStatus;
@@ -73,9 +74,10 @@ ClearTextStream::read(char* buffer, size_t byteCount) {
  * Reads and discards the specified number of bytes.
  *
  * @param   byteCount   The number of bytes to be read
+ *
+ * @throws  A runtime error if a fatal error was encountered
  */
-void
-ClearTextStream::blackHoleRead(size_t byteCount) {
+void ClearTextStream::blackHoleRead(size_t byteCount) {
 
     /*
      * Loop reading from the socket until the requested amount of data has been received (without
@@ -94,13 +96,13 @@ ClearTextStream::blackHoleRead(size_t byteCount) {
 
         if (byteCountStatus == STATUS_END_OF_STREAM) {
             close();
-            throw std::runtime_error("socket closed");
+            throw std::runtime_error("Socket closed");
         }
 
         if (byteCountStatus == STATUS_FAILURE) {
-            LOG(ERROR) << "TCP Read Failure: Error Code=" << errno << ", Description=" << strerror(errno);
+            LOG(ERROR) << "Clear text stream read failure: error code=" << errno << ", description=" << strerror(errno);
             close();
-            throw std::runtime_error("failed read");
+            throw std::runtime_error("Failed read");
         }
 
         byteCount -= byteCountStatus;
@@ -113,9 +115,10 @@ ClearTextStream::blackHoleRead(size_t byteCount) {
  *
  * @param   buffer      Pointer to the buffer the data is to be written to
  * @param   byteCount   The number of bytes to be written
+ *
+ * @throws  A runtime error if a fatal error was encountered
  */
-void
-ClearTextStream::write(const char* const buffer, size_t byteCount) {
+void ClearTextStream::write(const char* const buffer, size_t byteCount) {
 
     /*
      * Loop writing to the socket until the requested amount of data has been sent.
@@ -133,13 +136,13 @@ ClearTextStream::write(const char* const buffer, size_t byteCount) {
 
         if (byteCountStatus == STATUS_END_OF_STREAM) {
             close();
-            throw std::runtime_error("socket closed");
+            throw std::runtime_error("Socket closed");
         }
 
         if (byteCountStatus == STATUS_FAILURE) {
-            LOG(ERROR) << "TCP Write Failure: Error Code=" << errno << ", Description=" << strerror(errno);
+            LOG(ERROR) << "Clear text stream write failure: error code=" << errno << ", description=" << strerror(errno);
             close();
-            throw std::runtime_error("failed write");
+            throw std::runtime_error("Failed write");
         }
 
         byteCount -= byteCountStatus;
@@ -151,10 +154,9 @@ ClearTextStream::write(const char* const buffer, size_t byteCount) {
 /**
  * Closes the stream.
  */
-void
-ClearTextStream::close() {
+void ClearTextStream::close() {
 
     if (::close(m_streamFd) == STATUS_FAILURE) {
-        LOG(ERROR) << "TCP close failure: Error Code=" << errno << ", Description=" << strerror(errno);
+        LOG(ERROR) << "Clear text stream close failure: error code=" << errno << ", description=" << strerror(errno);
     }
 }

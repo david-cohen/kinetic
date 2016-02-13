@@ -24,8 +24,7 @@
  *
  * @return  HMAC for the specified data using the specified key
  */
-std::string
-Hmac::compute(const std::string& data, const std::string& key, HmacAlgorithm algorithm, bool prependSize) {
+std::string Hmac::compute(const std::string& data, const std::string& key, HmacAlgorithm algorithm, bool prependSize) {
 
     /*
      * Eliminate the unused args warning for algorithm.

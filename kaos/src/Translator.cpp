@@ -22,8 +22,7 @@
  *
  * @return  The algorithm in the internal format
  */
-HmacAlgorithm
-Translator::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSetting) {
+HmacAlgorithm Translator::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSetting) {
     return hmacAlgorithmSetting == kaos::Settings_ACL_HmacAlgorithm::Settings_ACL_HmacAlgorithm_HMAC_SHA1 ? HmacAlgorithm::SHA1 : HmacAlgorithm::UNKNOWN;
 }
 
@@ -34,8 +33,7 @@ Translator::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSet
  *
  * @return  The algorithm in the persisted settings format
  */
-kaos::Settings_ACL_HmacAlgorithm
-Translator::toSettingsFormat(HmacAlgorithm hmacAlgorithm) {
+kaos::Settings_ACL_HmacAlgorithm Translator::toSettingsFormat(HmacAlgorithm hmacAlgorithm) {
     return hmacAlgorithm == HmacAlgorithm::SHA1 ? kaos::Settings_ACL_HmacAlgorithm::Settings_ACL_HmacAlgorithm_HMAC_SHA1
            : kaos::Settings_ACL_HmacAlgorithm::Settings_ACL_HmacAlgorithm_HMAC_INVALID;
 }
@@ -47,8 +45,7 @@ Translator::toSettingsFormat(HmacAlgorithm hmacAlgorithm) {
  *
  * @return  The HMAC algorithm in the internal format
  */
-HmacAlgorithm
-Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm hmacAlgorithm) {
+HmacAlgorithm Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm hmacAlgorithm) {
     if (hmacAlgorithm == com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1)
         return HmacAlgorithm::SHA1;
     else
@@ -62,8 +59,7 @@ Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL
  *
  * @return  The operation in the internal format
  */
-Operation
-Translator::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
+Operation Translator::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
     switch (operation) {
         case kaos::Settings_ACL_Operation::Settings_ACL_Operation_READ:
             return Operation::READ;
@@ -93,8 +89,7 @@ Translator::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
  *
  * @return  The operation in the persisted settings format
  */
-kaos::Settings_ACL_Operation
-Translator::toSettingsFormat(Operation operation) {
+kaos::Settings_ACL_Operation Translator::toSettingsFormat(Operation operation) {
     switch (operation) {
         case Operation::READ:
             return kaos::Settings_ACL_Operation::Settings_ACL_Operation_READ;
@@ -124,8 +119,7 @@ Translator::toSettingsFormat(Operation operation) {
  *
  * @return  The operation in the internal format
  */
-Operation
-Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
+Operation Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
     switch (permission) {
         case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_READ:
             return Operation::READ;
@@ -155,8 +149,7 @@ Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL
  *
  * @return  The boolean value in string form
  */
-std::string
-Translator::toString(bool boolValue) {
+std::string Translator::toString(bool boolValue) {
     return boolValue ? "True" : "False";
 }
 
@@ -167,8 +160,7 @@ Translator::toString(bool boolValue) {
  *
  * @return the algorithm in string form
  */
-std::string
-Translator::toString(Algorithm algorithm) {
+std::string Translator::toString(Algorithm algorithm) {
 
     switch (algorithm) {
         case Algorithm::Command_Algorithm_INVALID_ALGORITHM:
@@ -195,8 +187,7 @@ Translator::toString(Algorithm algorithm) {
  *
  * @return the PIN operation type in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpType pinop) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpType pinop) {
 
     switch (pinop) {
         case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
@@ -221,8 +212,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpTyp
  *
  * @return the HMAC algorithm in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm algorithm) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm algorithm) {
 
     switch (algorithm) {
         case com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_INVALID_HMAC_ALGORITHM:
@@ -241,8 +231,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgo
  *
  * @return the authentication type in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Message_AuthType authType) {
+std::string Translator::toString(com::seagate::kinetic::proto::Message_AuthType authType) {
 
     switch (authType) {
         case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_INVALID_AUTH_TYPE:
@@ -265,8 +254,7 @@ Translator::toString(com::seagate::kinetic::proto::Message_AuthType authType) {
  *
  * @return the message type in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageType) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageType) {
 
     switch (messageType) {
         case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GET:
@@ -357,8 +345,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageTy
  *
  * @return the type in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Type type) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Type type) {
 
     switch (type) {
         case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_UTILIZATIONS:
@@ -389,8 +376,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Type type) {
  *
  * @return the permission in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
 
     switch (permission) {
         case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_READ:
@@ -423,8 +409,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_Permissi
  *
  * @return the synchronization in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_Synchronization synchronization) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_Synchronization synchronization) {
 
     if (synchronization == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_WRITETHROUGH)
         return "Write-Through";
@@ -443,8 +428,7 @@ Translator::toString(com::seagate::kinetic::proto::Command_Synchronization synch
  *
  * @return the statusCode in string form
  */
-std::string
-Translator::toString(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode) {
 
     switch (statusCode) {
         case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NOT_ATTEMPTED:

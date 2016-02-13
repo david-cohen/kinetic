@@ -38,8 +38,7 @@ HeartbeatProvider::HeartbeatProvider()
  *
  * @return  True if the thread was successfully created
  */
-bool
-HeartbeatProvider::start() {
+bool HeartbeatProvider::start() {
 
     try {
         m_active = true;
@@ -47,7 +46,7 @@ HeartbeatProvider::start() {
         return true;
     }
     catch (std::exception& e) {
-        LOG(ERROR) << "Failed to create Heartbeat Provider thread: Description=" << e.what();
+        LOG(ERROR) << "Failed to create heartbeat provider thread: description=" << e.what();
         m_thread = nullptr;
         return false;
     }
@@ -58,20 +57,19 @@ HeartbeatProvider::start() {
  *
  * @throws  A runtime error if a socket could not be opened or configured successfully
  */
-void
-HeartbeatProvider::openSocket() {
+void HeartbeatProvider::openSocket() {
 
     const uint8_t MULTICAST_TTL(1);
     m_socketFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (m_socketFd == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to create multicast socket: Error Code=" << errno << ", Description=" << strerror(errno);
+        LOG(ERROR) << "Failed to create multicast socket: error code=" << errno << ", description=" << strerror(errno);
         throw std::runtime_error("Failed to create multicast socket");
     }
 
     if (setsockopt(m_socketFd, IPPROTO_IP, IP_MULTICAST_TTL, &MULTICAST_TTL, sizeof(MULTICAST_TTL)) == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to set socket options IP_MULTICAST_TTL: Error Code=" << errno << ", Description=" << strerror(errno);
-        throw std::runtime_error("Failed to set socket options IP_MULTICAST_TTL");
+        LOG(ERROR) << "Failed to set socket option IP_MULTICAST_TTL: error code=" << errno << ", description=" << strerror(errno);
+        throw std::runtime_error("Failed to set socket option IP_MULTICAST_TTL");
     }
 }
 
@@ -81,8 +79,7 @@ HeartbeatProvider::openSocket() {
  *
  * @throws  A runtime error if the message wasn't sent successfully
  */
-void
-HeartbeatProvider::sendHeartbeatMessage() {
+void HeartbeatProvider::sendHeartbeatMessage() {
 
     std::stringstream stream;
     stream << "{"
@@ -119,8 +116,7 @@ HeartbeatProvider::sendHeartbeatMessage() {
  * This is the function performed by the heartbeat provider thread.  It opens a multicast sockets
  * and sends heartbeat messages at the specified interval.
  */
-void
-HeartbeatProvider::run() {
+void HeartbeatProvider::run() {
 
     while (m_active) {
         try {
@@ -131,7 +127,7 @@ HeartbeatProvider::run() {
             }
         }
         catch (std::exception& ex) {
-            LOG(ERROR) << "Heartbeat Provider exception: " << ex.what();
+            LOG(ERROR) << "Heartbeat provider thread failure, description: " << ex.what();
             sleep(systemConfig.heartbeatConnectionRetryInterval());
         }
     }
@@ -142,8 +138,7 @@ HeartbeatProvider::run() {
  *
  * Causes the heartbeat provider thread to terminate.
  */
-void
-HeartbeatProvider::stop() {
+void HeartbeatProvider::stop() {
 
     m_active = false;
 }
@@ -153,8 +148,7 @@ HeartbeatProvider::stop() {
  *
  * Causes the caller to be blocked until the thread ends.
  */
-void
-HeartbeatProvider::wait() {
+void HeartbeatProvider::wait() {
 
     if (m_thread != nullptr)
         m_thread->join();

@@ -14,6 +14,7 @@
 #include <iostream>
 #include "Hmac.hpp"
 #include "Common.hpp"
+#include "Logger.hpp"
 #include "Translator.hpp"
 #include "Settings.pb.hpp"
 #include "SystemConfig.hpp"
@@ -41,8 +42,7 @@ ServerSettings::ServerSettings(std::string filename)
  *
  * @return  Pointer to the access control for the specified user
  */
-AccessControlPtr
-ServerSettings::accessControl(int64_t identity) {
+AccessControlPtr ServerSettings::accessControl(int64_t identity) {
     AccessControlMap::const_iterator iter = m_accessControlMap.find(identity);
     return iter == m_accessControlMap.end() ? nullptr : iter->second;
 }
@@ -52,8 +52,7 @@ ServerSettings::accessControl(int64_t identity) {
  *
  * @param   newAccessControlList    New access control to use
  */
-void
-ServerSettings::updateAccessControl(std::list<AccessControlPtr> newAccessControlList) {
+void ServerSettings::updateAccessControl(std::list<AccessControlPtr> newAccessControlList) {
     for (auto accessControl : newAccessControlList) {
         if (this->accessControl(accessControl->identity()) != nullptr)
             m_accessControlMap.erase(accessControl->identity());
@@ -64,8 +63,7 @@ ServerSettings::updateAccessControl(std::list<AccessControlPtr> newAccessControl
 /**
  * Save the in memory server settings to persistence storage.
  */
-void
-ServerSettings::save() {
+void ServerSettings::save() {
     std::unique_ptr<kaos::Settings> settings(new kaos::Settings());
 
     settings->set_clusterversion(m_clusterVersion);
@@ -95,10 +93,10 @@ ServerSettings::save() {
 }
 
 /**
- * Set the values in the server settings to their default values.
+ * Set the values in the server settings to their default values and saves them to persistent
+ * storage.
  */
-void
-ServerSettings::setDefaults() {
+void ServerSettings::setDefaults() {
 
     setClusterVersion(systemConfig.defaultClusterVersion());
     m_lockPin = systemConfig.defaultLockPin();
@@ -118,17 +116,13 @@ ServerSettings::setDefaults() {
     std::list<AccessControlPtr> accessControlList;
     accessControlList.push_back(accessControl);
     updateAccessControl(accessControlList);
-#if 0
     save();
-#endif
 }
 
 /*
  * Load the settings into memory from their persistent storage.
  */
-bool
-ServerSettings::load() {
-
+bool ServerSettings::load() {
 
     struct stat info;
     if (stat(m_filename.c_str(), &info) != STATUS_SUCCESS)
@@ -137,7 +131,7 @@ ServerSettings::load() {
     std::unique_ptr<kaos::Settings> settings(new kaos::Settings());
     std::fstream input(m_filename.c_str(), std::ios::in | std::ios::binary);
     if (!settings->ParseFromIstream(&input)) {
-        std::cerr << "Failed to parse settings" << std::endl;
+        LOG(ERROR) << "Failed to load server settings";
         return false;
     }
 

@@ -37,7 +37,7 @@ using std::string;
  */
 static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
-static const char* VERSION("1.0.1-FOR-EVAL-ONLY");
+static const char* VERSION("1.0.2-FOR-EVAL-ONLY");
 
 /*
  * Daemon Related Settings
@@ -122,8 +122,7 @@ static const uint32_t ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING_OFFSET(0);
  *
  * @return  The key used to perform a flush write on the database
  */
-static std::string
-createFlushDataKey() {
+static std::string createFlushDataKey() {
     std::string flushDataKey;
     while (flushDataKey.size() <= MAX_KEY_SIZE) {
         flushDataKey.append(FLUSH_DATA_KEY_PATTERN);
@@ -139,8 +138,7 @@ createFlushDataKey() {
  *
  * @return  Enum value of LogLevel
  */
-static LogLevel
-toLogLevel(std::string logLevel) {
+static LogLevel toLogLevel(std::string logLevel) {
 
     if (logLevel == "ERROR")
         return ERROR;
@@ -243,7 +241,7 @@ SystemConfig::SystemConfig()
         if (stat(specifiedStorageDirectory.c_str(), &info) == STATUS_SUCCESS)
             storageDirectory = specifiedStorageDirectory;
         else
-            LOG(ERROR) << "Specified storage directory (" << specifiedStorageDirectory << ") failed stat: Error Code=" << errno << ", Description=" << strerror(errno);
+            LOG(ERROR) << "Specified storage directory (" << specifiedStorageDirectory << ") failed stat: error code=" << errno << ", description=" << strerror(errno);
     }
 
     m_databaseDirectory = storageDirectory + "/" + DATABASE_DIRECTORY;
@@ -255,7 +253,7 @@ SystemConfig::SystemConfig()
     struct ifaddrs* interfaceList(nullptr);
 
     if (getifaddrs(&interfaceList) == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to obtain network interface information: Error Code=" << errno << ", Description=" << strerror(errno);
+        LOG(ERROR) << "Failed to obtain network interface information: error code=" << errno << ", description=" << strerror(errno);
         return;
     }
 
@@ -309,7 +307,7 @@ SystemConfig::SystemConfig()
      */
     FILE* fp = popen("/sbin/hdparm -I /dev/sda", "r");
     if (fp == nullptr) {
-        LOG(ERROR) << "Failed to obtain drive information: Error Code=" << errno << ", Description=" << strerror(errno);
+        LOG(ERROR) << "Failed to obtain drive information: error code=" << errno << ", description=" << strerror(errno);
     }
     else {
         char* line = nullptr;

@@ -26,6 +26,7 @@ public:
      * Public Member Functions
      */
     SSL* createConnection(int32_t socketFd);
+    void tearDownConnection(SSL* ssl);
     bool operational() {return m_operational;}
 
 private:

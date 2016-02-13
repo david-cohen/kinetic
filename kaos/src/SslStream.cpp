@@ -16,7 +16,7 @@
 #include "SystemConfig.hpp"
 
 /**
- * SSL Stream Constructor
+ * Initialize the SSL stream object.
  *
  * @param   socketDescriptor    Stream socket's file descriptor
  */
@@ -25,10 +25,20 @@ SslStream::SslStream(int32_t socketDescriptor)
 }
 
 /**
+ * Tear down the SSL connection object.
+ */
+SslStream::~SslStream() {
+
+    sslControl.tearDownConnection(m_ssl);
+}
+
+/**
  * Reads the specified number of bytes into the specified buffer.
  *
  * @param   buffer      Pointer to the buffer the data is to be read into
  * @param   byteCount   The number of bytes to be read
+ *
+ * @throws  A runtime error if a fatal error was encountered
  */
 void SslStream::read(char* buffer, size_t byteCount) {
 
@@ -40,16 +50,14 @@ void SslStream::read(char* buffer, size_t byteCount) {
         int32_t byteCountStatus = SSL_read(m_ssl, &buffer[bufferIndex], byteCount);
 
         if (byteCountStatus == 0) {
-            // need to free SSL struct
             close();
-            throw std::runtime_error("socket closed");
+            throw std::runtime_error("Socket closed");
         }
 
         if (byteCountStatus < 0) {
-            LOG(ERROR) << "SSL read failure: return_code=" << byteCountStatus << ", ssl_error=" << SSL_get_error(m_ssl, byteCountStatus);
-            // need to free SSL struct
+            LOG(ERROR) << "SSL stream read failure: return code=" << byteCountStatus << ", SSL error=" << SSL_get_error(m_ssl, byteCountStatus);
             close();
-            throw std::runtime_error("failed read");
+            throw std::runtime_error("Failed read");
         }
 
         byteCount -= byteCountStatus;
@@ -62,6 +70,8 @@ void SslStream::read(char* buffer, size_t byteCount) {
  * Reads and discards the specified number of bytes.
  *
  * @param   byteCount   The number of bytes to be read
+ *
+ * @throws  A runtime error if a fatal error was encountered
  */
 void SslStream::blackHoleRead(size_t byteCount) {
 
@@ -75,16 +85,14 @@ void SslStream::blackHoleRead(size_t byteCount) {
         int32_t byteCountStatus = SSL_read(m_ssl, valueBuffer.get(), byteCount > systemConfig.maxValueSize() ? systemConfig.maxValueSize() : byteCount);
 
         if (byteCountStatus == 0) {
-            // need to free SSL struct
             close();
-            throw std::runtime_error("socket closed");
+            throw std::runtime_error("Socket closed");
         }
 
         if (byteCountStatus < 0) {
-            LOG(ERROR) << "SSL read failure: return_code=" << byteCountStatus << ", ssl_error=" << SSL_get_error(m_ssl, byteCountStatus);
-            // need to free SSL struct
+            LOG(ERROR) << "SSL stream read failure: return code=" << byteCountStatus << ", SSL error=" << SSL_get_error(m_ssl, byteCountStatus);
             close();
-            throw std::runtime_error("failed read");
+            throw std::runtime_error("Failed read");
         }
 
         byteCount -= byteCountStatus;
@@ -97,6 +105,8 @@ void SslStream::blackHoleRead(size_t byteCount) {
  *
  * @param   buffer      Pointer to the buffer the data is to be written to
  * @param   byteCount   The number of bytes to be written
+ *
+ * @throws  A runtime error if a fatal error was encountered
  */
 void SslStream::write(const char* const buffer, size_t byteCount) {
     /*
@@ -107,16 +117,14 @@ void SslStream::write(const char* const buffer, size_t byteCount) {
         int32_t byteCountStatus = SSL_write(m_ssl, &buffer[bufferIndex], byteCount);
 
         if (byteCountStatus == 0) {
-            // need to free SSL struct
             close();
-            throw std::runtime_error("socket closed");
+            throw std::runtime_error("Socket closed");
         }
 
         if (byteCountStatus < 0) {
-            LOG(ERROR) << "SSL write failure: return_code=" << byteCountStatus << ", ssl_error=" << SSL_get_error(m_ssl, byteCountStatus);
-            // need to free SSL struct
+            LOG(ERROR) << "SSL stream write failure: return code=" << byteCountStatus << ", SSL error=" << SSL_get_error(m_ssl, byteCountStatus);
             close();
-            throw std::runtime_error("failed write");
+            throw std::runtime_error("Failed write");
         }
 
         byteCount -= byteCountStatus;
@@ -131,6 +139,6 @@ void SslStream::write(const char* const buffer, size_t byteCount) {
 void SslStream::close() {
 
     if (::close(m_streamFd) == STATUS_FAILURE) {
-        LOG(ERROR) << "TCP close failure: Error Code=" << errno << ", Description=" << strerror(errno);
+        LOG(ERROR) << "SSL stream close failure: error code=" << errno << ", description=" << strerror(errno);
     }
 }

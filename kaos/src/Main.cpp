@@ -68,7 +68,7 @@ void terminateProgram(int signum) {
  */
 int32_t main(int argc, char** argv) {
 
-    bool foreground(true);
+    bool foreground(false);
     std::string pidFileName = systemConfig.defaultPidFileName();
     struct option longopts[] = {
         { "pid",        required_argument, nullptr, 'p' },
@@ -90,13 +90,15 @@ int32_t main(int argc, char** argv) {
         }
         else if (opt == 'f') {
             foreground = true;
-            logControl.setStandardOutEnabled(true);
         }
         else if (opt == 'h') {
             std::cout << "Usage: " << basename(argv[0]) << " [--pid|-p]|[--foreground|-f]|[--help|-h]" << std::endl;
             return (opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE);
         }
     }
+
+    if (foreground)
+        logControl.setStandardOutEnabled(true);
 
     LOG(INFO) << "Starting application";
 

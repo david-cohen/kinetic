@@ -10,6 +10,7 @@
  */
 #include <stdint.h>
 #include <list>
+#include <mutex>
 #include <string>
 #include <memory>
 #include "Common.hpp"
@@ -65,7 +66,8 @@ private:
     /*
      * Private Data Members
      */
-    leveldb::DB*    m_database;     //!< Actual levelDB database
+    leveldb::DB*            m_database;     //!< Actual levelDB database
+    std::recursive_mutex    m_mutex;        //!< Mutex to make object thread safe
 
     DISALLOW_COPY_AND_ASSIGN(ObjectStore);
 };

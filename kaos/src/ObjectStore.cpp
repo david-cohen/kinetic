@@ -14,6 +14,7 @@
 #include "leveldb/slice.h"
 #include "leveldb/comparator.h"
 #include "leveldb/write_batch.h"
+#include "leveldb/filter_policy.h"
 #include "Logger.hpp"
 #include "Entry.pb.hpp"
 #include "ObjectStore.hpp"
@@ -55,14 +56,17 @@ ObjectStore::~ObjectStore() {
  *
  * @return  true if the database was opened successfully
  */
-bool
-ObjectStore::open() {
+bool ObjectStore::open() {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     defaultReadOptions.verify_checksums = false;
     defaultReadOptions.fill_cache = true;
     databaseOptions.create_if_missing = true;
+    databaseOptions.max_open_files = 256;
     databaseOptions.block_cache = leveldb::NewLRUCache(systemConfig.objectStoreCacheSize());
     databaseOptions.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+
     leveldb::Status status = leveldb::DB::Open(databaseOptions, systemConfig.databaseDirectory(), &m_database);
     if (!status.ok())
         LOG(ERROR) << "Failed to open database, status: " << status.ToString() << std::endl;
@@ -73,8 +77,9 @@ ObjectStore::open() {
 /*
  * Closes the database (if it was open).
  */
-void
-ObjectStore::close() {
+void ObjectStore::close() {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     if (m_database != nullptr) {
         delete m_database;
@@ -86,8 +91,9 @@ ObjectStore::close() {
  * Erases the contents of the database.  This causes the database to temporarily be inaccessible
  * (because it's closes and then opened).
  */
-void
-ObjectStore::erase() {
+void ObjectStore::erase() {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     close();
     DestroyDB(systemConfig.databaseDirectory(), databaseOptions);
@@ -97,9 +103,9 @@ ObjectStore::erase() {
 /**
  * Flushes all the database data that's in memory to persistent media.
  */
-void
-ObjectStore::flush() {
+void ObjectStore::flush() {
 
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * Level DB doesn't have a flush command, so we have to perform a write to force a sync.  Since
      * we don't want to over-write the user's data, we will write a entry whose key is larger that
@@ -142,8 +148,9 @@ ObjectStore::flush() {
  * versions to be discarded and the data is rearranged to reduce the cost of operations needed to
  * access the data.
  */
-void
-ObjectStore::optimizeMedia() {
+void ObjectStore::optimizeMedia() {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * The parameters passed in indicate the starting and ending keys.  However, passing in null
@@ -167,9 +174,9 @@ ObjectStore::optimizeMedia() {
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  * @throws  INTERNAL_ERROR if the put failed due to a database error (such as I/O failure)
  */
-void
-ObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
+void ObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
 
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then if the database already has an entry with the same key,
      * then the specified version must match the version of the existing entry.  If there is not an
@@ -229,9 +236,9 @@ ObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
  *
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
-void
-ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue& params, const string& value) {
+void ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue& params, const string& value) {
 
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then if the database already has an entry with the same key,
      * then the specified version must match the version of the existing entry.  If there is not an
@@ -284,11 +291,10 @@ ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue& par
  * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
-void
-ObjectStore::deleteEntry(const Command_KeyValue& params) {
+void ObjectStore::deleteEntry(const Command_KeyValue& params) {
 
     const string& key = params.key();
-
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then the specified version must match the version of the
      * entry to be deleted.  If they don't match or the entry is not in the database, fail the
@@ -339,10 +345,10 @@ ObjectStore::deleteEntry(const Command_KeyValue& params) {
  * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
-void
-ObjectStore::batchedDeleteEntry(BatchDescriptor& batch, const Command_KeyValue& params) {
+void ObjectStore::batchedDeleteEntry(BatchDescriptor& batch, const Command_KeyValue& params) {
 
     const string& key = params.key();
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * If the request is not "forced", then the specified version must match the version of the
@@ -382,8 +388,9 @@ ObjectStore::batchedDeleteEntry(BatchDescriptor& batch, const Command_KeyValue& 
  *
  * @throws  INTERNAL_ERROR if the operation failed due to a database error (such as I/O failure)
  */
-void
-ObjectStore::batchCommit(BatchDescriptor& batch) {
+void ObjectStore::batchCommit(BatchDescriptor& batch) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     leveldb::Status status = m_database->Write(syncWriteOptions, &batch);
     if (!status.ok())
@@ -403,8 +410,9 @@ ObjectStore::batchCommit(BatchDescriptor& batch) {
  * @throws  NOT_FOUND if the entry was not found in the database
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
-void
-ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+void ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * Read the database, failing the operation if the entry could not be found or the database
@@ -444,8 +452,9 @@ ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* 
  * @throws  NOT_FOUND if the entry was not found in the database
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
-void
-ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
+void ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * Read the database, failing the operation if the entry could not be found or the database
@@ -486,8 +495,9 @@ ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyVa
  *
  * @throws  NOT_FOUND if the entry was not found in the database
  */
-void
-ObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+void ObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * The seek function will cause the iterator to have one of three positions depending on the
@@ -535,8 +545,9 @@ ObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyVal
  *
  * @throws  NOT_FOUND if the entry was not found in the database
  */
-void
-ObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+void ObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * The seek function will cause the iterator to have one of three positions depending on the
@@ -591,9 +602,10 @@ ObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_Ke
  * @param  accessControl    Describe the keys the user has access to
  * @param  returnData       Where the list or keys to be returned are saved
  */
-void
-ObjectStore::getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
-                         com::seagate::kinetic::proto::Command_Range* returnData) {
+void ObjectStore::getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
+                              com::seagate::kinetic::proto::Command_Range* returnData) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * The seek function will cause the iterator to have one of three positions depending on the
@@ -653,9 +665,10 @@ ObjectStore::getKeyRange(const com::seagate::kinetic::proto::Command_Range& para
  * @param  accessControl    Describe the keys the user has access to
  * @param  returnData       Where the list or keys to be returned are saved
  */
-void
-ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
-                                 com::seagate::kinetic::proto::Command_Range* returnData) {
+void ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
+                                      com::seagate::kinetic::proto::Command_Range* returnData) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
      * The seek function will cause the iterator to have one of three positions depending on the

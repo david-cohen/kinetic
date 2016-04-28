@@ -15,7 +15,7 @@
 /*
  * Request Handler Function Type.
  */
-typedef void (* RequestHandler)(Transaction& transaction);
+typedef void (* RequestHandler)(Transaction* transaction);
 
 /**
  * Contains operation information (one for each operation), which is used to process requests.

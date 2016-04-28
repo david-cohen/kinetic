@@ -43,7 +43,7 @@ public:
     /*
      * Public Member Functions
      */
-    bool sendResponse(Transaction& transaction);
+    bool sendResponse(Transaction* transaction);
 
     /*
      * Public Accessors
@@ -87,9 +87,9 @@ private:
     /*
      * Private Member Functions
      */
-    void receiveRequest(Transaction& transaction);
+    void receiveRequest(Transaction* transaction);
     void sendUnsolicitedStatusMessage();
-    void run();
+    void receiveHandler();
 
     /*
      * Private Data Member
@@ -100,7 +100,7 @@ private:
     const std::string           m_serverIpAddress;          //!< Server's IP address
     const uint32_t              m_clientPort;               //!< Client's TCP port number
     const std::string           m_clientIpAddress;          //!< Client's IP address
-    std::thread* const          m_thread;                   //!< Thread that receives messages
+    std::thread* const          m_receiveThread;            //!< Thread that receives request messages
     const int64_t               m_connectionId;             //!< Identification number for connection
     std::atomic<int64_t>        m_previousSequence;         //!< Last request message sequence number
     std::atomic_bool            m_processedFirstRequest;    //!< Indicates if the first request has been processed yet

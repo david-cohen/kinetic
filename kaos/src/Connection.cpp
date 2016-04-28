@@ -35,9 +35,9 @@ static std::atomic<int64_t> nextConnectionId(1);
 Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
     : m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()), m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
       m_clientPort(clientServerConnectionInfo.clientPort()), m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()),
-      m_thread(new std::thread(&Connection::run, this)), m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
+      m_receiveThread(new std::thread(&Connection::receiveHandler, this)), m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
 
-    m_thread->detach();
+    m_receiveThread->detach();
 }
 
 /*
@@ -45,7 +45,7 @@ Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clien
  */
 Connection::~Connection() {
     delete m_stream;
-    delete m_thread;
+    delete m_receiveThread;
 }
 
 /**
@@ -53,7 +53,7 @@ Connection::~Connection() {
  * receive a message, and when it does, it calls a message handler to process it.
  */
 void
-Connection::run() {
+Connection::receiveHandler() {
 
     try {
         LOG(INFO) << "Connection opened, server=" << m_serverIpAddress << ":" << m_serverPort
@@ -73,15 +73,15 @@ Connection::run() {
              * response before attempting to send one.
              */
             Transaction transaction(this);
-            receiveRequest(transaction);
+            receiveRequest(&transaction);
 
             if (transaction.error == ConnectionError::IO_ERROR)
                 break;
 
-            MessageHandler::processRequest(transaction);
+            MessageHandler::processRequest(&transaction);
 
             if (transaction.response != nullptr)
-                sendResponse(transaction);
+                sendResponse(&transaction);
         }
     }
     catch (std::exception& ex) {
@@ -118,7 +118,7 @@ Connection::sendUnsolicitedStatusMessage() {
     KineticLog::getLimits(getLogResponse);
     command->mutable_status()->set_code(::com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS);
     transaction.response->build_commandbytes();
-    sendResponse(transaction);
+    sendResponse(&transaction);
 }
 
 /**
@@ -131,7 +131,7 @@ Connection::sendUnsolicitedStatusMessage() {
  * @throws  A runtime error if an error is encountered
  */
 void
-Connection::receiveRequest(Transaction& transaction) {
+Connection::receiveRequest(Transaction* transaction) {
 
     try {
 
@@ -163,14 +163,14 @@ Connection::receiveRequest(Transaction& transaction) {
             m_stream->read(messageBuffer.get(), messageSize);
             try {
                 m_stream->blackHoleRead(messageSize - systemConfig.maxMessageSize());
-                transaction.request->deserializeData(messageBuffer.get(), messageSize);
+                transaction->request->deserializeData(messageBuffer.get(), messageSize);
             }
             catch (std::exception& ex) {
                 LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
             }
 
             if (systemConfig.debugEnabled())
-                MessageTrace::outputContents(messageFraming, transaction.request.get());
+                MessageTrace::outputContents(messageFraming, transaction->request.get());
 
             throw std::runtime_error("message size too large");
         }
@@ -186,39 +186,39 @@ Connection::receiveRequest(Transaction& transaction) {
 
         if (valueSize > systemConfig.maxValueSize()) {
             m_stream->blackHoleRead(valueSize);
-            if (!transaction.request->deserializeData(messageBuffer.get(), messageSize))
+            if (!transaction->request->deserializeData(messageBuffer.get(), messageSize))
                 throw std::runtime_error("invalid message format");
 
             if (systemConfig.debugEnabled())
-                MessageTrace::outputContents(messageFraming, transaction.request.get());
+                MessageTrace::outputContents(messageFraming, transaction->request.get());
 
-            transaction.error = ConnectionError::VALUE_TOO_BIG;
+            transaction->error = ConnectionError::VALUE_TOO_BIG;
             std::stringstream errorStream;
             errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
-            transaction.errorMessage = errorStream.str();
+            transaction->errorMessage = errorStream.str();
             return;
         }
 
         if (valueSize > 0) {
             std::unique_ptr<char> valueBuffer(new char[valueSize]);
             m_stream->read(valueBuffer.get(), valueSize);
-            transaction.request->setValue(valueBuffer.get(), valueSize);
+            transaction->request->setValue(valueBuffer.get(), valueSize);
         }
 
-        if (!transaction.request->deserializeData(messageBuffer.get(), messageSize))
+        if (!transaction->request->deserializeData(messageBuffer.get(), messageSize))
             throw std::runtime_error("invalid message format");
 
         if (systemConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, transaction.request.get());
+            MessageTrace::outputContents(messageFraming, transaction->request.get());
 
-        transaction.error = ConnectionError::NONE;
+        transaction->error = ConnectionError::NONE;
         return;
     }
     catch (std::exception& ex) {
         if (std::string(ex.what()) != "Socket closed")
             LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
     }
-    transaction.error = ConnectionError::IO_ERROR;
+    transaction->error = ConnectionError::IO_ERROR;
 }
 
 /**
@@ -231,22 +231,22 @@ Connection::receiveRequest(Transaction& transaction) {
  * @throws  A runtime error if an error is encountered
  */
 bool
-Connection::sendResponse(Transaction& transaction) {
+Connection::sendResponse(Transaction* transaction) {
 
     try {
-        uint32_t messageSize = transaction.response->serializedSize();
+        uint32_t messageSize = transaction->response->serializedSize();
         std::unique_ptr<char> messageBuffer(new char[messageSize]);
-        transaction.response->serializeData(messageBuffer.get(), messageSize);
+        transaction->response->serializeData(messageBuffer.get(), messageSize);
 
-        KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, transaction.response->value().size());
+        KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, transaction->response->value().size());
         m_stream->write((const char*) &messageFraming, sizeof(messageFraming));
 
         m_stream->write(messageBuffer.get(), messageSize);
-        if (!transaction.response->value().empty())
-            m_stream->write(transaction.response->value().c_str(), transaction.response->value().size());
+        if (!transaction->response->value().empty())
+            m_stream->write(transaction->response->value().c_str(), transaction->response->value().size());
 
         if (systemConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, transaction.response.get());
+            MessageTrace::outputContents(messageFraming, transaction->response.get());
     }
     catch (std::exception& ex) {
         if (std::string(ex.what()) != "socket closed")

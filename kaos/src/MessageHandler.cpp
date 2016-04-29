@@ -133,13 +133,6 @@ MessageHandler::processRequest(Transaction* transaction) {
 
     try {
         /*
-         * If request had already encountered an error, build an error response and end the request
-         * processing.
-         */
-        if (transaction->error != ConnectionError::NONE)
-            return processError(transaction);
-
-        /*
          * Verify that the request contains all the required header fields (if not, the verify
          */
 
@@ -250,6 +243,12 @@ MessageHandler::processRequest(Transaction* transaction) {
         Command_Status* status = transaction->response->mutable_command()->mutable_status();
         status->set_code(Command_Status_StatusCode_INTERNAL_ERROR);
         status->set_statusmessage(string(ex.what()));
+    }
+    catch (...) {
+        LOG(ERROR) << "MessageHandler::processRequest unknown exception";
+        Command_Status* status = transaction->response->mutable_command()->mutable_status();
+        status->set_code(Command_Status_StatusCode_INTERNAL_ERROR);
+        status->set_statusmessage("Unexpected exception");
     }
 
     if (transaction->response == nullptr)

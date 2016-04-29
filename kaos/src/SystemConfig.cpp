@@ -62,8 +62,8 @@ static const char* FLUSH_DATA_KEY_PATTERN("04231970_WesternDigital_07913240");
 /*
  * Communication Settings
  */
-static const int32_t  MAX_PENDING_ADMIN_CONNECTIONS(5);
-static const uint32_t MAX_ACTIVE_ADMIN_CONNECTIONS(10);
+static const int32_t  MAX_PENDING_ADMIN_CONNECTIONS(8);
+static const uint32_t MAX_ACTIVE_ADMIN_CONNECTIONS(64);
 static const uint32_t TCP_PORT(8123);
 static const uint32_t SSL_PORT(8443);
 static const uint32_t MULTICAST_PORT(8123);

@@ -18,6 +18,7 @@
 #include <atomic>
 #include "Common.hpp"
 #include "Transaction.hpp"
+#include "MessageQueue.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
 #include "ClientServerConnectionInfo.hpp"
@@ -90,6 +91,8 @@ private:
     void receiveRequest(Transaction* transaction);
     void sendUnsolicitedStatusMessage();
     void receiveHandler();
+    void transmitHandler();
+    void tearDownHandler(bool& operationalIndicator);
 
     /*
      * Private Data Member
@@ -101,11 +104,16 @@ private:
     const uint32_t              m_clientPort;               //!< Client's TCP port number
     const std::string           m_clientIpAddress;          //!< Client's IP address
     std::thread* const          m_receiveThread;            //!< Thread that receives request messages
+    std::thread* const          m_transmitThread;           //!< Thread that transmits response messages
     const int64_t               m_connectionId;             //!< Identification number for connection
     std::atomic<int64_t>        m_previousSequence;         //!< Last request message sequence number
     std::atomic_bool            m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
     BatchListMap                m_batchListMap;             //!< Lists of batch commands indexed by batch ID
     std::mutex                  m_mutex;                    //!< Mutex used to make class thread safe
+    std::atomic_bool            m_terminated;               //!< True if the connection has been terminated
+    bool                        m_receiverOperational;      //!< Indicates if the receiver thread is operational
+    bool                        m_transmitterOperational;   //!< Indicates if the transmitter thread is operational
+    MessageQueue<Transaction*> m_transactionQueue;          //!< Queue containing response messages to send (in tranaction records)
 
     DISALLOW_COPY_AND_ASSIGN(Connection);
 };

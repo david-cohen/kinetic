@@ -33,11 +33,17 @@ static std::atomic<int64_t> nextConnectionId(1);
  * @param   clientServerConnectionInfo  Information about the client and server in the connection
  */
 Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
-    : m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()), m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
-      m_clientPort(clientServerConnectionInfo.clientPort()), m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()),
-      m_receiveThread(new std::thread(&Connection::receiveHandler, this)), m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
+    : m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()),
+      m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
+      m_clientPort(clientServerConnectionInfo.clientPort()),
+      m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()),
+      m_receiveThread(new std::thread(&Connection::receiveHandler, this)),
+      m_transmitThread(new std::thread(&Connection::transmitHandler, this)),
+      m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false),
+      m_terminated(false), m_receiverOperational(true), m_transmitterOperational(true) {
 
     m_receiveThread->detach();
+    m_transmitThread->detach();
 }
 
 /*
@@ -46,6 +52,7 @@ Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clien
 Connection::~Connection() {
     delete m_stream;
     delete m_receiveThread;
+    delete m_transmitThread;
 }
 
 /**
@@ -65,23 +72,24 @@ Connection::receiveHandler() {
          */
         sendUnsolicitedStatusMessage();
 
-        for (;;) {
+        while (!m_terminated) {
 
             /*
              * Block waiting for a request.  When received, have the message handler process it.
              * Since not all requests get a response (such as a batched put), check if there is a
              * response before attempting to send one.
              */
-            Transaction transaction(this);
-            receiveRequest(&transaction);
+            Transaction* transaction = new Transaction(this);
+            receiveRequest(transaction);
 
-            if (transaction.error == ConnectionError::IO_ERROR)
+            if (transaction->error == ConnectionError::NONE)
+                MessageHandler::processRequest(transaction);
+            else if (transaction->error != ConnectionError::IO_ERROR)
+                MessageHandler::processError(transaction);
+            else
                 break;
 
-            MessageHandler::processRequest(&transaction);
-
-            if (transaction.response != nullptr)
-                sendResponse(&transaction);
+            m_transactionQueue.send(transaction);
         }
     }
     catch (std::exception& ex) {
@@ -91,10 +99,69 @@ Connection::receiveHandler() {
         LOG(ERROR) << "Unexpected exception encounter";
     }
 
-    LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
-              << ", client=" << m_clientIpAddress << ":" << m_clientPort;
+    tearDownHandler(m_receiverOperational);
+}
 
-    communicationsManager.removeConnection(this);
+/**
+ * Sends responses to completed Kinetic requests.
+ */
+void Connection::transmitHandler() {
+
+    try {
+        for (;;) {
+            Transaction* transaction = m_transactionQueue.receive();
+
+            if (m_terminated) {
+                delete transaction;
+                break;
+            }
+
+            if (transaction->response != nullptr)
+                sendResponse(transaction);
+
+            delete transaction;
+        }
+    }
+    catch (std::exception& ex) {
+        LOG(ERROR) << "Exception encounter: " << ex.what();
+    }
+    catch (...) {
+        LOG(ERROR) << "Unexpected exception encounter";
+    }
+
+    tearDownHandler(m_transmitterOperational);
+}
+
+/**
+ * Performs the cleanup of a connection thread.
+ *
+ * @param operationalIndicator  Operations indicator of the thread being torn down
+ */
+void Connection::tearDownHandler(bool& operationalIndicator) {
+
+    /*
+     * Mark the connection as terminated and the operational indicator for the handler to false.  If
+     * the receiver is still operational, send it a message so that it wakes up and terminates.
+     */
+    m_terminated = true;
+    std::unique_lock<std::mutex> m_scopedLock(m_mutex);
+    operationalIndicator = false;
+
+    if (m_transmitterOperational)
+        m_transactionQueue.send(new Transaction(this));
+
+    /*
+     * Since both handlers call this function.  When the second handler calls and both are no longer
+     * operational, log an event that the connection and closed and remove it from the connection
+     * manager's connection list.  Have a different thread remove the connection and cause the
+     * object to be destroyed.
+     */
+    if (!m_receiverOperational && !m_transmitterOperational) {
+        LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
+                  << ", client=" << m_clientIpAddress << ":" << m_clientPort;
+
+        communicationsManager.removeConnection(this);
+    }
 }
 
 /**

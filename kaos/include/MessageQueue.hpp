@@ -56,6 +56,15 @@ public:
         return message;
     }
 
+    /**
+     * Indicates if the queue is empty
+     *
+     * @return  true if there are no messages in the queue, false otherwise
+     */
+    bool empty() {
+        return m_queue.empty();
+    }
+
 private:
 
     std::mutex                      m_mutex;            //!< Ensures exclusive access to the queue

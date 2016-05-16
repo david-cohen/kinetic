@@ -1,5 +1,15 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ *
+ * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
+ * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
+ * Notice is for informational purposes only and does not imply publication.
+ *
+ * The receipt or possession of this code does not convey any rights to reproduce or disclose its
+ * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
+ * without the specific written consent of WD.  Any reproduction or distribution of this code
+ * without the express written consent of WD is strictly prohibited, is a violation of the copyright
+ * laws, and may subject you to criminal prosecution.
  */
 
 /*
@@ -59,8 +69,7 @@ Connection::~Connection() {
  * Performs the work of the Connection handler (with a dedicated thread).  It blocks waiting to
  * receive a message, and when it does, it calls a message handler to process it.
  */
-void
-Connection::receiveHandler() {
+void Connection::receiveHandler() {
 
     try {
         LOG(INFO) << "Connection opened, server=" << m_serverIpAddress << ":" << m_serverPort
@@ -108,18 +117,14 @@ Connection::receiveHandler() {
 void Connection::transmitHandler() {
 
     try {
-        for (;;) {
-            Transaction* transaction = m_transactionQueue.receive();
+        while (!m_terminated) {
+            std::shared_ptr<Transaction> transaction(m_transactionQueue.receive());
 
-            if (m_terminated) {
-                delete transaction;
+            if (m_terminated)
                 break;
-            }
 
             if (transaction->response != nullptr)
-                sendResponse(transaction);
-
-            delete transaction;
+                sendResponse(transaction->response);
         }
     }
     catch (std::exception& ex) {
@@ -152,11 +157,16 @@ void Connection::tearDownHandler(bool& operationalIndicator) {
 
     /*
      * Since both handlers call this function.  When the second handler calls and both are no longer
-     * operational, log an event that the connection and closed and remove it from the connection
-     * manager's connection list.  Have a different thread remove the connection and cause the
-     * object to be destroyed.
+     * operational, free any resources still in the transaction queue, log an event that the
+     * connection is closed, and remove it from the connection manager's connection list.
      */
     if (!m_receiverOperational && !m_transmitterOperational) {
+
+        while (!m_transactionQueue.empty()) {
+            Transaction* transaction = m_transactionQueue.receive();
+            delete transaction;
+        }
+
         LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
                   << ", client=" << m_clientIpAddress << ":" << m_clientPort;
 
@@ -168,13 +178,12 @@ void Connection::tearDownHandler(bool& operationalIndicator) {
  * Sends an Unsolicited Status Message when a connection is first established (following the Kinetic
  * protocol).
  */
-void
-Connection::sendUnsolicitedStatusMessage() {
+void Connection::sendUnsolicitedStatusMessage() {
 
-    Transaction transaction(this);
-    transaction.response.reset(new KineticMessage());
-    transaction.response->set_authtype(com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS);
-    ::com::seagate::kinetic::proto::Command* command = transaction.response->mutable_command();
+    KineticMessagePtr response(new KineticMessage());
+
+    response->set_authtype(com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS);
+    ::com::seagate::kinetic::proto::Command* command = response->mutable_command();
     ::com::seagate::kinetic::proto::Command_Header* header = command->mutable_header();
     header->set_connectionid(m_connectionId);
     header->set_clusterversion(serverSettings.clusterVersion());
@@ -184,8 +193,11 @@ Connection::sendUnsolicitedStatusMessage() {
     getLogResponse->add_types(::com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS);
     KineticLog::getLimits(getLogResponse);
     command->mutable_status()->set_code(::com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS);
-    transaction.response->build_commandbytes();
-    sendResponse(&transaction);
+    response->build_commandbytes();
+
+    Transaction* transaction = new Transaction(this);
+    transaction->response = response;
+    m_transactionQueue.send(transaction);
 }
 
 /**
@@ -197,8 +209,7 @@ Connection::sendUnsolicitedStatusMessage() {
  *
  * @throws  A runtime error if an error is encountered
  */
-void
-Connection::receiveRequest(Transaction* transaction) {
+void Connection::receiveRequest(Transaction* transaction) {
 
     try {
 
@@ -291,29 +302,28 @@ Connection::receiveRequest(Transaction* transaction) {
 /**
  * Sends a Kinetic response (serializing and framing the message before sending).
  *
- * @param   transaction     Object containing the response to be sent
+ * @param   response    Response message to be sents
  *
  * @return  True if the operation was successful, false otherwise
  *
  * @throws  A runtime error if an error is encountered
  */
-bool
-Connection::sendResponse(Transaction* transaction) {
+bool Connection::sendResponse(KineticMessagePtr response) {
 
     try {
-        uint32_t messageSize = transaction->response->serializedSize();
+        uint32_t messageSize = response->serializedSize();
         std::unique_ptr<char> messageBuffer(new char[messageSize]);
-        transaction->response->serializeData(messageBuffer.get(), messageSize);
+        response->serializeData(messageBuffer.get(), messageSize);
 
-        KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, transaction->response->value().size());
+        KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, response->value().size());
         m_stream->write((const char*) &messageFraming, sizeof(messageFraming));
 
         m_stream->write(messageBuffer.get(), messageSize);
-        if (!transaction->response->value().empty())
-            m_stream->write(transaction->response->value().c_str(), transaction->response->value().size());
+        if (!response->value().empty())
+            m_stream->write(response->value().c_str(), response->value().size());
 
         if (systemConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, transaction->response.get());
+            MessageTrace::outputContents(messageFraming, response.get());
     }
     catch (std::exception& ex) {
         if (std::string(ex.what()) != "socket closed")

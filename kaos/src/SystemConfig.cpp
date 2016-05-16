@@ -1,5 +1,15 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ *
+ * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
+ * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
+ * Notice is for informational purposes only and does not imply publication.
+ *
+ * The receipt or possession of this code does not convey any rights to reproduce or disclose its
+ * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
+ * without the specific written consent of WD.  Any reproduction or distribution of this code
+ * without the express written consent of WD is strictly prohibited, is a violation of the copyright
+ * laws, and may subject you to criminal prosecution.
  */
 
 /*
@@ -63,7 +73,7 @@ static const char* FLUSH_DATA_KEY_PATTERN("04231970_WesternDigital_07913240");
  * Communication Settings
  */
 static const int32_t  MAX_PENDING_ADMIN_CONNECTIONS(8);
-static const uint32_t MAX_ACTIVE_ADMIN_CONNECTIONS(64);
+static const uint32_t MAX_ACTIVE_ADMIN_CONNECTIONS(128);
 static const uint32_t TCP_PORT(8123);
 static const uint32_t SSL_PORT(8443);
 static const uint32_t MULTICAST_PORT(8123);
@@ -80,7 +90,7 @@ static const size_t MAX_KEY_SIZE(4096);
 static const size_t MAX_VALUE_SIZE(1048576);
 static const size_t MAX_VERSION_SIZE(2048);
 static const size_t MAX_TAG_SIZE(4096);
-static const size_t MAX_CONNECTIONS(32);
+static const size_t MAX_CONNECTIONS(MAX_ACTIVE_ADMIN_CONNECTIONS);
 static const size_t MAX_OUTSTANDING_READ_REQUESTS(8);
 static const size_t MAX_OUTSTANDING_WRITE_REQUESTS(8);
 static const size_t MAX_MESSAGE_SIZE(2097152);

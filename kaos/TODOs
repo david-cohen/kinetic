@@ -1,0 +1,7 @@
+# Created by Bhaumik Bhatt <bhaumik.vasav.bhatt@hgst.com>
+# TODO's
+
+Config file/options to easily swap the database library being used (once abstract interface for ObjectStore class is in place): Right now there is an environment variable 'export' option to do this. eg. export USE_ENV_DB=<db_name>
+
+Distribution agnostic tools install script
+

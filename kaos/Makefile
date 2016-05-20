@@ -43,7 +43,11 @@ DEPENDENCIES_DIR	= $(BASE_DIR)/dependencies
 ASTYLE_DIR  		= $(DEPENDENCIES_DIR)/astyle/build/gcc/bin
 BOOST_DIR   		= $(DEPENDENCIES_DIR)/boost
 GOOGLE_TEST_DIR 	= $(DEPENDENCIES_DIR)/googletest
-LEVELDB_DIR 		= $(DEPENDENCIES_DIR)/leveldb
+ifeq ($(USE_ENV_DB),rocksdb)
+	ROCKSDB_DIR 	= $(DEPENDENCIES_DIR)/rocksdb
+else
+	LEVELDB_DIR 	= $(DEPENDENCIES_DIR)/leveldb
+endif
 LINT_DIR			= $(DEPENDENCIES_DIR)/styleguide/cpplint
 PROTOBUF_DIR		= $(DEPENDENCIES_DIR)/protobuf
 OPENSSL_DIR 		= $(DEPENDENCIES_DIR)/openssl
@@ -52,7 +56,11 @@ CONFIG_DIR  		= /etc/kaos
 # Dependencies Libraries
 
 GTEST_LIBRARY   	= $(GOOGLE_TEST_DIR)/make/gtest_main.a
-LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
+ifeq ($(USE_ENV_DB),rocksdb)
+	ROCKSDB_LIBRARY 	= $(ROCKSDB_DIR)/librocksdb.a
+else
+	LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
+endif
 PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
 
@@ -63,8 +71,18 @@ CC  			= $(COMPILER_PREFIX)gcc
 CXX 			= $(COMPILER_PREFIX)g++
 CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DWORK_WITH_JAVA_SMOKE_TEST -DTIMESTAMP="\"$(TIMESTAMP)\"" -DSOURCE_HASH="\"$(SOURCE_HASH)\""
 CXX_TEST_FLAGS  = $(CXX_APP_FLAGS) -DUNIT_TEST -DTIMESTAMP="\"$(TIMESTAMP)\""
-APP_INCLUDES	= -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(LEVELDB_DIR)/include -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
-APP_LIBRARIES   = $(LEVELDB_LIBRARY) $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
+APP_INCLUDES	= -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
+ifeq ($(USE_ENV_DB),rocksdb)
+	APP_INCLUDES	+= -I$(ROCKSDB_DIR)/include
+else
+	APP_INCLUDES	+= -I$(LEVELDB_DIR)/include
+endif
+ifeq ($(USE_ENV_DB),rocksdb)
+	APP_LIBRARIES	= $(ROCKSDB_LIBRARY)
+else
+	APP_LIBRARIES	= $(LEVELDB_LIBRARY)
+endif
+APP_LIBRARIES   += $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
 TEST_INCLUDES   = $(APP_INCLUDES) -I$(GOOGLE_TEST_DIR)/include
 TEST_LIBRARIES  = $(GTEST_LIBRARY) $(APP_LIBRARIES)
 
@@ -141,7 +159,11 @@ install-cert:
 
 # Build the required dependencies
 
-dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
+ifdef (USE_ENV_DB)
+	dependencies: dependencies-dir boost $(USE_ENV_DB) openssl protobuf googletest lint astyle install-cert
+else 
+	dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
+endif
 
 dependencies-dir:
 	mkdir -p $(DEPENDENCIES_DIR)
@@ -165,6 +187,20 @@ leveldb:
 	mv $(DEPENDENCIES_DIR)/leveldb-1.18 $(DEPENDENCIES_DIR)/leveldb
 	export CC=$(CC) && export CXX=$(CXX) && cd $(LEVELDB_DIR) && \
 	./build_detect_platform config $(LEVELDB_DIR) && make
+
+ifeq ($(USE_ENV_DB),rocksdb)
+
+# Build the rocksDB library	
+
+rocksdb:
+	wget -P $(DEPENDENCIES_DIR) https://github.com/facebook/rocksdb/archive/4.8.fb.tar.gz
+	tar -zxf $(DEPENDENCIES_DIR)/4.8.fb.tar.gz -C $(DEPENDENCIES_DIR)
+	rm $(DEPENDENCIES_DIR)/4.8.fb.tar.gz
+	mv $(DEPENDENCIES_DIR)/rocksdb-4.8.fb $(DEPENDENCIES_DIR)/rocksdb
+	export CC=$(CC) && export CXX=$(CXX) && cd $(ROCKSDB_DIR) && \
+	make static_lib
+
+endif
 
 # Build the Open SSL libraries
 
@@ -264,7 +300,7 @@ all:	clean kaos test package doxygen
 
 # Identify the targets that are not files
 
-.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
+.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb $(USE_ENV_DB) boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
 
 # Build kaos application
 

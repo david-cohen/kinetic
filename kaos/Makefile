@@ -274,6 +274,7 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/CommunicationsManager.o \
 	$(BUILD_APP_OBJ_DIR)/Connection.o \
 	$(BUILD_APP_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_APP_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_APP_OBJ_DIR)/HeartbeatProvider.o \
 	$(BUILD_APP_OBJ_DIR)/Hmac.o \
 	$(BUILD_APP_OBJ_DIR)/KineticLog.o \
@@ -287,7 +288,6 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_APP_OBJ_DIR)/SslControl.o \
 	$(BUILD_APP_OBJ_DIR)/SslStream.o \
-	$(BUILD_APP_OBJ_DIR)/SystemConfig.o \
 	$(BUILD_APP_OBJ_DIR)/TcpTransport.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
@@ -319,34 +319,34 @@ $(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest: \
 $(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettingsUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/translatorUnitTest: \
-	$(BUILD_TEST_OBJ_DIR)/TranslatorUnitTest.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/Translator.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
+	$(BUILD_TEST_OBJ_DIR)/TranslatorUnitTest.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/accessScopeUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/AccessScopeUnitTest.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/accessControlUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/AccessControlUnitTest.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
@@ -358,36 +358,36 @@ $(BUILD_TEST_BIN_DIR)/hmacUnitTest: \
 
 $(BUILD_TEST_BIN_DIR)/perfTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
-	$(BUILD_TEST_OBJ_DIR)/PerformanceTest.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
-	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
+	$(BUILD_TEST_OBJ_DIR)/PerformanceTest.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/objectStoreTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStoreTest.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStoreTest.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
-	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
+	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest: \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_TEST_OBJ_DIR)/HeartbeatProvider.o \
-	$(BUILD_TEST_OBJ_DIR)/HeartbeatProviderUnitTest.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
+	$(BUILD_TEST_OBJ_DIR)/HeartbeatProviderUnitTest.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 

@@ -44,11 +44,11 @@ ASTYLE_DIR  		= $(DEPENDENCIES_DIR)/astyle/build/gcc/bin
 BOOST_DIR   		= $(DEPENDENCIES_DIR)/boost
 GOOGLE_TEST_DIR 	= $(DEPENDENCIES_DIR)/googletest
 ifeq ($(USE_ENV_DB),rocksdb)
-	ROCKSDB_DIR 	= $(DEPENDENCIES_DIR)/rocksdb
+ROCKSDB_DIR 		= $(DEPENDENCIES_DIR)/rocksdb
 else
-	LEVELDB_DIR 	= $(DEPENDENCIES_DIR)/leveldb
+LEVELDB_DIR 		= $(DEPENDENCIES_DIR)/leveldb
 endif
-LINT_DIR			= $(DEPENDENCIES_DIR)/styleguide/cpplint
+LINT_DIR		= $(DEPENDENCIES_DIR)/styleguide/cpplint
 PROTOBUF_DIR		= $(DEPENDENCIES_DIR)/protobuf
 OPENSSL_DIR 		= $(DEPENDENCIES_DIR)/openssl
 CONFIG_DIR  		= /etc/kaos
@@ -57,9 +57,9 @@ CONFIG_DIR  		= /etc/kaos
 
 GTEST_LIBRARY   	= $(GOOGLE_TEST_DIR)/make/gtest_main.a
 ifeq ($(USE_ENV_DB),rocksdb)
-	ROCKSDB_LIBRARY 	= $(ROCKSDB_DIR)/librocksdb.a
+ROCKSDB_LIBRARY 	= $(ROCKSDB_DIR)/librocksdb.a
 else
-	LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
+LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
 endif
 PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
@@ -71,18 +71,21 @@ CC  			= $(COMPILER_PREFIX)gcc
 CXX 			= $(COMPILER_PREFIX)g++
 CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DWORK_WITH_JAVA_SMOKE_TEST -DTIMESTAMP="\"$(TIMESTAMP)\"" -DSOURCE_HASH="\"$(SOURCE_HASH)\""
 CXX_TEST_FLAGS  = $(CXX_APP_FLAGS) -DUNIT_TEST -DTIMESTAMP="\"$(TIMESTAMP)\""
+
 APP_INCLUDES	= -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
 ifeq ($(USE_ENV_DB),rocksdb)
-	APP_INCLUDES	+= -I$(ROCKSDB_DIR)/include
+APP_INCLUDES	+= -I$(ROCKSDB_DIR)/include
 else
-	APP_INCLUDES	+= -I$(LEVELDB_DIR)/include
+APP_INCLUDES	+= -I$(LEVELDB_DIR)/include
 endif
+
 ifeq ($(USE_ENV_DB),rocksdb)
-	APP_LIBRARIES	= $(ROCKSDB_LIBRARY)
+APP_LIBRARIES	= $(ROCKSDB_LIBRARY)
 else
-	APP_LIBRARIES	= $(LEVELDB_LIBRARY)
+APP_LIBRARIES	= $(LEVELDB_LIBRARY)
 endif
 APP_LIBRARIES   += $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
+
 TEST_INCLUDES   = $(APP_INCLUDES) -I$(GOOGLE_TEST_DIR)/include
 TEST_LIBRARIES  = $(GTEST_LIBRARY) $(APP_LIBRARIES)
 
@@ -159,10 +162,10 @@ install-cert:
 
 # Build the required dependencies
 
-ifdef (USE_ENV_DB)
-	dependencies: dependencies-dir boost $(USE_ENV_DB) openssl protobuf googletest lint astyle install-cert
-else 
-	dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
+ifndef (USE_ENV_DB)
+dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
+else
+dependencies: dependencies-dir boost $(USE_ENV_DB) openssl protobuf googletest lint astyle install-cert
 endif
 
 dependencies-dir:
@@ -197,6 +200,8 @@ rocksdb:
 	tar -zxf $(DEPENDENCIES_DIR)/4.8.fb.tar.gz -C $(DEPENDENCIES_DIR)
 	rm $(DEPENDENCIES_DIR)/4.8.fb.tar.gz
 	mv $(DEPENDENCIES_DIR)/rocksdb-4.8.fb $(DEPENDENCIES_DIR)/rocksdb
+	sed -i "s/CFLAGS += /CFLAGS += -DNDEBUG /g" $(ROCKSDB_DIR)/Makefile
+	sed -i "s/CXXFLAGS += /CXXFLAGS += -DNDEBUG /g" $(ROCKSDB_DIR)/Makefile
 	export CC=$(CC) && export CXX=$(CXX) && cd $(ROCKSDB_DIR) && \
 	make static_lib
 

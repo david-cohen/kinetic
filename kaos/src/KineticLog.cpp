@@ -24,7 +24,7 @@
 #include "Server.hpp"
 #include "Kinetic.pb.hpp"
 #include "KineticLog.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "MessageStatistics.hpp"
 
 /**
@@ -36,17 +36,17 @@ void
 KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Configuration* configuration(response->mutable_configuration());
-    configuration->set_vendor(systemConfig.vendor());
-    configuration->set_model(systemConfig.model());
-    configuration->set_version(systemConfig.version());
-    configuration->set_serialnumber(systemConfig.serialNumber());
-    configuration->set_compilationdate(systemConfig.compilationDate());
-    configuration->set_sourcehash(systemConfig.sourceHash());
-    configuration->set_port(systemConfig.tcpPort());
-    configuration->set_tlsport(systemConfig.sslPort());
-    configuration->set_worldwidename(systemConfig.worldWideName());
+    configuration->set_vendor(globalConfig.vendor());
+    configuration->set_model(globalConfig.model());
+    configuration->set_version(globalConfig.version());
+    configuration->set_serialnumber(globalConfig.serialNumber());
+    configuration->set_compilationdate(globalConfig.compilationDate());
+    configuration->set_sourcehash(globalConfig.sourceHash());
+    configuration->set_port(globalConfig.tcpPort());
+    configuration->set_tlsport(globalConfig.sslPort());
+    configuration->set_worldwidename(globalConfig.worldWideName());
 
-    for (auto networkInterfaceSet : systemConfig.networkInterfaceMap()) {
+    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
         auto networkInterfaceConfig = networkInterfaceSet.second;
         ::com::seagate::kinetic::proto::Command_GetLog_Configuration_Interface* networkInterface = configuration->add_interface();
         networkInterface->set_name(networkInterfaceConfig->name());
@@ -65,19 +65,19 @@ void
 KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Limits* limits(response->mutable_limits());
-    limits->set_maxkeysize(systemConfig.maxKeySize());
-    limits->set_maxvaluesize(systemConfig.maxValueSize());
-    limits->set_maxversionsize(systemConfig.maxVersionSize());
-    limits->set_maxtagsize(systemConfig.maxTagSize());
-    limits->set_maxconnections(systemConfig.maxConnections());
-    limits->set_maxoutstandingreadrequests(systemConfig.maxOutstandingReadRequests());
-    limits->set_maxoutstandingwriterequests(systemConfig.maxOutstandingWriteRequests());
-    limits->set_maxmessagesize(systemConfig.maxMessageSize());
-    limits->set_maxkeyrangecount(systemConfig.maxKeyRangeCount());
-    limits->set_maxidentitycount(systemConfig.maxIdentityCount());
-    limits->set_maxpinsize(systemConfig.maxPinSize());
-    limits->set_maxoperationcountperbatch(systemConfig.maxOperationCountPerBatch());
-    limits->set_maxbatchcountperdevice(systemConfig.maxBatchCountPerDevice());
+    limits->set_maxkeysize(globalConfig.maxKeySize());
+    limits->set_maxvaluesize(globalConfig.maxValueSize());
+    limits->set_maxversionsize(globalConfig.maxVersionSize());
+    limits->set_maxtagsize(globalConfig.maxTagSize());
+    limits->set_maxconnections(globalConfig.maxConnections());
+    limits->set_maxoutstandingreadrequests(globalConfig.maxOutstandingReadRequests());
+    limits->set_maxoutstandingwriterequests(globalConfig.maxOutstandingWriteRequests());
+    limits->set_maxmessagesize(globalConfig.maxMessageSize());
+    limits->set_maxkeyrangecount(globalConfig.maxKeyRangeCount());
+    limits->set_maxidentitycount(globalConfig.maxIdentityCount());
+    limits->set_maxpinsize(globalConfig.maxPinSize());
+    limits->set_maxoperationcountperbatch(globalConfig.maxOperationCountPerBatch());
+    limits->set_maxbatchcountperdevice(globalConfig.maxBatchCountPerDevice());
 }
 
 /**
@@ -102,7 +102,7 @@ KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response
 
     struct statvfs fiData;
     memset(&fiData, 0, sizeof(fiData));
-    std::string mountPoint = systemConfig.databaseDirectory();
+    std::string mountPoint = globalConfig.databaseDirectory();
 
     float totalCapacity(0);
     float remainingCapacity(0);

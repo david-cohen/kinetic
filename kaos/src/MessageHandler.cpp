@@ -32,7 +32,7 @@
 #include "Transaction.hpp"
 #include "KineticLog.hpp"
 #include "ObjectStore.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "OperationInfo.hpp"
 #include "KineticMessage.hpp"
@@ -463,7 +463,7 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
             if (!m_serverSettings.erasePin().empty() && (m_serverSettings.erasePin().compare(security.olderasepin()) != 0))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old lock pin");
 
-            if (security.newerasepin().length() > systemConfig.maxPinSize())
+            if (security.newerasepin().length() > globalConfig.maxPinSize())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "New PIN exceeds the maximum size");
 
             m_serverSettings.setErasePin(security.newerasepin());
@@ -477,7 +477,7 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
             if (!m_serverSettings.lockPin().empty() && ((m_serverSettings.lockPin().compare(security.oldlockpin()) != 0)))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old erase pin");
 
-            if (security.newlockpin().length() > systemConfig.maxPinSize())
+            if (security.newlockpin().length() > globalConfig.maxPinSize())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "New PIN exceeds the maximum size");
 
             m_serverSettings.setLockPin(security.newlockpin());
@@ -496,7 +496,7 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
                     identitySet.insert(acl.identity());
             }
 
-            if (identitySet.size() > systemConfig.maxIdentityCount())
+            if (identitySet.size() > globalConfig.maxIdentityCount())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum number of identities");
 
             list<AccessControlPtr> accessControlList;
@@ -603,7 +603,7 @@ MessageHandler::processGetLogRequest(Transaction* transaction) {
      */
     std::set<com::seagate::kinetic::proto::Command_GetLog_Type> logTypeSet;
     if (getLogRequest.types_size() == 0)
-        logTypeSet = systemConfig.defaultLogTypes();
+        logTypeSet = globalConfig.defaultLogTypes();
 
     /*
      * Remove any duplicate log types by copying them to a set (which doesn't permit duplicates).
@@ -682,13 +682,13 @@ MessageHandler::processPutRequest(Transaction* transaction) {
      * Validate the parameters.
      */
 
-    if (params.key().size() > systemConfig.maxKeySize())
+    if (params.key().size() > globalConfig.maxKeySize())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Key size too large");
 
-    if (params.newversion().size() > systemConfig.maxVersionSize())
+    if (params.newversion().size() > globalConfig.maxVersionSize())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Version size too large");
 
-    if (params.tag().size() > systemConfig.maxTagSize())
+    if (params.tag().size() > globalConfig.maxTagSize())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Tag size too large");
 
     /*
@@ -792,7 +792,7 @@ MessageHandler::processGetKeyRangeRequest(Transaction* transaction) {
     const com::seagate::kinetic::proto::Command_Range& params(transaction->request->command()->body().range());
 
 #if 0
-    int32_t maxReturned = params.maxreturned() > systemConfig.maxKeyRangeCount() ? systemConfig.maxKeyRangeCount() : params.maxreturned();
+    int32_t maxReturned = params.maxreturned() > globalConfig.maxKeyRangeCount() ? globalConfig.maxKeyRangeCount() : params.maxreturned();
 #endif
 
     // TODO(gballance) - maybe have this checked in initialMessageProcessing
@@ -992,7 +992,7 @@ MessageHandler::processInvalidRequest(Transaction* transaction) {
 void
 MessageHandler::processStartBatchRequest(Transaction* transaction) {
 
-    if (m_connection->communicationsManager()->batchCount() >= systemConfig.maxBatchCountPerDevice())
+    if (m_connection->communicationsManager()->batchCount() >= globalConfig.maxBatchCountPerDevice())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
     if (!transaction->request->command()->header().has_batchid())

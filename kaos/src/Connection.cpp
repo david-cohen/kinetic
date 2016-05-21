@@ -27,7 +27,7 @@
 #include "Connection.hpp"
 #include "Transaction.hpp"
 #include "MessageTrace.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "KineticMessage.hpp"
 #include "MessageHandler.hpp"
 #include "CommunicationsManager.hpp"
@@ -174,18 +174,18 @@ void Connection::receiveRequest(Transaction* transaction) {
          * possible so that the response will contain the correct header information.  Read and
          * dispose of the remaining data (which should be the value, not the command).
          */
-        if (messageSize > systemConfig.maxMessageSize()) {
-            std::unique_ptr<char> messageBuffer(new char[systemConfig.maxMessageSize()]);
+        if (messageSize > globalConfig.maxMessageSize()) {
+            std::unique_ptr<char> messageBuffer(new char[globalConfig.maxMessageSize()]);
             m_stream->read(messageBuffer.get(), messageSize);
             try {
-                m_stream->blackHoleRead(messageSize - systemConfig.maxMessageSize());
+                m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
                 transaction->request->deserializeData(messageBuffer.get(), messageSize);
             }
             catch (std::exception& ex) {
                 LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
             }
 
-            if (systemConfig.debugEnabled())
+            if (globalConfig.debugEnabled())
                 MessageTrace::outputContents(messageFraming, transaction->request.get());
 
             throw std::runtime_error("message size too large");
@@ -200,12 +200,12 @@ void Connection::receiveRequest(Transaction* transaction) {
         std::unique_ptr<char> messageBuffer(new char[messageSize]);
         m_stream->read(messageBuffer.get(), messageSize);
 
-        if (valueSize > systemConfig.maxValueSize()) {
+        if (valueSize > globalConfig.maxValueSize()) {
             m_stream->blackHoleRead(valueSize);
             if (!transaction->request->deserializeData(messageBuffer.get(), messageSize))
                 throw std::runtime_error("invalid message format");
 
-            if (systemConfig.debugEnabled())
+            if (globalConfig.debugEnabled())
                 MessageTrace::outputContents(messageFraming, transaction->request.get());
 
             transaction->errorCode = com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
@@ -224,7 +224,7 @@ void Connection::receiveRequest(Transaction* transaction) {
         if (!transaction->request->deserializeData(messageBuffer.get(), messageSize))
             throw std::runtime_error("invalid message format");
 
-        if (systemConfig.debugEnabled())
+        if (globalConfig.debugEnabled())
             MessageTrace::outputContents(messageFraming, transaction->request.get());
 
         return;
@@ -260,7 +260,7 @@ bool Connection::sendResponse(KineticMessagePtr response) {
         if (!response->value().empty())
             m_stream->write(response->value().c_str(), response->value().size());
 
-        if (systemConfig.debugEnabled())
+        if (globalConfig.debugEnabled())
             MessageTrace::outputContents(messageFraming, response.get());
     }
     catch (std::exception& ex) {

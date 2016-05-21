@@ -17,7 +17,7 @@
 #include <sstream>
 #include <iostream>
 #include "ObjectStore.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Used Namespaces
@@ -27,7 +27,7 @@ using std::string;
 /*
  * Global Variable
  */
-SystemConfig systemConfig;
+GlobalConfig globalConfig;
 ObjectStorePtr objectStore;
 bool debug = false;
 

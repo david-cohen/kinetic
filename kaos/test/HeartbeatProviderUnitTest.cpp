@@ -17,7 +17,7 @@
 #include <sstream>
 #include "gtest/gtest.h"
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "HeartbeatProvider.hpp"
 
 /*
@@ -57,7 +57,7 @@ public:
  * Data Objects
  */
 LogControl logControl;
-SystemConfig  systemConfig;
+GlobalConfig  globalConfig;
 
 /**
  * Create Connection
@@ -79,12 +79,12 @@ void createConnection(MulticastConnection& connection) {
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons(systemConfig.multicastPort());
+    server.sin_port = htons(globalConfig.multicastPort());
     ASSERT_NE(bind(connection.socketfd, (struct sockaddr*) &server, sizeof(struct sockaddr)), STATUS_FAILURE) << "Failed to bind socket: Error Code=" << errno << ", Description=" << strerror(errno);
 
     struct ip_mreq group;
     memset(&group, 0, sizeof(group));
-    group.imr_multiaddr.s_addr = inet_addr(systemConfig.multicastIpAddress());
+    group.imr_multiaddr.s_addr = inet_addr(globalConfig.multicastIpAddress());
     ASSERT_NE(setsockopt(connection.socketfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group)), STATUS_FAILURE) << "Failed to set socket options IP_ADD_MEMBERSHIP: Error Code=" << errno << ", Description=" << strerror(errno);
 }
 
@@ -120,7 +120,7 @@ bool ioReadyStatus(MulticastConnection& connection) {
 
     struct timeval timeout;
     memset(&timeout, 0, sizeof(timeout));
-    timeout.tv_sec = systemConfig.heartbeatSendInterval() * DOUBLE_INTERVAL;
+    timeout.tv_sec = globalConfig.heartbeatSendInterval() * DOUBLE_INTERVAL;
 
     return select(connection.socketfd + 1, &readfds, nullptr, nullptr, &timeout);
 }
@@ -135,33 +135,33 @@ bool ioReadyStatus(MulticastConnection& connection) {
 void validateMessage(MulticastConnection& connection) {
 
     string manufacturer = connection.messageNode.get<string>("manufacturer", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.vendor(), manufacturer.c_str());
+    ASSERT_STREQ(globalConfig.vendor(), manufacturer.c_str());
 
     string model = connection.messageNode.get<string>("model", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.model(), model.c_str());
+    ASSERT_STREQ(globalConfig.model(), model.c_str());
 
     string version = connection.messageNode.get<string>("firmware_version", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.version(), version.c_str());
+    ASSERT_STREQ(globalConfig.version(), version.c_str());
 
     string serialNumber = connection.messageNode.get<string>("serial_number", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.serialNumber().c_str(), serialNumber.c_str());
+    ASSERT_STREQ(globalConfig.serialNumber().c_str(), serialNumber.c_str());
 
     string worldWideName = connection.messageNode.get<string>("world_wide_name", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.worldWideName().c_str(), worldWideName.c_str());
+    ASSERT_STREQ(globalConfig.worldWideName().c_str(), worldWideName.c_str());
 
     string protocolVersion = connection.messageNode.get<string>("protocol_version", NOT_FOUND_STRING);
-    ASSERT_STREQ(systemConfig.protocolVersion(), protocolVersion.c_str());
+    ASSERT_STREQ(globalConfig.protocolVersion(), protocolVersion.c_str());
 
     uint32_t tcpPort = connection.messageNode.get<uint32_t>("port", KNOWN_INCORRECT_PORT_NUMBER);
-    ASSERT_EQ(systemConfig.tcpPort(), tcpPort);
+    ASSERT_EQ(globalConfig.tcpPort(), tcpPort);
 
     uint32_t sslPort = connection.messageNode.get<uint32_t>("tlsPort", KNOWN_INCORRECT_PORT_NUMBER);
-    ASSERT_EQ(systemConfig.sslPort(), sslPort);
+    ASSERT_EQ(globalConfig.sslPort(), sslPort);
 
     bool foundNetworkInterface = false;
     for (boost::property_tree::ptree::value_type& node : connection.messageNode.get_child("network_interfaces")) {
         string name = node.second.get<string>("name", NOT_FOUND_STRING);
-        NetworkInterfacePtr networkInterface = systemConfig.networkInterfaceMap()[name];
+        NetworkInterfacePtr networkInterface = globalConfig.networkInterfaceMap()[name];
 
         if (networkInterface != nullptr) {
             string ipv4 = node.second.get<string>("ipv4_addr", NOT_FOUND_STRING);
@@ -244,7 +244,7 @@ TEST(Heartbeat_Provider_Unit_Test, Broadcast_Interval_Test) {
 
     int64_t ticksPerSecond = sysconf(_SC_CLK_TCK);
     int64_t elapsedTimeInTicks = endTime - startTime;
-    int64_t expectedElapsedTimeInTicks = systemConfig.heartbeatSendInterval() * ticksPerSecond;
+    int64_t expectedElapsedTimeInTicks = globalConfig.heartbeatSendInterval() * ticksPerSecond;
 
     std::cout << "Time between messages: " << static_cast<float>(elapsedTimeInTicks) / static_cast<float>(ticksPerSecond) << " seconds" << std::endl;
     ASSERT_GE(elapsedTimeInTicks, expectedElapsedTimeInTicks - ONE_TICK);

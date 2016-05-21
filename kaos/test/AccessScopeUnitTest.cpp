@@ -11,12 +11,12 @@
 #include "gtest/gtest.h"
 #include "Logger.hpp"
 #include "AccessScope.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Global Variables
  */
-SystemConfig systemConfig;
+GlobalConfig globalConfig;
 LogControl logControl;
 
 /**
@@ -26,7 +26,7 @@ LogControl logControl;
  */
 std::string createLargeString() {
 
-    uint32_t stringSize = systemConfig.maxKeySize();
+    uint32_t stringSize = globalConfig.maxKeySize();
     std::string pattern = "0123456789abcdef";
     std::string sizedString;
     for (uint32_t index = 0; index < (stringSize / pattern.size()); index++)
@@ -79,7 +79,7 @@ TEST(Access_Scope_Unit_Test, Core_Functionality_Test) {
 
     std::vector<bool> tlsRequiredArray = {false, true};
     std::vector<std::string> keySubstringArray = {"", "0", createBinaryString(), createLargeString()};
-    std::vector<size_t> keySubstringOffsetArray = {0, 1, systemConfig.maxKeySize() / 4, systemConfig.maxKeySize() - 1};
+    std::vector<size_t> keySubstringOffsetArray = {0, 1, globalConfig.maxKeySize() / 4, globalConfig.maxKeySize() - 1};
 
     /*
      * Create an AccessScope object for all the different combination of parameters.

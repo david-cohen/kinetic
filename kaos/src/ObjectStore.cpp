@@ -28,7 +28,7 @@
 #include "Logger.hpp"
 #include "Entry.pb.hpp"
 #include "ObjectStore.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "MessageException.hpp"
 
 /*
@@ -77,10 +77,10 @@ bool ObjectStore::open() {
     defaultReadOptions.fill_cache = true;
     databaseOptions.create_if_missing = true;
     databaseOptions.max_open_files = 256;
-    databaseOptions.block_cache = leveldb::NewLRUCache(systemConfig.objectStoreCacheSize());
-    databaseOptions.compression = systemConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+    databaseOptions.block_cache = leveldb::NewLRUCache(globalConfig.objectStoreCacheSize());
+    databaseOptions.compression = globalConfig.objectStoreCompressionEnabled() ? leveldb::kSnappyCompression : leveldb::kNoCompression;
 
-    leveldb::Status status = leveldb::DB::Open(databaseOptions, systemConfig.databaseDirectory(), &m_database);
+    leveldb::Status status = leveldb::DB::Open(databaseOptions, globalConfig.databaseDirectory(), &m_database);
     if (!status.ok())
         LOG(ERROR) << "Failed to open database, status: " << status.ToString() << std::endl;
 
@@ -109,7 +109,7 @@ void ObjectStore::erase() {
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     close();
-    DestroyDB(systemConfig.databaseDirectory(), databaseOptions);
+    DestroyDB(globalConfig.databaseDirectory(), databaseOptions);
     open();
 }
 
@@ -127,7 +127,7 @@ void ObjectStore::flush() {
      * exists, don't remove it.  Delete it and re-write it in one batch command.
      */
     string serializedEntryData;
-    leveldb::Status status = m_database->Get(defaultReadOptions, systemConfig.flushDataKey(), &serializedEntryData);
+    leveldb::Status status = m_database->Get(defaultReadOptions, globalConfig.flushDataKey(), &serializedEntryData);
     leveldb::WriteBatch batch;
 
     /*
@@ -135,8 +135,8 @@ void ObjectStore::flush() {
      */
     if (!status.ok()) {
         leveldb::Slice emptyData;
-        batch.Put(systemConfig.flushDataKey(), emptyData);
-        batch.Delete(systemConfig.flushDataKey());
+        batch.Put(globalConfig.flushDataKey(), emptyData);
+        batch.Delete(globalConfig.flushDataKey());
     }
 
     /*
@@ -145,8 +145,8 @@ void ObjectStore::flush() {
      */
     else {
         leveldb::Slice slicedData(serializedEntryData);
-        batch.Delete(systemConfig.flushDataKey());
-        batch.Put(systemConfig.flushDataKey(), slicedData);
+        batch.Delete(globalConfig.flushDataKey());
+        batch.Put(globalConfig.flushDataKey(), slicedData);
     }
 
     /*

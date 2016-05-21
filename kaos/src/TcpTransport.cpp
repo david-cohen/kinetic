@@ -26,7 +26,7 @@
 #include "Common.hpp"
 #include "Logger.hpp"
 #include "TcpTransport.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /**
  * Sets up the server by creating the listening socket for it to use to detect new connections.
@@ -65,7 +65,7 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
     if (bind(listeningSocketDescriptor, (struct sockaddr*) &server, sizeof(struct sockaddr)) == STATUS_FAILURE)
         throw std::runtime_error("Failed to bind socket on port " + toString(port) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
 
-    if (listen(listeningSocketDescriptor, systemConfig.maxPendingAdminConnections()) == STATUS_FAILURE)
+    if (listen(listeningSocketDescriptor, globalConfig.maxPendingAdminConnections()) == STATUS_FAILURE)
         throw std::runtime_error("Failed to listen to socket on port " + toString(port) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
 
     return listeningSocketDescriptor;

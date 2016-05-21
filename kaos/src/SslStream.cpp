@@ -23,7 +23,7 @@
 #include "Logger.hpp"
 #include "SslStream.hpp"
 #include "SslControl.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Private Data Objects
@@ -94,10 +94,10 @@ void SslStream::blackHoleRead(size_t byteCount) {
      * Loop reading from the socket until the requested amount of data has been received (without
      * keeping any of the received data).
      */
-    std::unique_ptr<char> valueBuffer(new char[systemConfig.maxValueSize()]);
+    std::unique_ptr<char> valueBuffer(new char[globalConfig.maxValueSize()]);
 
     do {
-        int32_t byteCountStatus = SSL_read(m_ssl, valueBuffer.get(), byteCount > systemConfig.maxValueSize() ? systemConfig.maxValueSize() : byteCount);
+        int32_t byteCountStatus = SSL_read(m_ssl, valueBuffer.get(), byteCount > globalConfig.maxValueSize() ? globalConfig.maxValueSize() : byteCount);
 
         if (byteCountStatus == 0) {
             close();

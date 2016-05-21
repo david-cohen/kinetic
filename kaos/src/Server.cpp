@@ -25,7 +25,7 @@
 #include "Server.hpp"
 #include "Logger.hpp"
 #include "ObjectStore.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "ServerSettings.hpp"
 #include "MessageStatistics.hpp"
 #include "CommunicationsManager.hpp"
@@ -37,7 +37,7 @@
  * values.
  */
 LogControl logControl;
-SystemConfig systemConfig;
+GlobalConfig globalConfig;
 
 /*
  * Private Variables
@@ -61,7 +61,7 @@ void terminateProgram(int signum) {
 }
 
 Server::Server(std::string pidFileName, bool foreground)
-    : m_pidFileName(!pidFileName.empty() ? pidFileName : systemConfig.defaultPidFileName()), m_foreground(foreground),
+    : m_pidFileName(!pidFileName.empty() ? pidFileName : globalConfig.defaultPidFileName()), m_foreground(foreground),
       m_communicationsManager(this), m_settings(), m_messageStatistics(), m_objectStore() {
 }
 

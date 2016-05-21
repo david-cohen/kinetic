@@ -19,7 +19,7 @@
 #include "Server.hpp"
 #include "SslStream.hpp"
 #include "Connection.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "ClearTextStream.hpp"
 #include "ConnectionListener.hpp"
 #include "CommunicationsManager.hpp"
@@ -32,8 +32,8 @@
 CommunicationsManager::CommunicationsManager(Server* server)
     : m_server(server), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
 
-    ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(this, systemConfig.sslPort()));
-    ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(this, systemConfig.tcpPort()));
+    ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(this, globalConfig.sslPort()));
+    ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(this, globalConfig.tcpPort()));
     m_listenerList.push_back(sslListener);
     m_listenerList.push_back(clearTextListener);
 }
@@ -74,7 +74,7 @@ void CommunicationsManager::stop() {
 void CommunicationsManager::addConnection(Connection* connection) {
 
     std::unique_lock<std::mutex> scopedLock(m_mutex);
-    if (m_connectionList.size() >= systemConfig.maxConnections())
+    if (m_connectionList.size() >= globalConfig.maxConnections())
         throw std::runtime_error("No connections available");
 
     m_connectionList.push_back(connection);

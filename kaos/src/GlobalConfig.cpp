@@ -35,7 +35,7 @@
 #include "Hmac.hpp"
 #include "Logger.hpp"
 #include "Kinetic.pb.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Used Namespaces
@@ -166,7 +166,7 @@ static LogLevel toLogLevel(std::string logLevel) {
  * Initializes the system configuration object, which contains the attributes that a user can not
  * set.
  */
-SystemConfig::SystemConfig()
+GlobalConfig::GlobalConfig()
     : m_debugEnabled(DEFAULT_DEBUG_ENABLED),
       m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
       m_databaseDirectory(),

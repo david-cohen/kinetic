@@ -27,7 +27,7 @@
 #include <sstream>
 #include <exception>
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "HeartbeatProvider.hpp"
 
 /**
@@ -38,8 +38,8 @@ HeartbeatProvider::HeartbeatProvider()
 
     memset(&m_address, 0, sizeof(m_address));
     m_address.sin_family = AF_INET;
-    m_address.sin_addr.s_addr = inet_addr(systemConfig.multicastIpAddress());
-    m_address.sin_port = htons(systemConfig.multicastPort());
+    m_address.sin_addr.s_addr = inet_addr(globalConfig.multicastIpAddress());
+    m_address.sin_port = htons(globalConfig.multicastPort());
 }
 
 /**
@@ -93,18 +93,18 @@ void HeartbeatProvider::sendHeartbeatMessage() {
 
     std::stringstream stream;
     stream << "{"
-           << "\"manufacturer\":\"" << systemConfig.vendor() << "\","
-           << "\"model\":\"" << systemConfig.model() << "\","
-           << "\"firmware_version\":\"" << systemConfig.version() << "\","
-           << "\"serial_number\":\"" << systemConfig.serialNumber() << "\","
-           << "\"world_wide_name\":\"" << systemConfig.worldWideName() << "\","
-           << "\"protocol_version\":\"" << systemConfig.protocolVersion() << "\","
-           << "\"port\":" << systemConfig.tcpPort() << ","
-           << "\"tlsPort\":" << systemConfig.sslPort() << ","
+           << "\"manufacturer\":\"" << globalConfig.vendor() << "\","
+           << "\"model\":\"" << globalConfig.model() << "\","
+           << "\"firmware_version\":\"" << globalConfig.version() << "\","
+           << "\"serial_number\":\"" << globalConfig.serialNumber() << "\","
+           << "\"world_wide_name\":\"" << globalConfig.worldWideName() << "\","
+           << "\"protocol_version\":\"" << globalConfig.protocolVersion() << "\","
+           << "\"port\":" << globalConfig.tcpPort() << ","
+           << "\"tlsPort\":" << globalConfig.sslPort() << ","
            << "\"network_interfaces\":[";
 
-    auto interfaceCount = systemConfig.networkInterfaceMap().size();
-    for (auto networkInterfaceSet : systemConfig.networkInterfaceMap()) {
+    auto interfaceCount = globalConfig.networkInterfaceMap().size();
+    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
         auto networkInterface = networkInterfaceSet.second;
         stream << "{\"name\":\"" << networkInterface->name() << "\","
                << "\"ipv4_addr\":\"" << networkInterface->ipv4() << "\","
@@ -133,12 +133,12 @@ void HeartbeatProvider::run() {
             openSocket();
             while (m_active) {
                 sendHeartbeatMessage();
-                sleep(systemConfig.heartbeatSendInterval());
+                sleep(globalConfig.heartbeatSendInterval());
             }
         }
         catch (std::exception& ex) {
             LOG(ERROR) << "Heartbeat provider thread failure, description: " << ex.what();
-            sleep(systemConfig.heartbeatConnectionRetryInterval());
+            sleep(globalConfig.heartbeatConnectionRetryInterval());
         }
     }
 }

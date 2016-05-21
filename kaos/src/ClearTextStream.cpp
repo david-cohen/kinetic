@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include "Common.hpp"
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "ClearTextStream.hpp"
 
 /*
@@ -93,10 +93,10 @@ void ClearTextStream::blackHoleRead(size_t byteCount) {
      * Loop reading from the socket until the requested amount of data has been received (without
      * keeping any of the received data).
      */
-    std::unique_ptr<char> valueBuffer(new char[systemConfig.maxValueSize()]);
+    std::unique_ptr<char> valueBuffer(new char[globalConfig.maxValueSize()]);
 
     do {
-        int32_t byteCountStatus = ::read(m_streamFd, valueBuffer.get(), byteCount > systemConfig.maxValueSize() ? systemConfig.maxValueSize() : byteCount);
+        int32_t byteCountStatus = ::read(m_streamFd, valueBuffer.get(), byteCount > globalConfig.maxValueSize() ? globalConfig.maxValueSize() : byteCount);
 
         /*
          * If the read failed because it was interrupted (non-fatal error), then retry the operation.

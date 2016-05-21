@@ -12,8 +12,8 @@
  * laws, and may subject you to criminal prosecution.
  */
 #pragma once
-#ifndef SYSTEM_CONFIG_HPP
-#define SYSTEM_CONFIG_HPP
+#ifndef GLOBAL_CONFIG_HPP
+#define GLOBAL_CONFIG_HPP
 
 /*
  * Include Files
@@ -34,15 +34,15 @@
 typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSet;
 
 /**
- * Contains all the read-only system configuration data.
+ * Contains read-only global configuration data.
  */
-class SystemConfig {
+class GlobalConfig {
 public:
 
     /*
      * Constructor
      */
-    SystemConfig();
+    GlobalConfig();
 
     /*
      * Public Accessors
@@ -161,9 +161,9 @@ private:
     GetLogTypeSet        m_defaultLogTypes;
     NetworkInterfaceMap  m_networkInterfaceMap;
 
-    DISALLOW_COPY_AND_ASSIGN(SystemConfig);
+    DISALLOW_COPY_AND_ASSIGN(GlobalConfig);
 };
 
-extern SystemConfig systemConfig;
+extern GlobalConfig globalConfig;
 
 #endif

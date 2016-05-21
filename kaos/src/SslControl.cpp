@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include "Logger.hpp"
 #include "SslControl.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Constants
@@ -53,11 +53,11 @@ SslControl::SslControl()
     /*
      * Load the certificate and the private key and then make sure they are consistent.
      */
-    if (SSL_CTX_use_certificate_file(m_context, systemConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
+    if (SSL_CTX_use_certificate_file(m_context, globalConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to load certificate";
         return;
     }
-    if (SSL_CTX_use_PrivateKey_file(m_context, systemConfig.sslPrivateKeyFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
+    if (SSL_CTX_use_PrivateKey_file(m_context, globalConfig.sslPrivateKeyFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to load private key";
         return;
     }

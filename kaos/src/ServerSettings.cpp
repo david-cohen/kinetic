@@ -27,7 +27,7 @@
 #include "Logger.hpp"
 #include "Translator.hpp"
 #include "Settings.pb.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
 
@@ -35,7 +35,7 @@
  * Initializes the Server Settings object.
  */
 ServerSettings::ServerSettings()
-    : m_filename(systemConfig.serverSettingsFile()) {
+    : m_filename(globalConfig.serverSettingsFile()) {
 
     /*
      * If possible, load the setting from persistent store.  Otherwise, set them to their default
@@ -125,22 +125,22 @@ void ServerSettings::save() {
  */
 void ServerSettings::setDefaults() {
 
-    setClusterVersion(systemConfig.defaultClusterVersion());
-    m_locked = systemConfig.defaultLocked();
-    m_lockPin = systemConfig.defaultLockPin();
-    m_erasePin = systemConfig.defaultErasePin();
+    setClusterVersion(globalConfig.defaultClusterVersion());
+    m_locked = globalConfig.defaultLocked();
+    m_lockPin = globalConfig.defaultLockPin();
+    m_erasePin = globalConfig.defaultErasePin();
     m_accessControlMap.clear();
 
     OperationSizedBoolArray operationArray;
     operationArray.fill(true);
-    AccessScope scope(systemConfig.accessControlDefaultTlsRequired(),
-                      systemConfig.accessScopeDefaultKeySubstring(),
-                      systemConfig.accessScopeDefaultKeySubstringOffset(), operationArray);
+    AccessScope scope(globalConfig.accessControlDefaultTlsRequired(),
+                      globalConfig.accessScopeDefaultKeySubstring(),
+                      globalConfig.accessScopeDefaultKeySubstringOffset(), operationArray);
     AccessScopeList scopeList;
     scopeList.push_back(scope);
-    AccessControlPtr accessControl(new AccessControl(systemConfig.accessControlDefaultIdentity(),
-                                   systemConfig.accessControlDefaultHmacKey(),
-                                   systemConfig.accessControlDefaultHmacAlgorithm(), scopeList));
+    AccessControlPtr accessControl(new AccessControl(globalConfig.accessControlDefaultIdentity(),
+                                   globalConfig.accessControlDefaultHmacKey(),
+                                   globalConfig.accessControlDefaultHmacAlgorithm(), scopeList));
     std::list<AccessControlPtr> accessControlList;
     accessControlList.push_back(accessControl);
     updateAccessControl(accessControlList);

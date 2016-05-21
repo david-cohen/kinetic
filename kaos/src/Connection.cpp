@@ -30,7 +30,6 @@
 #include "GlobalConfig.hpp"
 #include "KineticMessage.hpp"
 #include "MessageHandler.hpp"
-#include "CommunicationsManager.hpp"
 
 /*
  * Private Data Objects
@@ -40,12 +39,12 @@ static std::atomic<int64_t> nextConnectionId(1);
 /**
  * Initializes the Connection object.
  *
- * @param   communicationsManager       Manager of the connection
+ * @param   server                      Manager of the connection
  * @param   stream                      Data stream to be used for this connection
  * @param   lientServerConnectionInfo   Information about the client and server in the connection
  */
-Connection::Connection(CommunicationsManager* communicationsManager, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
-    : m_communicationsManager(communicationsManager), m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()),
+Connection::Connection(Server* server, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
+    : m_server(server), m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()),
       m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()), m_clientPort(clientServerConnectionInfo.clientPort()),
       m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()), m_thread(new std::thread(&Connection::run, this)),
       m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
@@ -112,7 +111,7 @@ void Connection::run() {
     LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
               << ", client=" << m_clientIpAddress << ":" << m_clientPort;
 
-    m_communicationsManager->removeConnection(this);
+    m_server->removeConnection(this);
 }
 
 /**
@@ -127,7 +126,7 @@ void Connection::sendUnsolicitedStatusMessage() {
     ::com::seagate::kinetic::proto::Command* command = transaction.response->mutable_command();
     ::com::seagate::kinetic::proto::Command_Header* header = command->mutable_header();
     header->set_connectionid(m_connectionId);
-    header->set_clusterversion(m_communicationsManager->server()->settings().clusterVersion());
+    header->set_clusterversion(m_server->settings().clusterVersion());
     ::com::seagate::kinetic::proto::Command_GetLog* getLogResponse = command->mutable_body()->mutable_getlog();
     getLogResponse->add_types(::com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION);
     KineticLog::getConfiguration(getLogResponse);

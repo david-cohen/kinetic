@@ -27,14 +27,16 @@
 #include <memory>
 #include <atomic>
 #include "Common.hpp"
+#include "Server.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
-#include "CommunicationsManager.hpp"
 #include "ClientServerConnectionInfo.hpp"
 
 /*
  * Incomplete Class Definition (to avoid circular dependencies)
  */
+
+class Server;
 class Transaction;
 
 /*
@@ -52,7 +54,7 @@ public:
     /*
      * Constructor/Destructor
      */
-    Connection(CommunicationsManager* communicationsManager, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
+    Connection(Server* server, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
     ~Connection();
 
     /*
@@ -63,7 +65,7 @@ public:
     /*
      * Public Accessors
      */
-    inline CommunicationsManager* communicationsManager() {return m_communicationsManager;}
+    inline Server* server() {return m_server;}
     inline int64_t connectionId() {return m_connectionId;}
     inline int64_t previousSequence() {return m_previousSequence;}
     inline bool processedFirstRequest() {return m_processedFirstRequest;}
@@ -110,19 +112,19 @@ private:
     /*
      * Private Data Member
      */
-    CommunicationsManager*      m_communicationsManager;    //!< Manager of the connection
-    Security                    m_security;                 //!< Connection's security (SSL or None)
-    StreamInterface* const      m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
-    const uint32_t              m_serverPort;               //!< Server's TCP port number
-    const std::string           m_serverIpAddress;          //!< Server's IP address
-    const uint32_t              m_clientPort;               //!< Client's TCP port number
-    const std::string           m_clientIpAddress;          //!< Client's IP address
-    std::thread* const          m_thread;                   //!< Thread that receives messages
-    const int64_t               m_connectionId;             //!< Identification number for connection
-    std::atomic<int64_t>        m_previousSequence;         //!< Last request message sequence number
-    std::atomic_bool            m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
-    BatchListMap                m_batchListMap;             //!< Lists of batch commands indexed by batch ID
-    std::mutex                  m_mutex;                    //!< Mutex used to make class thread safe
+    Server*                 m_server;                   //!< Manager of the connection
+    Security                m_security;                 //!< Connection's security (SSL or None)
+    StreamInterface* const  m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
+    const uint32_t          m_serverPort;               //!< Server's TCP port number
+    const std::string       m_serverIpAddress;          //!< Server's IP address
+    const uint32_t          m_clientPort;               //!< Client's TCP port number
+    const std::string       m_clientIpAddress;          //!< Client's IP address
+    std::thread* const      m_thread;                   //!< Thread that receives messages
+    const int64_t           m_connectionId;             //!< Identification number for connection
+    std::atomic<int64_t>    m_previousSequence;         //!< Last request message sequence number
+    std::atomic_bool        m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
+    BatchListMap            m_batchListMap;             //!< Lists of batch commands indexed by batch ID
+    std::mutex              m_mutex;                    //!< Mutex used to make class thread safe
 
     DISALLOW_COPY_AND_ASSIGN(Connection);
 };

@@ -13,12 +13,12 @@
 #include <thread>
 #include "Common.hpp"
 #include "Logger.hpp"
+#include "Server.hpp"
 #include "TcpTransport.hpp"
 #include "ListenerInterface.hpp"
-#include "CommunicationsManager.hpp"
 
 /**
- * A stream agnostic connection listener for Kinetic clients.  Kinetic support both encrypted and
+ * A stream agnostic connection listener for Kinetic clients.  Kinetic supports both encrypted and
  * clear text data streams for its connections.  This listener is used for both.  When a client is
  * discovered through the listening port, a connection is created with the proper data stream.
  */
@@ -29,11 +29,11 @@ public:
     /**
      * ConnectionListener Constructor
      *
-     * @param   communicationsManager   Manager of the connections to be created
-     * @param   port                    The port to listen on for new connections
+     * @param   server  The server that will manage the new conections
+     * @param   port    The port to listen on for new connections
      */
-    explicit ConnectionListener(CommunicationsManager* communicationsManager, uint32_t port)
-        : m_communicationsManager(communicationsManager), m_port(port), m_terminated(false), m_thread(nullptr) {
+    explicit ConnectionListener(Server* server, uint32_t port)
+        : m_server(server), m_port(port), m_terminated(false), m_thread(nullptr) {
     }
 
     /**
@@ -96,7 +96,7 @@ private:
             try {
                 ClientServerConnectionInfo clientServerConnectionInfo = TcpTransport::serverConnect(m_port, m_listeningSocket);
                 StreamInterface* stream = static_cast<StreamInterface*>(new StreamType(clientServerConnectionInfo.socketDescriptor()));
-                m_communicationsManager->addConnection(new Connection(m_communicationsManager, stream, clientServerConnectionInfo));
+                m_server->addConnection(new Connection(m_server, stream, clientServerConnectionInfo));
             }
             catch (std::exception& ex) {
                 LOG(ERROR) << "Exception encounter: " << ex.what();
@@ -112,11 +112,11 @@ private:
     /*
      * Private Data Members
      */
-    CommunicationsManager*  m_communicationsManager;    //!< Manager of the connection
-    uint32_t                m_port;                     //!< Listening port
-    bool                    m_terminated;               //!< Indicates if listener is terminated
-    int32_t                 m_listeningSocket;          //!< File descriptor of socket listening on
-    std::thread*            m_thread;                   //!< Listening thread
+    Server*         m_server;           //!< Server that will manager the new connections
+    uint32_t        m_port;             //!< Listening port
+    bool            m_terminated;       //!< Indicates if listener is terminated
+    int32_t         m_listeningSocket;  //!< File descriptor of socket listening on
+    std::thread*    m_thread;           //!< Listening thread
 
     DISALLOW_COPY_AND_ASSIGN(ConnectionListener);
 };

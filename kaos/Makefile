@@ -271,7 +271,6 @@ all:	clean kaos test package doxygen
 $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/AccessControl.o \
 	$(BUILD_APP_OBJ_DIR)/ClearTextStream.o \
-	$(BUILD_APP_OBJ_DIR)/CommunicationsManager.o \
 	$(BUILD_APP_OBJ_DIR)/Connection.o \
 	$(BUILD_APP_OBJ_DIR)/Entry.pb.o \
 	$(BUILD_APP_OBJ_DIR)/GlobalConfig.o \

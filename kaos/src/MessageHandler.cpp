@@ -39,7 +39,6 @@
 #include "MessageHandler.hpp"
 #include "MessageException.hpp"
 #include "MessageStatistics.hpp"
-#include "CommunicationsManager.hpp"
 
 /*
  * Used Namespaces
@@ -134,9 +133,8 @@ static OperationInfo dispatchTable[DISPATCH_TABLE_SIZE] = {
 };
 
 MessageHandler::MessageHandler(Connection* connection)
-    : m_connection(connection), m_objectStore(connection->communicationsManager()->server()->objectStore()),
-      m_serverSettings(connection->communicationsManager()->server()->settings()),
-      m_messageStatistics(connection->communicationsManager()->server()->messageStatistics()) {
+    : m_connection(connection), m_objectStore(connection->server()->objectStore()),
+      m_serverSettings(connection->server()->settings()), m_messageStatistics(connection->server()->messageStatistics()) {
 }
 
 /**
@@ -992,7 +990,7 @@ MessageHandler::processInvalidRequest(Transaction* transaction) {
 void
 MessageHandler::processStartBatchRequest(Transaction* transaction) {
 
-    if (m_connection->communicationsManager()->batchCount() >= globalConfig.maxBatchCountPerDevice())
+    if (m_connection->server()->batchCount() >= globalConfig.maxBatchCountPerDevice())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
     if (!transaction->request->command()->header().has_batchid())

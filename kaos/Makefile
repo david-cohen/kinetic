@@ -98,14 +98,14 @@ run-tests:
 
 proto:
 	[ -d $(BUILD_PROTO_DIR) ] || mkdir -p $(BUILD_PROTO_DIR)
-	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BASE_DIR)/$(BUILD_PROTO_DIR) $(PROTO_DIR)/Kinetic.proto
-	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BASE_DIR)/$(BUILD_PROTO_DIR) $(PROTO_DIR)/Entry.proto
-	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BASE_DIR)/$(BUILD_PROTO_DIR) $(PROTO_DIR)/Settings.proto
-	$(BASE_DIR)/tools/clean-proto-file.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Entry
-	$(BASE_DIR)/tools/clean-proto-file.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Kinetic
-	$(BASE_DIR)/tools/clean-proto-file.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Settings
-	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.cpp $(APP_SRC_DIR)/
-	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.hpp $(INCLUDE_DIR)/
+	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Kinetic.proto
+	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Entry.proto
+	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Settings.proto
+	$(BASE_DIR)/tools/clean-proto-file.sh $(BUILD_PROTO_DIR) Entry
+	$(BASE_DIR)/tools/clean-proto-file.sh $(BUILD_PROTO_DIR) Kinetic
+	$(BASE_DIR)/tools/clean-proto-file.sh $(BUILD_PROTO_DIR) Settings
+	mv $(BUILD_PROTO_DIR)/*.cpp $(APP_SRC_DIR)/
+	mv $(BUILD_PROTO_DIR)/*.hpp $(INCLUDE_DIR)/
 
 # Check for suspicious coding
 

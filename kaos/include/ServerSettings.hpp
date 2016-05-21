@@ -35,7 +35,7 @@ public:
      * Constructor
      */
     ServerSettings();
-    ServerSettings(std::string filename);
+    explicit ServerSettings(std::string filename);
 
     /*
      * Public Member Functions
@@ -45,16 +45,19 @@ public:
     AccessControlPtr accessControl(int64_t identity);
     void updateAccessControl(std::list<AccessControlPtr> newAccessControlList);
 
+
     /*
      * Public Accessors
      */
     inline int64_t clusterVersion() {return m_clusterVersion;}
+    inline bool locked() const {return m_locked;}
     inline std::string lockPin() {return m_lockPin;}
     inline std::string erasePin() {return m_erasePin;}
     inline AccessControlMap accessControlMap() {return m_accessControlMap;}
     inline void setClusterVersion(int64_t clusterVersion) {m_clusterVersion = clusterVersion;}
-    inline void setErasePin(std::string erasePin) {m_erasePin.assign(erasePin);}
+    inline void setLocked(bool locked) {m_locked = locked;}
     inline void setLockPin(std::string lockPin) {m_lockPin.assign(lockPin);}
+    inline void setErasePin(std::string erasePin) {m_erasePin.assign(erasePin);}
 
 private:
 
@@ -68,8 +71,9 @@ private:
      */
     std::string         m_filename;             //!< Name of the file containing the settings
     int64_t             m_clusterVersion;       //!< Cluster version of object store
-    std::string         m_lockPin;              //!< Personal ID Number to lock/unlock drive
-    std::string         m_erasePin;             //!< Personal ID Number to erase drive
+    bool                m_locked;               //!< Indicates if object store is locked
+    std::string         m_lockPin;              //!< Personal ID Number to lock/unlock object store
+    std::string         m_erasePin;             //!< Personal ID Number to erase object store
     AccessControlMap    m_accessControlMap;     //!< Access Control map (for fast look-up)
 
     DISALLOW_COPY_AND_ASSIGN(ServerSettings);

@@ -46,8 +46,9 @@ void protobuf_AssignDesc_Settings_2eproto() {
             "Settings.proto");
     GOOGLE_CHECK(file != NULL);
     Settings_descriptor_ = file->message_type(0);
-    static const int Settings_offsets_[4] = {
+    static const int Settings_offsets_[5] = {
         GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Settings, clusterversion_),
+        GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Settings, locked_),
         GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Settings, lockpin_),
         GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Settings, erasepin_),
         GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Settings, acl_),
@@ -139,21 +140,21 @@ void protobuf_AddDesc_Settings_2eproto() {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-        "\n\016Settings.proto\022\004kaos\"\230\004\n\010Settings\022\026\n\016c"
-        "lusterVersion\030\001 \001(\003\022\017\n\007lockPin\030\002 \001(\014\022\020\n\010"
-        "erasePin\030\003 \001(\014\022\037\n\003acl\030\004 \003(\0132\022.kaos.Setti"
-        "ngs.ACL\032\257\003\n\003ACL\022\020\n\010identity\030\001 \001(\003\022\017\n\007hma"
-        "cKey\030\002 \001(\014\0227\n\rhmacAlgorithm\030\003 \001(\0162 .kaos"
-        ".Settings.ACL.HmacAlgorithm\022\'\n\005scope\030\004 \003"
-        "(\0132\030.kaos.Settings.ACL.Scope\032\177\n\005Scope\022\023\n"
-        "\013tlsRequired\030\001 \001(\010\022\024\n\014keySubstring\030\002 \001(\014"
-        "\022\032\n\022keySubstringOffset\030\003 \001(\003\022/\n\toperatio"
-        "n\030\004 \003(\0162\034.kaos.Settings.ACL.Operation\"9\n"
-        "\rHmacAlgorithm\022\031\n\014HMAC_INVALID\020\377\377\377\377\377\377\377\377\377"
-        "\001\022\r\n\tHMAC_SHA1\020\001\"g\n\tOperation\022\010\n\004READ\020\000\022"
-        "\t\n\005WRITE\020\001\022\n\n\006DELETE\020\002\022\t\n\005RANGE\020\003\022\t\n\005SET"
-        "UP\020\004\022\t\n\005P2POP\020\005\022\n\n\006GETLOG\020\007\022\014\n\010SECURITY\020"
-        "\010", 561);
+        "\n\016Settings.proto\022\004kaos\"\250\004\n\010Settings\022\026\n\016c"
+        "lusterVersion\030\001 \001(\003\022\016\n\006locked\030\002 \001(\010\022\017\n\007l"
+        "ockPin\030\003 \001(\014\022\020\n\010erasePin\030\004 \001(\014\022\037\n\003acl\030\005 "
+        "\003(\0132\022.kaos.Settings.ACL\032\257\003\n\003ACL\022\020\n\010ident"
+        "ity\030\001 \001(\003\022\017\n\007hmacKey\030\002 \001(\014\0227\n\rhmacAlgori"
+        "thm\030\003 \001(\0162 .kaos.Settings.ACL.HmacAlgori"
+        "thm\022\'\n\005scope\030\004 \003(\0132\030.kaos.Settings.ACL.S"
+        "cope\032\177\n\005Scope\022\023\n\013tlsRequired\030\001 \001(\010\022\024\n\014ke"
+        "ySubstring\030\002 \001(\014\022\032\n\022keySubstringOffset\030\003"
+        " \001(\003\022/\n\toperation\030\004 \003(\0162\034.kaos.Settings."
+        "ACL.Operation\"9\n\rHmacAlgorithm\022\031\n\014HMAC_I"
+        "NVALID\020\377\377\377\377\377\377\377\377\377\001\022\r\n\tHMAC_SHA1\020\001\"g\n\tOper"
+        "ation\022\010\n\004READ\020\000\022\t\n\005WRITE\020\001\022\n\n\006DELETE\020\002\022\t"
+        "\n\005RANGE\020\003\022\t\n\005SETUP\020\004\022\t\n\005P2POP\020\005\022\n\n\006GETLO"
+        "G\020\007\022\014\n\010SECURITY\020\010", 577);
     ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
         "Settings.proto", &protobuf_RegisterTypes);
     Settings::default_instance_ = new Settings();
@@ -960,6 +961,7 @@ void Settings_ACL::Swap(Settings_ACL* other) {
 
 #ifndef _MSC_VER
 const int Settings::kClusterVersionFieldNumber;
+const int Settings::kLockedFieldNumber;
 const int Settings::kLockPinFieldNumber;
 const int Settings::kErasePinFieldNumber;
 const int Settings::kAclFieldNumber;
@@ -985,6 +987,7 @@ void Settings::SharedCtor() {
     ::google::protobuf::internal::GetEmptyString();
     _cached_size_ = 0;
     clusterversion_ = GOOGLE_LONGLONG(0);
+    locked_ = false;
     lockpin_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     erasepin_ = const_cast<::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -1028,8 +1031,9 @@ Settings* Settings::New() const {
 }
 
 void Settings::Clear() {
-    if (_has_bits_[0 / 32] & 7) {
+    if (_has_bits_[0 / 32] & 15) {
         clusterversion_ = GOOGLE_LONGLONG(0);
+        locked_ = false;
         if (has_lockpin()) {
             if (lockpin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
                 lockpin_->clear();
@@ -1067,13 +1071,29 @@ bool Settings::MergePartialFromCodedStream(
                 else {
                     goto handle_unusual;
                 }
-                if (input->ExpectTag(18)) goto parse_lockPin;
+                if (input->ExpectTag(16)) goto parse_locked;
                 break;
             }
 
-            // optional bytes lockPin = 2;
+            // optional bool locked = 2;
             case 2: {
-                if (tag == 18) {
+                if (tag == 16) {
+parse_locked:
+                    DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive <
+                         bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL > (
+                             input, &locked_)));
+                    set_has_locked();
+                }
+                else {
+                    goto handle_unusual;
+                }
+                if (input->ExpectTag(26)) goto parse_lockPin;
+                break;
+            }
+
+            // optional bytes lockPin = 3;
+            case 3: {
+                if (tag == 26) {
 parse_lockPin:
                     DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
                             input, this->mutable_lockpin()));
@@ -1081,13 +1101,13 @@ parse_lockPin:
                 else {
                     goto handle_unusual;
                 }
-                if (input->ExpectTag(26)) goto parse_erasePin;
+                if (input->ExpectTag(34)) goto parse_erasePin;
                 break;
             }
 
-            // optional bytes erasePin = 3;
-            case 3: {
-                if (tag == 26) {
+            // optional bytes erasePin = 4;
+            case 4: {
+                if (tag == 34) {
 parse_erasePin:
                     DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
                             input, this->mutable_erasepin()));
@@ -1095,13 +1115,13 @@ parse_erasePin:
                 else {
                     goto handle_unusual;
                 }
-                if (input->ExpectTag(34)) goto parse_acl;
+                if (input->ExpectTag(42)) goto parse_acl;
                 break;
             }
 
-            // repeated .kaos.Settings.ACL acl = 4;
-            case 4: {
-                if (tag == 34) {
+            // repeated .kaos.Settings.ACL acl = 5;
+            case 5: {
+                if (tag == 42) {
 parse_acl:
                     DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
                             input, add_acl()));
@@ -1109,7 +1129,7 @@ parse_acl:
                 else {
                     goto handle_unusual;
                 }
-                if (input->ExpectTag(34)) goto parse_acl;
+                if (input->ExpectTag(42)) goto parse_acl;
                 if (input->ExpectAtEnd()) goto success;
                 break;
             }
@@ -1144,22 +1164,27 @@ void Settings::SerializeWithCachedSizes(
         ::google::protobuf::internal::WireFormatLite::WriteInt64(1, this->clusterversion(), output);
     }
 
-    // optional bytes lockPin = 2;
+    // optional bool locked = 2;
+    if (has_locked()) {
+        ::google::protobuf::internal::WireFormatLite::WriteBool(2, this->locked(), output);
+    }
+
+    // optional bytes lockPin = 3;
     if (has_lockpin()) {
         ::google::protobuf::internal::WireFormatLite::WriteBytesMaybeAliased(
-            2, this->lockpin(), output);
+            3, this->lockpin(), output);
     }
 
-    // optional bytes erasePin = 3;
+    // optional bytes erasePin = 4;
     if (has_erasepin()) {
         ::google::protobuf::internal::WireFormatLite::WriteBytesMaybeAliased(
-            3, this->erasepin(), output);
+            4, this->erasepin(), output);
     }
 
-    // repeated .kaos.Settings.ACL acl = 4;
+    // repeated .kaos.Settings.ACL acl = 5;
     for (int i = 0; i < this->acl_size(); i++) {
         ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-            4, this->acl(i), output);
+            5, this->acl(i), output);
     }
 
     if (!unknown_fields().empty()) {
@@ -1177,25 +1202,30 @@ void Settings::SerializeWithCachedSizes(
         target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(1, this->clusterversion(), target);
     }
 
-    // optional bytes lockPin = 2;
+    // optional bool locked = 2;
+    if (has_locked()) {
+        target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(2, this->locked(), target);
+    }
+
+    // optional bytes lockPin = 3;
     if (has_lockpin()) {
         target =
             ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-                2, this->lockpin(), target);
+                3, this->lockpin(), target);
     }
 
-    // optional bytes erasePin = 3;
+    // optional bytes erasePin = 4;
     if (has_erasepin()) {
         target =
             ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-                3, this->erasepin(), target);
+                4, this->erasepin(), target);
     }
 
-    // repeated .kaos.Settings.ACL acl = 4;
+    // repeated .kaos.Settings.ACL acl = 5;
     for (int i = 0; i < this->acl_size(); i++) {
         target = ::google::protobuf::internal::WireFormatLite::
                  WriteMessageNoVirtualToArray(
-                     4, this->acl(i), target);
+                     5, this->acl(i), target);
     }
 
     if (!unknown_fields().empty()) {
@@ -1217,14 +1247,19 @@ int Settings::ByteSize() const {
                               this->clusterversion());
         }
 
-        // optional bytes lockPin = 2;
+        // optional bool locked = 2;
+        if (has_locked()) {
+            total_size += 1 + 1;
+        }
+
+        // optional bytes lockPin = 3;
         if (has_lockpin()) {
             total_size += 1 +
                           ::google::protobuf::internal::WireFormatLite::BytesSize(
                               this->lockpin());
         }
 
-        // optional bytes erasePin = 3;
+        // optional bytes erasePin = 4;
         if (has_erasepin()) {
             total_size += 1 +
                           ::google::protobuf::internal::WireFormatLite::BytesSize(
@@ -1232,7 +1267,7 @@ int Settings::ByteSize() const {
         }
 
     }
-    // repeated .kaos.Settings.ACL acl = 4;
+    // repeated .kaos.Settings.ACL acl = 5;
     total_size += 1 * this->acl_size();
     for (int i = 0; i < this->acl_size(); i++) {
         total_size +=
@@ -1271,6 +1306,9 @@ void Settings::MergeFrom(const Settings& from) {
         if (from.has_clusterversion()) {
             set_clusterversion(from.clusterversion());
         }
+        if (from.has_locked()) {
+            set_locked(from.locked());
+        }
         if (from.has_lockpin()) {
             set_lockpin(from.lockpin());
         }
@@ -1301,6 +1339,7 @@ bool Settings::IsInitialized() const {
 void Settings::Swap(Settings* other) {
     if (other != this) {
         std::swap(clusterversion_, other->clusterversion_);
+        std::swap(locked_, other->locked_);
         std::swap(lockpin_, other->lockpin_);
         std::swap(erasepin_, other->erasepin_);
         acl_.Swap(&other->acl_);

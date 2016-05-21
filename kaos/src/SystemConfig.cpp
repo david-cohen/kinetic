@@ -59,7 +59,6 @@ static const char* DATABASE_DIRECTORY("objectDatabase");
 static const char* SERVER_SETTINGS_FILE("serverSettings");
 static const LogFacility LOGGING_FACILITY(LOCAL2);
 static const LogLevel DEFAULT_LOGGING_LEVEL(WARNING);
-static const bool DEFAULT_LOCKED(false);
 static const bool DEFAULT_DEBUG_ENABLED(false);
 
 /*
@@ -112,6 +111,7 @@ static const char* SSL_CERTIFICATE_FILE("/etc/kaos/cert.pem");
  * Setup Settings
  */
 static const int64_t DEFAULT_CLUSTER_VERSION(0);
+static const bool DEFAULT_LOCKED(false);
 static const char* DEFAULT_LOCK_PIN("");
 static const char* DEFAULT_ERASE_PIN("");
 
@@ -167,8 +167,7 @@ static LogLevel toLogLevel(std::string logLevel) {
  * set.
  */
 SystemConfig::SystemConfig()
-    : m_locked(DEFAULT_LOCKED),
-      m_debugEnabled(DEFAULT_DEBUG_ENABLED),
+    : m_debugEnabled(DEFAULT_DEBUG_ENABLED),
       m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
       m_databaseDirectory(),
       m_serverSettingsFile(),
@@ -209,6 +208,7 @@ SystemConfig::SystemConfig()
       m_sslPrivateKeyFile(SSL_PRIVATE_KEY_FILE),
       m_sslCertificateFile(SSL_CERTIFICATE_FILE),
       m_defaultClusterVersion(DEFAULT_CLUSTER_VERSION),
+      m_defaultLocked(DEFAULT_LOCKED),
       m_defaultLockPin(DEFAULT_LOCK_PIN),
       m_defaultErasePin(DEFAULT_ERASE_PIN),
       m_accessControlDefaultTlsRequired(ACCESS_CONTROL_DEFAULT_TLS_REQUIRED),

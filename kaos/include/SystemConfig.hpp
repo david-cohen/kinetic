@@ -34,7 +34,7 @@
 typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSet;
 
 /**
- * Contains the system configuration data that can not be set by a user.
+ * Contains all the read-only system configuration data.
  */
 class SystemConfig {
 public:
@@ -47,8 +47,6 @@ public:
     /*
      * Public Accessors
      */
-    inline bool locked() const {return m_locked;}
-    inline void setLocked(bool locked) {m_locked = locked;}
     inline bool debugEnabled() const {return m_debugEnabled;}
     inline std::string defaultPidFileName() const {return m_defaultPidFileName;}
     inline std::string databaseDirectory() const {return m_databaseDirectory;}
@@ -90,6 +88,7 @@ public:
     inline std::string sslPrivateKeyFile() const {return m_sslPrivateKeyFile;}
     inline std::string sslCertificateFile() const {return m_sslCertificateFile;}
     inline int64_t defaultClusterVersion() const {return m_defaultClusterVersion;}
+    inline bool defaultLocked() const {return m_defaultLocked;}
     inline std::string defaultLockPin() const {return m_defaultLockPin;}
     inline std::string defaultErasePin() const {return m_defaultErasePin;}
     inline bool accessControlDefaultTlsRequired() const {return m_accessControlDefaultTlsRequired;}
@@ -149,6 +148,7 @@ private:
     std::string          m_sslPrivateKeyFile;
     std::string          m_sslCertificateFile;
     int64_t              m_defaultClusterVersion;
+    bool                 m_defaultLocked;
     std::string          m_defaultLockPin;
     std::string          m_defaultErasePin;
     bool                 m_accessControlDefaultTlsRequired;

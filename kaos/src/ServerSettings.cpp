@@ -46,9 +46,9 @@ ServerSettings::ServerSettings()
 }
 
 /*
- * Initializes the Server Settings object. 
- *  
- * @param   filename    Name of the file used to maintain the server settings 
+ * Initializes the Server Settings object.
+ *
+ * @param   filename    Name of the file used to maintain the server settings
  */
 ServerSettings::ServerSettings(std::string filename)
     : m_filename(filename) {
@@ -93,6 +93,7 @@ void ServerSettings::save() {
     std::unique_ptr<kaos::Settings> settings(new kaos::Settings());
 
     settings->set_clusterversion(m_clusterVersion);
+    settings->set_locked(m_locked);
     settings->set_lockpin(m_lockPin);
     settings->set_erasepin(m_erasePin);
 
@@ -125,6 +126,7 @@ void ServerSettings::save() {
 void ServerSettings::setDefaults() {
 
     setClusterVersion(systemConfig.defaultClusterVersion());
+    m_locked = systemConfig.defaultLocked();
     m_lockPin = systemConfig.defaultLockPin();
     m_erasePin = systemConfig.defaultErasePin();
     m_accessControlMap.clear();
@@ -162,6 +164,7 @@ bool ServerSettings::load() {
     }
 
     setClusterVersion(settings->clusterversion());
+    setLocked(settings->locked());
     setLockPin(settings->lockpin());
     setErasePin(settings->erasepin());
 

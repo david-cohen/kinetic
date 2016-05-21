@@ -234,9 +234,9 @@ MessageHandler::processRequest(Transaction* transaction) {
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
         }
 
-        if (systemConfig.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
-                                       && ((transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
-                                           || (transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
+        if (server->settings().locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
+                                             && ((transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
+                                                     || (transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
 
             throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED);
         }
@@ -885,7 +885,7 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
                 if ((!server->settings().lockPin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                systemConfig.setLocked(true);
+                server->settings().setLocked(true);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
@@ -893,7 +893,7 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
                 if ((!server->settings().lockPin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                systemConfig.setLocked(false);
+                server->settings().setLocked(false);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP:

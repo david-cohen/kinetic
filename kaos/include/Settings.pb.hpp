@@ -435,10 +435,17 @@ public:
     inline ::google::protobuf::int64 clusterversion() const;
     inline void set_clusterversion(::google::protobuf::int64 value);
 
-    // optional bytes lockPin = 2;
+    // optional bool locked = 2;
+    inline bool has_locked() const;
+    inline void clear_locked();
+    static const int kLockedFieldNumber = 2;
+    inline bool locked() const;
+    inline void set_locked(bool value);
+
+    // optional bytes lockPin = 3;
     inline bool has_lockpin() const;
     inline void clear_lockpin();
-    static const int kLockPinFieldNumber = 2;
+    static const int kLockPinFieldNumber = 3;
     inline const ::std::string& lockpin() const;
     inline void set_lockpin(const ::std::string& value);
     inline void set_lockpin(const char* value);
@@ -447,10 +454,10 @@ public:
     inline ::std::string* release_lockpin();
     inline void set_allocated_lockpin(::std::string* lockpin);
 
-    // optional bytes erasePin = 3;
+    // optional bytes erasePin = 4;
     inline bool has_erasepin() const;
     inline void clear_erasepin();
-    static const int kErasePinFieldNumber = 3;
+    static const int kErasePinFieldNumber = 4;
     inline const ::std::string& erasepin() const;
     inline void set_erasepin(const ::std::string& value);
     inline void set_erasepin(const char* value);
@@ -459,10 +466,10 @@ public:
     inline ::std::string* release_erasepin();
     inline void set_allocated_erasepin(::std::string* erasepin);
 
-    // repeated .kaos.Settings.ACL acl = 4;
+    // repeated .kaos.Settings.ACL acl = 5;
     inline int acl_size() const;
     inline void clear_acl();
-    static const int kAclFieldNumber = 4;
+    static const int kAclFieldNumber = 5;
     inline const ::kaos::Settings_ACL& acl(int index) const;
     inline ::kaos::Settings_ACL* mutable_acl(int index);
     inline ::kaos::Settings_ACL* add_acl();
@@ -475,6 +482,8 @@ public:
 private:
     inline void set_has_clusterversion();
     inline void clear_has_clusterversion();
+    inline void set_has_locked();
+    inline void clear_has_locked();
     inline void set_has_lockpin();
     inline void clear_has_lockpin();
     inline void set_has_erasepin();
@@ -488,6 +497,7 @@ private:
     ::std::string* lockpin_;
     ::std::string* erasepin_;
     ::google::protobuf::RepeatedPtrField<::kaos::Settings_ACL> acl_;
+    bool locked_;
     friend void  protobuf_AddDesc_Settings_2eproto();
     friend void protobuf_AssignDesc_Settings_2eproto();
     friend void protobuf_ShutdownFile_Settings_2eproto();
@@ -849,15 +859,39 @@ inline void Settings::set_clusterversion(::google::protobuf::int64 value) {
     // @@protoc_insertion_point(field_set:kaos.Settings.clusterVersion)
 }
 
-// optional bytes lockPin = 2;
-inline bool Settings::has_lockpin() const {
+// optional bool locked = 2;
+inline bool Settings::has_locked() const {
     return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void Settings::set_has_lockpin() {
+inline void Settings::set_has_locked() {
     _has_bits_[0] |= 0x00000002u;
 }
-inline void Settings::clear_has_lockpin() {
+inline void Settings::clear_has_locked() {
     _has_bits_[0] &= ~0x00000002u;
+}
+inline void Settings::clear_locked() {
+    locked_ = false;
+    clear_has_locked();
+}
+inline bool Settings::locked() const {
+    // @@protoc_insertion_point(field_get:kaos.Settings.locked)
+    return locked_;
+}
+inline void Settings::set_locked(bool value) {
+    set_has_locked();
+    locked_ = value;
+    // @@protoc_insertion_point(field_set:kaos.Settings.locked)
+}
+
+// optional bytes lockPin = 3;
+inline bool Settings::has_lockpin() const {
+    return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void Settings::set_has_lockpin() {
+    _has_bits_[0] |= 0x00000004u;
+}
+inline void Settings::clear_has_lockpin() {
+    _has_bits_[0] &= ~0x00000004u;
 }
 inline void Settings::clear_lockpin() {
     if (lockpin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
@@ -927,15 +961,15 @@ inline void Settings::set_allocated_lockpin(::std::string* lockpin) {
     // @@protoc_insertion_point(field_set_allocated:kaos.Settings.lockPin)
 }
 
-// optional bytes erasePin = 3;
+// optional bytes erasePin = 4;
 inline bool Settings::has_erasepin() const {
-    return (_has_bits_[0] & 0x00000004u) != 0;
+    return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void Settings::set_has_erasepin() {
-    _has_bits_[0] |= 0x00000004u;
+    _has_bits_[0] |= 0x00000008u;
 }
 inline void Settings::clear_has_erasepin() {
-    _has_bits_[0] &= ~0x00000004u;
+    _has_bits_[0] &= ~0x00000008u;
 }
 inline void Settings::clear_erasepin() {
     if (erasepin_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
@@ -1005,7 +1039,7 @@ inline void Settings::set_allocated_erasepin(::std::string* erasepin) {
     // @@protoc_insertion_point(field_set_allocated:kaos.Settings.erasePin)
 }
 
-// repeated .kaos.Settings.ACL acl = 4;
+// repeated .kaos.Settings.ACL acl = 5;
 inline int Settings::acl_size() const {
     return acl_.size();
 }

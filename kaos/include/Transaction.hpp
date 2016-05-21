@@ -34,11 +34,10 @@ class Connection;
  * access control.
  */
 struct Transaction {
-    explicit Transaction(Connection* transactionConnection)
-        : connection(transactionConnection), request(new KineticMessage()), response(new KineticMessage()), accessControl(),
+    Transaction()
+        : request(new KineticMessage()), response(new KineticMessage()), accessControl(),
           errorCode(com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_STATUS_CODE), errorMessage() {}
 
-    Connection* const                                       connection;     //!< Connection used for the transaction
     KineticMessagePtr                                       request;        //!< Request message
     KineticMessagePtr                                       response;       //!< Response message (may not be used)
     AccessControlPtr                                        accessControl;  //!< Access allowed for transaction

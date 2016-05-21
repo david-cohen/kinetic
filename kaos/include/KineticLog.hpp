@@ -20,6 +20,7 @@
  */
 #include <string>
 #include "Kinetic.pb.hpp"
+#include "MessageStatistics.hpp"
 
 /**
  * Provides the information needed for the various Kinetic get log requests (which includes
@@ -34,7 +35,7 @@ public:
      */
     static void getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response);
     static void getLimits(com::seagate::kinetic::proto::Command_GetLog* response);
-    static void getStatistics(com::seagate::kinetic::proto::Command_GetLog* response);
+    static void getStatistics(com::seagate::kinetic::proto::Command_GetLog* response, MessageStatistics& messageStatistics);
     static void getCapacities(com::seagate::kinetic::proto::Command_GetLog* response);
     static void getMessage(com::seagate::kinetic::proto::Command_GetLog* response);
     static void getDevice(const com::seagate::kinetic::proto::Command_GetLog& request, std::string& responseValue);

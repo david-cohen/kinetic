@@ -107,31 +107,37 @@ using com::seagate::kinetic::proto::Message_AuthType;
 static const int DISPATCH_TABLE_SIZE = 24;
 static OperationInfo dispatchTable[DISPATCH_TABLE_SIZE] = {
 //    Request Type                              Operation Type       Function Handler                             Involves Key
-    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  MessageHandler::processInvalidRequest,       false },
-    { Command_MessageType_GET,                  Operation::READ,     MessageHandler::processGetRequest,           true  },
-    { Command_MessageType_PUT,                  Operation::WRITE,    MessageHandler::processPutRequest,           true  },
-    { Command_MessageType_DELETE,               Operation::DELETE,   MessageHandler::processDeleteRequest,        true  },
-    { Command_MessageType_GETNEXT,              Operation::READ,     MessageHandler::processGetNextRequest,       false },
-    { Command_MessageType_GETPREVIOUS,          Operation::READ,     MessageHandler::processGetPreviousRequest,   false },
-    { Command_MessageType_GETKEYRANGE,          Operation::RANGE,    MessageHandler::processGetKeyRangeRequest,   false },
-    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  MessageHandler::processInvalidRequest,       false },
-    { Command_MessageType_GETVERSION,           Operation::READ,     MessageHandler::processGetVersionRequest,    true  },
-    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  MessageHandler::processInvalidRequest,       false },
-    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  MessageHandler::processInvalidRequest,       false },
-    { Command_MessageType_SETUP,                Operation::SETUP,    MessageHandler::processSetupRequest,         false },
-    { Command_MessageType_GETLOG,               Operation::GETLOG,   MessageHandler::processGetLogRequest,        false },
-    { Command_MessageType_SECURITY,             Operation::SECURITY, MessageHandler::processSecurityRequest,      false },
-    { Command_MessageType_PEER2PEERPUSH,        Operation::P2POP,    MessageHandler::processP2pPushRequest,       false },
-    { Command_MessageType_NOOP,                 Operation::INVALID,  MessageHandler::processNoopRequest,          false },
-    { Command_MessageType_FLUSHALLDATA,         Operation::INVALID,  MessageHandler::processFlushRequest,         false },
-    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  MessageHandler::processInvalidRequest,       false },
-    { Command_MessageType_PINOP,                Operation::INVALID,  MessageHandler::processPinOpRequest,         false },
-    { Command_MessageType_MEDIASCAN,            Operation::RANGE,    MessageHandler::processInvalidRequest,       false },
-    { Command_MessageType_MEDIAOPTIMIZE,        Operation::RANGE,    MessageHandler::processOptimizeMediaRequest, false },
-    { Command_MessageType_START_BATCH,          Operation::INVALID,  MessageHandler::processStartBatchRequest,    false },
-    { Command_MessageType_END_BATCH,            Operation::INVALID,  MessageHandler::processEndBatchRequest,      false },
-    { Command_MessageType_ABORT_BATCH,          Operation::INVALID,  MessageHandler::processAbortBatchRequest,    false },
+    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  &MessageHandler::processInvalidRequest,       false },
+    { Command_MessageType_GET,                  Operation::READ,     &MessageHandler::processGetRequest,           true  },
+    { Command_MessageType_PUT,                  Operation::WRITE,    &MessageHandler::processPutRequest,           true  },
+    { Command_MessageType_DELETE,               Operation::DELETE,   &MessageHandler::processDeleteRequest,        true  },
+    { Command_MessageType_GETNEXT,              Operation::READ,     &MessageHandler::processGetNextRequest,       false },
+    { Command_MessageType_GETPREVIOUS,          Operation::READ,     &MessageHandler::processGetPreviousRequest,   false },
+    { Command_MessageType_GETKEYRANGE,          Operation::RANGE,    &MessageHandler::processGetKeyRangeRequest,   false },
+    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  &MessageHandler::processInvalidRequest,       false },
+    { Command_MessageType_GETVERSION,           Operation::READ,     &MessageHandler::processGetVersionRequest,    true  },
+    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  &MessageHandler::processInvalidRequest,       false },
+    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  &MessageHandler::processInvalidRequest,       false },
+    { Command_MessageType_SETUP,                Operation::SETUP,    &MessageHandler::processSetupRequest,         false },
+    { Command_MessageType_GETLOG,               Operation::GETLOG,   &MessageHandler::processGetLogRequest,        false },
+    { Command_MessageType_SECURITY,             Operation::SECURITY, &MessageHandler::processSecurityRequest,      false },
+    { Command_MessageType_PEER2PEERPUSH,        Operation::P2POP,    &MessageHandler::processP2pPushRequest,       false },
+    { Command_MessageType_NOOP,                 Operation::INVALID,  &MessageHandler::processNoopRequest,          false },
+    { Command_MessageType_FLUSHALLDATA,         Operation::INVALID,  &MessageHandler::processFlushRequest,         false },
+    { Command_MessageType_INVALID_MESSAGE_TYPE, Operation::INVALID,  &MessageHandler::processInvalidRequest,       false },
+    { Command_MessageType_PINOP,                Operation::INVALID,  &MessageHandler::processPinOpRequest,         false },
+    { Command_MessageType_MEDIASCAN,            Operation::RANGE,    &MessageHandler::processInvalidRequest,       false },
+    { Command_MessageType_MEDIAOPTIMIZE,        Operation::RANGE,    &MessageHandler::processOptimizeMediaRequest, false },
+    { Command_MessageType_START_BATCH,          Operation::INVALID,  &MessageHandler::processStartBatchRequest,    false },
+    { Command_MessageType_END_BATCH,            Operation::INVALID,  &MessageHandler::processEndBatchRequest,      false },
+    { Command_MessageType_ABORT_BATCH,          Operation::INVALID,  &MessageHandler::processAbortBatchRequest,    false },
 };
+
+MessageHandler::MessageHandler(Connection* connection)
+    : m_connection(connection), m_objectStore(connection->communicationsManager()->server()->objectStore()),
+      m_serverSettings(connection->communicationsManager()->server()->settings()),
+      m_messageStatistics(connection->communicationsManager()->server()->messageStatistics()) {
+}
 
 /**
  * Processes the Kinetic request.
@@ -175,7 +181,7 @@ MessageHandler::processRequest(Transaction* transaction) {
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Header missing Identity");
 
         if (requestHeader.messagetype() != Command_MessageType_PINOP)
-            transaction->accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
+            transaction->accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
 
         /*
          * Verify that the cluster version is set and correct (for non-pinauth requests, which
@@ -186,7 +192,7 @@ MessageHandler::processRequest(Transaction* transaction) {
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Header missing Cluster Version");
             }
             // Note: the smoke test expected the "CLUSTER_VERSION_FAILURE" test.
-            else if (requestHeader.clusterversion() != server->settings().clusterVersion()) {
+            else if (requestHeader.clusterversion() != m_serverSettings.clusterVersion()) {
                 throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "CLUSTER_VERSION_FAILURE");
             }
         }
@@ -197,18 +203,18 @@ MessageHandler::processRequest(Transaction* transaction) {
         /*
          * Next, validate the contents of the header.
          */
-        if (transaction->connection->processedFirstRequest()) {
-            if (requestHeader.connectionid() != transaction->connection->connectionId())
+        if (m_connection->processedFirstRequest()) {
+            if (requestHeader.connectionid() != m_connection->connectionId())
                 throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "Incorrect Connection ID");
 
-            if (requestHeader.sequence() <= transaction->connection->previousSequence())
+            if (requestHeader.sequence() <= m_connection->previousSequence())
                 throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "Invalid Sequence Number");
         }
         else {
-            transaction->connection->setProcessedFirstRequest(true);
+            m_connection->setProcessedFirstRequest(true);
         }
 
-        transaction->connection->setPreviousSequence(requestHeader.sequence());
+        m_connection->setPreviousSequence(requestHeader.sequence());
 
         // PIN operations don't require specified access control, they just need to specify the PIN.
 
@@ -226,7 +232,7 @@ MessageHandler::processRequest(Transaction* transaction) {
             /*
              * Access checks
              */
-            if (transaction->accessControl->tlsRequired(operationInfo.operation) && (transaction->connection->security() != Security::SSL))
+            if (transaction->accessControl->tlsRequired(operationInfo.operation) && (m_connection->security() != Security::SSL))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Requires TLS connection for request");
 
             // Note: the smoke test expected the "permission denied" test.
@@ -234,14 +240,14 @@ MessageHandler::processRequest(Transaction* transaction) {
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
         }
 
-        if (server->settings().locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
-                                             && ((transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
-                                                     || (transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
+        if (m_serverSettings.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
+                                           && ((transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
+                                               || (transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
 
             throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED);
         }
 
-        operationInfo.processRequest(transaction);
+        (this->*operationInfo.processRequest)(transaction);
     }
     catch (MessageException& messageException) {
         Command_Status* status = transaction->response->mutable_command()->mutable_status();
@@ -274,7 +280,7 @@ MessageHandler::processRequest(Transaction* transaction) {
     if (transaction->accessControl != nullptr)
         transaction->response->generateHmac(transaction->accessControl->hmacKey(), transaction->accessControl->hmacAlgorithm());
 
-    server->messageStatistics().update(transaction->request, transaction->response);
+    m_messageStatistics.update(transaction->request, transaction->response);
 }
 
 /**
@@ -307,7 +313,7 @@ MessageHandler::processError(Transaction* transaction) {
         }
 
         if ((transaction->request->authtype() == Message_AuthType::Message_AuthType_HMACAUTH) && transaction->request->hmacauth().has_identity())
-            transaction->accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
+            transaction->accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
 
         status->set_code(transaction->errorCode);
         status->set_statusmessage(transaction->errorMessage);
@@ -327,7 +333,7 @@ MessageHandler::processError(Transaction* transaction) {
         transaction->response->generateHmac(transaction->accessControl->hmacKey(), transaction->accessControl->hmacAlgorithm());
     }
 
-    server->messageStatistics().update(transaction->request, transaction->response);
+    m_messageStatistics.update(transaction->request, transaction->response);
 }
 
 /**
@@ -390,8 +396,8 @@ MessageHandler::processSetupRequest(Transaction* transaction) {
             return;
             }
         */
-        server->settings().setClusterVersion(setupRequest.newclusterversion());
-        server->settings().save();
+        m_serverSettings.setClusterVersion(setupRequest.newclusterversion());
+        m_serverSettings.save();
     }
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
@@ -454,13 +460,13 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
          */
         if (security.has_newerasepin() || security.has_olderasepin()) {
 
-            if (!server->settings().erasePin().empty() && (server->settings().erasePin().compare(security.olderasepin()) != 0))
+            if (!m_serverSettings.erasePin().empty() && (m_serverSettings.erasePin().compare(security.olderasepin()) != 0))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old lock pin");
 
             if (security.newerasepin().length() > systemConfig.maxPinSize())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "New PIN exceeds the maximum size");
 
-            server->settings().setErasePin(security.newerasepin());
+            m_serverSettings.setErasePin(security.newerasepin());
         }
 
         /*
@@ -468,13 +474,13 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
          */
         else if (security.has_newlockpin() || security.has_oldlockpin()) {
 
-            if (!server->settings().lockPin().empty() && ((server->settings().lockPin().compare(security.oldlockpin()) != 0)))
+            if (!m_serverSettings.lockPin().empty() && ((m_serverSettings.lockPin().compare(security.oldlockpin()) != 0)))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old erase pin");
 
             if (security.newlockpin().length() > systemConfig.maxPinSize())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "New PIN exceeds the maximum size");
 
-            server->settings().setLockPin(security.newlockpin());
+            m_serverSettings.setLockPin(security.newlockpin());
         }
 
         else if (security.acl_size() > 0) {
@@ -562,13 +568,13 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
                 AccessControlPtr accessControl(new AccessControl(identity, hmacKey, hmacAlgorithm, scopeList));
                 accessControlList.push_back(accessControl);
             }
-            server->settings().updateAccessControl(accessControlList);
+            m_serverSettings.updateAccessControl(accessControlList);
         }
 
         /*
          * Save the new setting and indicate that the operation was performed successfully.
          */
-        server->settings().save();
+        m_serverSettings.save();
         transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
     }
     catch (MessageException& messageException) {
@@ -612,7 +618,7 @@ MessageHandler::processGetLogRequest(Transaction* transaction) {
         getLogResponse->add_types(logType);
         switch (logType) {
             case com::seagate::kinetic::proto::Command_GetLog_Type_STATISTICS:
-                KineticLog::getStatistics(getLogResponse);
+                KineticLog::getStatistics(getLogResponse, m_messageStatistics);
                 break;
             case com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION:
                 KineticLog::getConfiguration(getLogResponse);
@@ -660,7 +666,7 @@ MessageHandler::processPutRequest(Transaction* transaction) {
      */
     if (transaction->request->command()->header().has_batchid()) {
 
-        BatchListPtr batchList = transaction->connection->getBatchList(transaction->request->command()->header().batchid());
+        BatchListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
 
         if (batchList == nullptr)
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
@@ -689,7 +695,7 @@ MessageHandler::processPutRequest(Transaction* transaction) {
      * Perform the put operation.  If an error is encountered, the function will throw and will be
      * caught by the calling function.
      */
-    server->objectStore().putEntry(params, transaction->request->value());
+    m_objectStore.putEntry(params, transaction->request->value());
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -705,9 +711,9 @@ MessageHandler::processGetRequest(Transaction* transaction) {
     const Command_KeyValue& request = transaction->request->command()->body().keyvalue();
 
     if (!request.metadataonly())
-        server->objectStore().getEntry(request.key(), transaction->response->value(), transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        m_objectStore.getEntry(request.key(), transaction->response->value(), transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
     else
-        server->objectStore().getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        m_objectStore.getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -719,8 +725,8 @@ MessageHandler::processGetRequest(Transaction* transaction) {
 void
 MessageHandler::processGetVersionRequest(Transaction* transaction) {
 
-    server->objectStore().getEntryMetadata(transaction->request->command()->body().keyvalue().key(), true,
-                                           transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+    m_objectStore.getEntryMetadata(transaction->request->command()->body().keyvalue().key(), true,
+                                   transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -735,13 +741,13 @@ MessageHandler::processGetNextRequest(Transaction* transaction) {
 
     Command_KeyValue* returnMetadata = transaction->response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    server->objectStore().getNextEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
+    m_objectStore.getNextEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
 
     // why is this check here?
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
+    AccessControlPtr accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
 
     // Note: the conformance test expects the "permission denied text.
     if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
@@ -760,13 +766,13 @@ MessageHandler::processGetPreviousRequest(Transaction* transaction) {
 
     Command_KeyValue* returnMetadata = transaction->response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    server->objectStore().getPreviousEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
+    m_objectStore.getPreviousEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
 
     // why is this check here?
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
+    AccessControlPtr accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
 
     // Note: the conformance test expects the "permission denied text.
     if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
@@ -793,7 +799,7 @@ MessageHandler::processGetKeyRangeRequest(Transaction* transaction) {
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
+    AccessControlPtr accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
 
 #if 0  // THIS IS NOT HOW THE OPERATION WORKS
     if (accessControl != nullptr) {
@@ -809,9 +815,9 @@ MessageHandler::processGetKeyRangeRequest(Transaction* transaction) {
     com::seagate::kinetic::proto::Command_Range* response(transaction->response->mutable_command()->mutable_body()->mutable_range());
 
     if (!params.reverse())
-        server->objectStore().getKeyRange(params, accessControl, response);
+        m_objectStore.getKeyRange(params, accessControl, response);
     else
-        server->objectStore().getKeyRangeReversed(params, accessControl, response);
+        m_objectStore.getKeyRangeReversed(params, accessControl, response);
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -829,7 +835,7 @@ MessageHandler::processDeleteRequest(Transaction* transaction) {
 
     if (transaction->request->command()->header().has_batchid()) {
 
-        BatchListPtr batchList = transaction->connection->getBatchList(transaction->request->command()->header().batchid());
+        BatchListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
 
         if (batchList == nullptr)
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
@@ -839,7 +845,7 @@ MessageHandler::processDeleteRequest(Transaction* transaction) {
         return;
     }
 
-    server->objectStore().deleteEntry(transaction->request->command()->body().keyvalue());
+    m_objectStore.deleteEntry(transaction->request->command()->body().keyvalue());
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -851,7 +857,7 @@ MessageHandler::processDeleteRequest(Transaction* transaction) {
 void
 MessageHandler::processFlushRequest(Transaction* transaction) {
 
-    server->objectStore().flush();
+    m_objectStore.flush();
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -882,35 +888,35 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
         switch (transaction->request->command()->body().pinop().pinoptype()) {
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP:
 
-                if ((!server->settings().lockPin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().lockPin()) != 0))
+                if ((!m_serverSettings.lockPin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                server->settings().setLocked(true);
+                m_serverSettings.setLocked(true);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
 
-                if ((!server->settings().lockPin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().lockPin()) != 0))
+                if ((!m_serverSettings.lockPin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                server->settings().setLocked(false);
+                m_serverSettings.setLocked(false);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP:
-                if ((!server->settings().erasePin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().erasePin()) != 0))
+                if ((!m_serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                server->objectStore().erase();
-                server->settings().setDefaults();
+                m_objectStore.erase();
+                m_serverSettings.setDefaults();
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
 
-                if ((!server->settings().erasePin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().erasePin()) != 0))
+                if ((!m_serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 4");
 
-                server->objectStore().erase();
-                server->settings().setDefaults();
+                m_objectStore.erase();
+                m_serverSettings.setDefaults();
                 break;
 
             default:
@@ -937,7 +943,7 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
 void
 MessageHandler::processOptimizeMediaRequest(Transaction* transaction) {
 
-    server->objectStore().optimizeMedia();
+    m_objectStore.optimizeMedia();
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -986,13 +992,13 @@ MessageHandler::processInvalidRequest(Transaction* transaction) {
 void
 MessageHandler::processStartBatchRequest(Transaction* transaction) {
 
-    if (transaction->connection->communicationsManager()->batchCount() >= systemConfig.maxBatchCountPerDevice())
+    if (m_connection->communicationsManager()->batchCount() >= systemConfig.maxBatchCountPerDevice())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
     if (!transaction->request->command()->header().has_batchid())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Start Batch command missing Batch ID");
 
-    if (!transaction->connection->createBatchList(transaction->request->command()->header().batchid()))
+    if (!m_connection->createBatchList(transaction->request->command()->header().batchid()))
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Batch ID already in use");
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
@@ -1017,7 +1023,7 @@ MessageHandler::processEndBatchRequest(Transaction* transaction) {
      * Handle this differently depending on if it had been aborted (see Kinetic java simulator)
      */
     uint32_t batchId = transaction->request->command()->header().batchid();
-    BatchListPtr batchList = transaction->connection->getBatchList(batchId);
+    BatchListPtr batchList = m_connection->getBatchList(batchId);
 
     if (batchList == nullptr)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
@@ -1033,23 +1039,23 @@ MessageHandler::processEndBatchRequest(Transaction* transaction) {
 
         try {
             if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT)
-                server->objectStore().batchedPutEntry(batch, batchRequest->command()->body().keyvalue(), batchRequest->value());
+                m_objectStore.batchedPutEntry(batch, batchRequest->command()->body().keyvalue(), batchRequest->value());
 
             else if (batchRequest->command()->header().messagetype() == Command_MessageType_DELETE)
-                server->objectStore().batchedDeleteEntry(batch, batchRequest->command()->body().keyvalue());
+                m_objectStore.batchedDeleteEntry(batch, batchRequest->command()->body().keyvalue());
         }
         catch (MessageException& messageException) {
             returnBatchInfo->set_failedsequence(batchRequest->command()->header().sequence());
             Command_Status* status = transaction->response->mutable_command()->mutable_status();
             status->set_code(Command_Status_StatusCode_INVALID_BATCH);
             status->set_statusmessage(messageException.statusMessage());
-            transaction->connection->deleteBatchList(batchId);
+            m_connection->deleteBatchList(batchId);
             return;
         }
     }
 
-    server->objectStore().batchCommit(batch);
-    transaction->connection->deleteBatchList(batchId);
+    m_objectStore.batchCommit(batch);
+    m_connection->deleteBatchList(batchId);
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -1064,7 +1070,7 @@ MessageHandler::processAbortBatchRequest(Transaction* transaction) {
     if (!transaction->request->command()->header().has_batchid())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Abort Batch command missing Batch ID");
 
-    if (!transaction->connection->deleteBatchList(transaction->request->command()->header().batchid()))
+    if (!m_connection->deleteBatchList(transaction->request->command()->header().batchid()))
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);

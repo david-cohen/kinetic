@@ -83,11 +83,12 @@ KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
 /**
  * Builds the response with the requested statistics information.
  *
- * @param   response    Pointer to the get log response to be populated
+ * @param   response            Pointer to the get log response to be populated
+ * @param   messageStatistics   Object containing the message statistics
  */
 void
-KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response) {
-    server->messageStatistics().get(response);
+KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response, MessageStatistics& messageStatistics) {
+    messageStatistics.get(response);
 }
 
 /**

@@ -48,7 +48,4 @@ private:
     DISALLOW_COPY_AND_ASSIGN(Server);
 };
 
-// THIS IS TEMPORARY
-extern Server* server;
-
 #endif

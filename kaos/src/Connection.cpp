@@ -77,6 +77,7 @@ void Connection::run() {
          */
         sendUnsolicitedStatusMessage();
 
+        MessageHandler* messageHandler = new MessageHandler(this);
         for (;;) {
 
             /*
@@ -84,16 +85,16 @@ void Connection::run() {
              * Since not all requests get a response (such as a batched put), check if there is a
              * response before attempting to send one.
              */
-            Transaction* transaction = new Transaction(this);
+            Transaction* transaction = new Transaction();
             receiveRequest(transaction);
 
             if (transaction->errorCode == com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED)
                 break;
 
             if (transaction->errorCode == com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_STATUS_CODE)
-                MessageHandler::processRequest(transaction);
+                messageHandler->processRequest(transaction);
             else
-                MessageHandler::processError(transaction);
+                messageHandler->processError(transaction);
 
             if (transaction->response != nullptr)
                 sendResponse(transaction->response);
@@ -120,7 +121,7 @@ void Connection::run() {
  */
 void Connection::sendUnsolicitedStatusMessage() {
 
-    Transaction transaction(this);
+    Transaction transaction;
     transaction.response.reset(new KineticMessage());
     transaction.response->set_authtype(com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS);
     ::com::seagate::kinetic::proto::Command* command = transaction.response->mutable_command();

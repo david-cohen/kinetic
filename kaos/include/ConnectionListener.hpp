@@ -13,7 +13,6 @@
 #include <thread>
 #include "Common.hpp"
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
 #include "TcpTransport.hpp"
 #include "ListenerInterface.hpp"
 #include "CommunicationsManager.hpp"

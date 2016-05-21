@@ -162,7 +162,7 @@ install-cert:
 
 # Build the required dependencies
 
-ifndef (USE_ENV_DB)
+ifndef USE_ENV_DB
 dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
 else
 dependencies: dependencies-dir boost $(USE_ENV_DB) openssl protobuf googletest lint astyle install-cert
@@ -191,8 +191,6 @@ leveldb:
 	export CC=$(CC) && export CXX=$(CXX) && cd $(LEVELDB_DIR) && \
 	./build_detect_platform config $(LEVELDB_DIR) && make
 
-ifeq ($(USE_ENV_DB),rocksdb)
-
 # Build the rocksDB library	
 
 rocksdb:
@@ -204,8 +202,6 @@ rocksdb:
 	sed -i "s/CXXFLAGS += /CXXFLAGS += -DNDEBUG /g" $(ROCKSDB_DIR)/Makefile
 	export CC=$(CC) && export CXX=$(CXX) && cd $(ROCKSDB_DIR) && \
 	make static_lib
-
-endif
 
 # Build the Open SSL libraries
 

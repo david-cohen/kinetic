@@ -12,38 +12,43 @@
  * laws, and may subject you to criminal prosecution.
  */
 #pragma once
-#ifndef SSL_CONTROL_HPP
-#define SSL_CONTROL_HPP
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
 /*
  * Include Files
  */
 #include <stdint.h>
-#include <openssl/ssl.h>
+#include <string>
+#include "Common.hpp"
+#include "ObjectStore.hpp"
+#include "ServerSettings.hpp"
+#include "MessageStatistics.hpp"
+#include "CommunicationsManager.hpp"
 
-/**
- * Provides SSL connection creation capabilities.
- */
-class SslControl {
+class Server {
+
 public:
-    /*
-     * Constructor/Destructor
-     */
-    SslControl();
-    ~SslControl();
 
-    /*
-     * Public Member Functions
-     */
-    SSL* createConnection(int32_t socketFd);
-    void tearDownConnection(SSL* ssl);
+    Server(std::string pidFileName, bool foreground);
+    ServerSettings& settings() {return m_settings;}
+    ObjectStore& objectStore() {return m_objectStore;}
+    MessageStatistics& messageStatistics() {return m_messageStatistics;}
+    int32_t run();
 
 private:
-    /*
-     * Private Data Members
-     */
-    bool        m_operational;  //!< True if the required libraries, certificate and private key were loaded successfully
-    SSL_CTX*    m_context;      //!< Object needed to establish TLS/SSL enabled connection
+
+    std::string             m_pidFileName;
+    bool                    m_foreground;
+    CommunicationsManager   m_communicationsManager;
+    ServerSettings          m_settings;
+    MessageStatistics       m_messageStatistics;
+    ObjectStore             m_objectStore;
+
+    DISALLOW_COPY_AND_ASSIGN(Server);
 };
+
+// THIS IS TEMPORARY
+extern Server* server;
 
 #endif

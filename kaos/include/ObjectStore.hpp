@@ -28,19 +28,13 @@
 #include "leveldb/write_batch.h"
 #include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
-
-/*
- * Types taken from the Kinetic message.
- */
-typedef com::seagate::kinetic::proto::Command_Synchronization PersistOption;
-typedef com::seagate::kinetic::proto::Command_Algorithm Algorithm;
-typedef leveldb::WriteBatch BatchDescriptor;
+#include "ObjectStoreInterface.hpp"
 
 /**
  * Object database of the Kinetic server.  It provides a Kinetic friendly interface to the levelDB
  * database.
  */
-class ObjectStore {
+class ObjectStore : public ObjectStoreInterface {
 
 public:
 
@@ -69,9 +63,10 @@ public:
     void getEntryMetadata(const std::string& key, bool versionOnly, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
     void getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl, com::seagate::kinetic::proto::Command_Range* returnData);
     void getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl, com::seagate::kinetic::proto::Command_Range* returnData);
-    leveldb::WriteOptions& getWriteOptions(PersistOption option);
 
 private:
+
+    leveldb::WriteOptions& getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option);
 
     /*
      * Private Data Members
@@ -81,7 +76,5 @@ private:
 
     DISALLOW_COPY_AND_ASSIGN(ObjectStore);
 };
-
-extern ObjectStore objectStore;
 
 #endif

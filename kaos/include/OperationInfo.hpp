@@ -18,9 +18,9 @@
 /*
  * Include Files
  */
-#include "Connection.hpp"
-#include "KineticMessage.hpp"
 #include "Kinetic.pb.hpp"
+#include "Transaction.hpp"
+#include "KineticMessage.hpp"
 
 /*
  * Request Handler Function Type.

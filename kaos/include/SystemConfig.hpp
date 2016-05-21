@@ -47,60 +47,60 @@ public:
     /*
      * Public Accessors
      */
-    inline bool locked() { return m_locked;}
+    inline bool locked() const {return m_locked;}
     inline void setLocked(bool locked) {m_locked = locked;}
-    inline bool debugEnabled() { return m_debugEnabled;}
-    inline std::string defaultPidFileName() {return m_defaultPidFileName;}
-    inline std::string databaseDirectory() {return m_databaseDirectory;}
-    inline std::string serverSettingsFile() {return m_serverSettingsFile;}
-    inline const char* vendor() {return m_vendor;}
-    inline const char* model() {return m_model;}
-    inline const char* version() {return m_version;}
-    inline std::string serialNumber() {return m_serialNumber;}
-    inline std::string worldWideName() {return m_worldWideName;}
-    inline const char* protocolVersion() {return m_protocolVersion;}
-    inline const char* compilationDate() {return m_compilationDate;}
-    inline const char* sourceHash() {return m_sourceHash;}
-    inline bool objectStoreCompressionEnabled() {return m_objectStoreCompressionEnabled;}
-    inline uint32_t objectStoreCacheSize() {return m_objectStoreCacheSize;}
-    inline int32_t maxPendingAdminConnections() {return m_maxPendingAdminConnections;}
-    inline uint32_t maxActiveAdminConnections() {return m_maxActiveAdminConnections;}
-    inline uint32_t tcpPort() {return m_tcpPort;}
-    inline uint32_t sslPort() {return m_sslPort;}
-    inline uint32_t multicastPort() {return m_multicastPort;}
-    inline const char* multicastIpAddress() {return m_multicastIpAddress;}
-    inline uint32_t heartbeatSendInterval() {return m_heartbeatSendInterval;}
-    inline uint32_t heartbeatConnectionRetryInterval() {return m_heartbeatConnectionRetryInterval;}
-    inline size_t minKeySize() {return m_minKeySize;}
-    inline size_t maxKeySize() {return m_maxKeySize;}
-    inline size_t maxValueSize() {return m_maxValueSize;}
-    inline size_t maxVersionSize() {return m_maxVersionSize;}
-    inline size_t maxTagSize() {return m_maxTagSize;}
-    inline size_t maxConnections() {return m_maxConnectionse;}
-    inline size_t maxOutstandingReadRequests() {return m_maxOutstandingReadRequests;}
-    inline size_t maxOutstandingWriteRequests() {return m_maxOutstandingWriteRequests;}
-    inline size_t maxMessageSize() {return m_maxMessageSize;}
-    inline size_t maxKeyRangeCount() {return m_maxKeyRangeCount;}
-    inline size_t maxIdentityCount() {return m_maxIdentityCount;}
-    inline size_t maxPinSize() {return m_maxPinSize;}
-    inline size_t maxOperationCountPerBatch() {return m_maxOperationCountPerBatch;}
-    inline size_t maxBatchCountPerDevice() {return m_maxBatchCountPerDevice;}
-    inline size_t maxAlgorithmSize() {return m_maxAlgorithmSize;}
-    inline size_t maxHmacKeySize() {return m_maxHmacKeySize;}
-    inline std::string sslPrivateKeyFile() {return m_sslPrivateKeyFile;}
-    inline std::string sslCertificateFile() {return m_sslCertificateFile;}
-    inline int64_t defaultClusterVersion() {return m_defaultClusterVersion;}
-    inline std::string defaultLockPin() {return m_defaultLockPin;}
-    inline std::string defaultErasePin() {return m_defaultErasePin;}
-    inline bool accessControlDefaultTlsRequired() {return m_accessControlDefaultTlsRequired;}
-    inline int64_t accessControlDefaultIdentity() {return m_accessControlDefaultIdentity;}
-    inline std::string accessControlDefaultHmacKey() {return m_accessControlDefaultHmacKey;}
-    inline HmacAlgorithm accessControlDefaultHmacAlgorithm() {return m_accessControlDefaultHmacAlgorithm;}
-    inline std::string accessScopeDefaultKeySubstring() {return m_accessScopeDefaultKeySubstring;}
-    inline uint32_t accessScopeDefaultKeySubstringOffset() {return m_accessScopeDefaultKeySubstringOffset;}
-    inline const leveldb::Slice& flushDataKey() {return m_flushDataKey;}
-    inline std::set<com::seagate::kinetic::proto::Command_GetLog_Type> defaultLogTypes() {return m_defaultLogTypes;}
-    inline NetworkInterfaceMap networkInterfaceMap() {return m_networkInterfaceMap;}
+    inline bool debugEnabled() const {return m_debugEnabled;}
+    inline std::string defaultPidFileName() const {return m_defaultPidFileName;}
+    inline std::string databaseDirectory() const {return m_databaseDirectory;}
+    inline std::string serverSettingsFile() const {return m_serverSettingsFile;}
+    inline const char* vendor() const {return m_vendor;}
+    inline const char* model() const {return m_model;}
+    inline const char* version() const {return m_version;}
+    inline std::string serialNumber() const {return m_serialNumber;}
+    inline std::string worldWideName() const {return m_worldWideName;}
+    inline const char* protocolVersion() const {return m_protocolVersion;}
+    inline const char* compilationDate() const {return m_compilationDate;}
+    inline const char* sourceHash() const {return m_sourceHash;}
+    inline bool objectStoreCompressionEnabled() const {return m_objectStoreCompressionEnabled;}
+    inline uint32_t objectStoreCacheSize() const {return m_objectStoreCacheSize;}
+    inline int32_t maxPendingAdminConnections() const {return m_maxPendingAdminConnections;}
+    inline uint32_t maxActiveAdminConnections() const {return m_maxActiveAdminConnections;}
+    inline uint32_t tcpPort() const {return m_tcpPort;}
+    inline uint32_t sslPort() const {return m_sslPort;}
+    inline uint32_t multicastPort() const {return m_multicastPort;}
+    inline const char* multicastIpAddress() const {return m_multicastIpAddress;}
+    inline uint32_t heartbeatSendInterval() const {return m_heartbeatSendInterval;}
+    inline uint32_t heartbeatConnectionRetryInterval() const {return m_heartbeatConnectionRetryInterval;}
+    inline size_t minKeySize() const {return m_minKeySize;}
+    inline size_t maxKeySize() const {return m_maxKeySize;}
+    inline size_t maxValueSize() const {return m_maxValueSize;}
+    inline size_t maxVersionSize() const {return m_maxVersionSize;}
+    inline size_t maxTagSize() const {return m_maxTagSize;}
+    inline size_t maxConnections() const {return m_maxConnectionse;}
+    inline size_t maxOutstandingReadRequests() const {return m_maxOutstandingReadRequests;}
+    inline size_t maxOutstandingWriteRequests() const {return m_maxOutstandingWriteRequests;}
+    inline size_t maxMessageSize() const {return m_maxMessageSize;}
+    inline size_t maxKeyRangeCount() const {return m_maxKeyRangeCount;}
+    inline size_t maxIdentityCount() const {return m_maxIdentityCount;}
+    inline size_t maxPinSize() const {return m_maxPinSize;}
+    inline size_t maxOperationCountPerBatch() const {return m_maxOperationCountPerBatch;}
+    inline size_t maxBatchCountPerDevice() const {return m_maxBatchCountPerDevice;}
+    inline size_t maxAlgorithmSize() const {return m_maxAlgorithmSize;}
+    inline size_t maxHmacKeySize() const {return m_maxHmacKeySize;}
+    inline std::string sslPrivateKeyFile() const {return m_sslPrivateKeyFile;}
+    inline std::string sslCertificateFile() const {return m_sslCertificateFile;}
+    inline int64_t defaultClusterVersion() const {return m_defaultClusterVersion;}
+    inline std::string defaultLockPin() const {return m_defaultLockPin;}
+    inline std::string defaultErasePin() const {return m_defaultErasePin;}
+    inline bool accessControlDefaultTlsRequired() const {return m_accessControlDefaultTlsRequired;}
+    inline int64_t accessControlDefaultIdentity() const {return m_accessControlDefaultIdentity;}
+    inline std::string accessControlDefaultHmacKey() const {return m_accessControlDefaultHmacKey;}
+    inline HmacAlgorithm accessControlDefaultHmacAlgorithm() const {return m_accessControlDefaultHmacAlgorithm;}
+    inline std::string accessScopeDefaultKeySubstring() const {return m_accessScopeDefaultKeySubstring;}
+    inline uint32_t accessScopeDefaultKeySubstringOffset() const {return m_accessScopeDefaultKeySubstringOffset;}
+    inline const leveldb::Slice& flushDataKey() const {return m_flushDataKey;}
+    inline std::set<com::seagate::kinetic::proto::Command_GetLog_Type> defaultLogTypes() const {return m_defaultLogTypes;}
+    inline NetworkInterfaceMap networkInterfaceMap() const {return m_networkInterfaceMap;}
 
 private:
 

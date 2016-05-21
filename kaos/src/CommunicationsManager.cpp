@@ -16,7 +16,9 @@
  * Include Files
  */
 #include <mutex>
+#include "Server.hpp"
 #include "SslStream.hpp"
+#include "Connection.hpp"
 #include "SystemConfig.hpp"
 #include "ClearTextStream.hpp"
 #include "ConnectionListener.hpp"
@@ -27,10 +29,11 @@
  * Currently, there are only two - one for encrypted communication on the SSL port and one for clear
  * text communications on the TCP port.
 */
-CommunicationsManager::CommunicationsManager() {
+CommunicationsManager::CommunicationsManager(Server* server)
+    : m_server(server), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
 
-    ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(systemConfig.sslPort()));
-    ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(systemConfig.tcpPort()));
+    ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(this, systemConfig.sslPort()));
+    ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(this, systemConfig.tcpPort()));
     m_listenerList.push_back(sslListener);
     m_listenerList.push_back(clearTextListener);
 }

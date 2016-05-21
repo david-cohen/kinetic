@@ -34,6 +34,22 @@
 /*
  * Initializes the Server Settings object.
  */
+ServerSettings::ServerSettings()
+    : m_filename(systemConfig.serverSettingsFile()) {
+
+    /*
+     * If possible, load the setting from persistent store.  Otherwise, set them to their default
+     * values.
+     */
+    if (!load())
+        setDefaults();
+}
+
+/*
+ * Initializes the Server Settings object. 
+ *  
+ * @param   filename    Name of the file used to maintain the server settings 
+ */
 ServerSettings::ServerSettings(std::string filename)
     : m_filename(filename) {
 

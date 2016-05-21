@@ -23,7 +23,6 @@
 #include "Hmac.hpp"
 #include "Common.hpp"
 #include "Kinetic.pb.hpp"
-#include "ObjectStore.hpp"
 #include "AccessScope.hpp"
 #include "Settings.pb.hpp"
 

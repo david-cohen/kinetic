@@ -73,11 +73,14 @@ SslControl::SslControl()
  */
 SslControl::~SslControl() {
 
-    if (m_context != nullptr)
-        SSL_CTX_free(m_context);
+    if (m_operational) {
+        if (m_context != nullptr)
+            SSL_CTX_free(m_context);
 
-    EVP_cleanup();
-    ERR_free_strings();
+        EVP_cleanup();
+        ERR_free_strings();
+        m_operational = false;
+    }
 }
 
 /**
@@ -90,6 +93,11 @@ SslControl::~SslControl() {
  * @throws  A runtime error if a connection could not be created
  */
 SSL* SslControl::createConnection(int socketFd) {
+
+    if (!m_operational) {
+        LOG(ERROR) << "Failed to create SSL connection due to non-operational SSL control";
+        throw std::runtime_error("Failed to create SSL connection due to non-operational SSL control");
+    }
 
     SSL* ssl = SSL_new(m_context);
 

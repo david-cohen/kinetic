@@ -19,6 +19,7 @@
  * Include Files
  */
 #include <string>
+#include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
 
@@ -27,15 +28,6 @@
  */
 class Connection;
 
-/*
- * Connection Error
- */
-enum class ConnectionError {
-    NONE          = 0,
-    VALUE_TOO_BIG = 1,
-    IO_ERROR      = 2,
-};
-
 /**
  * Describes a Kinetic transaction (in a passive data structure), which includes of the request
  * message, the optional response message, and other context information such as the connection and
@@ -43,14 +35,15 @@ enum class ConnectionError {
  */
 struct Transaction {
     explicit Transaction(Connection* transactionConnection)
-        : connection(transactionConnection), request(new KineticMessage()), response(new KineticMessage()), error(ConnectionError::NONE) {}
+        : connection(transactionConnection), request(new KineticMessage()), response(new KineticMessage()), accessControl(),
+          errorCode(com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_STATUS_CODE), errorMessage() {}
 
-    Connection* const   connection;     //!< Connection used for the transaction
-    KineticMessagePtr   request;        //!< Request message
-    KineticMessagePtr   response;       //!< Response message (may not be used)
-    ConnectionError     error;          //!< Connection related error
-    std::string         errorMessage;   //!< Text description of error
-    AccessControlPtr    accessControl;  //!< Access allowed for transaction
+    Connection* const                                       connection;     //!< Connection used for the transaction
+    KineticMessagePtr                                       request;        //!< Request message
+    KineticMessagePtr                                       response;       //!< Response message (may not be used)
+    AccessControlPtr                                        accessControl;  //!< Access allowed for transaction
+    com::seagate::kinetic::proto::Command_Status_StatusCode errorCode;      //!< Error code of encountered error (if any)
+    std::string                                             errorMessage;   //!< Text description of error (if any)
 };
 
 #endif

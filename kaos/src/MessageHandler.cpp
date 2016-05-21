@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <unordered_set>
 #include <unordered_map>
+#include "Server.hpp"
 #include "Logger.hpp"
 #include "Connection.hpp"
 #include "Translator.hpp"
@@ -34,7 +35,6 @@
 #include "SystemConfig.hpp"
 #include "AccessControl.hpp"
 #include "OperationInfo.hpp"
-#include "ServerSettings.hpp"
 #include "KineticMessage.hpp"
 #include "MessageHandler.hpp"
 #include "MessageException.hpp"
@@ -175,7 +175,7 @@ MessageHandler::processRequest(Transaction* transaction) {
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Header missing Identity");
 
         if (requestHeader.messagetype() != Command_MessageType_PINOP)
-            transaction->accessControl = serverSettings.accessControl(transaction->request->hmacauth().identity());
+            transaction->accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
 
         /*
          * Verify that the cluster version is set and correct (for non-pinauth requests, which
@@ -186,7 +186,7 @@ MessageHandler::processRequest(Transaction* transaction) {
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Header missing Cluster Version");
             }
             // Note: the smoke test expected the "CLUSTER_VERSION_FAILURE" test.
-            else if (requestHeader.clusterversion() != serverSettings.clusterVersion()) {
+            else if (requestHeader.clusterversion() != server->settings().clusterVersion()) {
                 throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "CLUSTER_VERSION_FAILURE");
             }
         }
@@ -274,7 +274,7 @@ MessageHandler::processRequest(Transaction* transaction) {
     if (transaction->accessControl != nullptr)
         transaction->response->generateHmac(transaction->accessControl->hmacKey(), transaction->accessControl->hmacAlgorithm());
 
-    messageStatistics.update(transaction->request, transaction->response);
+    server->messageStatistics().update(transaction->request, transaction->response);
 }
 
 /**
@@ -307,16 +307,10 @@ MessageHandler::processError(Transaction* transaction) {
         }
 
         if ((transaction->request->authtype() == Message_AuthType::Message_AuthType_HMACAUTH) && transaction->request->hmacauth().has_identity())
-            transaction->accessControl = serverSettings.accessControl(transaction->request->hmacauth().identity());
+            transaction->accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
 
-        if (transaction->error == ConnectionError::VALUE_TOO_BIG) {
-            status->set_code(Command_Status_StatusCode_INVALID_REQUEST);
-            status->set_statusmessage(transaction->errorMessage);
-        }
-        else {
-            status->set_code(Command_Status_StatusCode_INTERNAL_ERROR);
-            status->set_statusmessage("Unknown connection error");
-        }
+        status->set_code(transaction->errorCode);
+        status->set_statusmessage(transaction->errorMessage);
     }
     catch (MessageException& messageException) {
         Command_Status* status = transaction->response->mutable_command()->mutable_status();
@@ -333,7 +327,7 @@ MessageHandler::processError(Transaction* transaction) {
         transaction->response->generateHmac(transaction->accessControl->hmacKey(), transaction->accessControl->hmacAlgorithm());
     }
 
-    messageStatistics.update(transaction->request, transaction->response);
+    server->messageStatistics().update(transaction->request, transaction->response);
 }
 
 /**
@@ -396,8 +390,8 @@ MessageHandler::processSetupRequest(Transaction* transaction) {
             return;
             }
         */
-        serverSettings.setClusterVersion(setupRequest.newclusterversion());
-        serverSettings.save();
+        server->settings().setClusterVersion(setupRequest.newclusterversion());
+        server->settings().save();
     }
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
@@ -460,13 +454,13 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
          */
         if (security.has_newerasepin() || security.has_olderasepin()) {
 
-            if (!serverSettings.erasePin().empty() && (serverSettings.erasePin().compare(security.olderasepin()) != 0))
+            if (!server->settings().erasePin().empty() && (server->settings().erasePin().compare(security.olderasepin()) != 0))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old lock pin");
 
             if (security.newerasepin().length() > systemConfig.maxPinSize())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "New PIN exceeds the maximum size");
 
-            serverSettings.setErasePin(security.newerasepin());
+            server->settings().setErasePin(security.newerasepin());
         }
 
         /*
@@ -474,13 +468,13 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
          */
         else if (security.has_newlockpin() || security.has_oldlockpin()) {
 
-            if (!serverSettings.lockPin().empty() && ((serverSettings.lockPin().compare(security.oldlockpin()) != 0)))
+            if (!server->settings().lockPin().empty() && ((server->settings().lockPin().compare(security.oldlockpin()) != 0)))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old erase pin");
 
             if (security.newlockpin().length() > systemConfig.maxPinSize())
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "New PIN exceeds the maximum size");
 
-            serverSettings.setLockPin(security.newlockpin());
+            server->settings().setLockPin(security.newlockpin());
         }
 
         else if (security.acl_size() > 0) {
@@ -568,13 +562,13 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
                 AccessControlPtr accessControl(new AccessControl(identity, hmacKey, hmacAlgorithm, scopeList));
                 accessControlList.push_back(accessControl);
             }
-            serverSettings.updateAccessControl(accessControlList);
+            server->settings().updateAccessControl(accessControlList);
         }
 
         /*
          * Save the new setting and indicate that the operation was performed successfully.
          */
-        serverSettings.save();
+        server->settings().save();
         transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
     }
     catch (MessageException& messageException) {
@@ -695,7 +689,7 @@ MessageHandler::processPutRequest(Transaction* transaction) {
      * Perform the put operation.  If an error is encountered, the function will throw and will be
      * caught by the calling function.
      */
-    objectStore.putEntry(params, transaction->request->value());
+    server->objectStore().putEntry(params, transaction->request->value());
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -711,9 +705,9 @@ MessageHandler::processGetRequest(Transaction* transaction) {
     const Command_KeyValue& request = transaction->request->command()->body().keyvalue();
 
     if (!request.metadataonly())
-        objectStore.getEntry(request.key(), transaction->response->value(), transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        server->objectStore().getEntry(request.key(), transaction->response->value(), transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
     else
-        objectStore.getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        server->objectStore().getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -725,8 +719,8 @@ MessageHandler::processGetRequest(Transaction* transaction) {
 void
 MessageHandler::processGetVersionRequest(Transaction* transaction) {
 
-    objectStore.getEntryMetadata(transaction->request->command()->body().keyvalue().key(), true,
-                                 transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+    server->objectStore().getEntryMetadata(transaction->request->command()->body().keyvalue().key(), true,
+                                           transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -741,13 +735,13 @@ MessageHandler::processGetNextRequest(Transaction* transaction) {
 
     Command_KeyValue* returnMetadata = transaction->response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    objectStore.getNextEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
+    server->objectStore().getNextEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
 
     // why is this check here?
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = serverSettings.accessControl(transaction->request->hmacauth().identity());
+    AccessControlPtr accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
 
     // Note: the conformance test expects the "permission denied text.
     if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
@@ -766,13 +760,13 @@ MessageHandler::processGetPreviousRequest(Transaction* transaction) {
 
     Command_KeyValue* returnMetadata = transaction->response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    objectStore.getPreviousEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
+    server->objectStore().getPreviousEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
 
     // why is this check here?
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = serverSettings.accessControl(transaction->request->hmacauth().identity());
+    AccessControlPtr accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
 
     // Note: the conformance test expects the "permission denied text.
     if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
@@ -799,7 +793,7 @@ MessageHandler::processGetKeyRangeRequest(Transaction* transaction) {
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = serverSettings.accessControl(transaction->request->hmacauth().identity());
+    AccessControlPtr accessControl = server->settings().accessControl(transaction->request->hmacauth().identity());
 
 #if 0  // THIS IS NOT HOW THE OPERATION WORKS
     if (accessControl != nullptr) {
@@ -815,9 +809,9 @@ MessageHandler::processGetKeyRangeRequest(Transaction* transaction) {
     com::seagate::kinetic::proto::Command_Range* response(transaction->response->mutable_command()->mutable_body()->mutable_range());
 
     if (!params.reverse())
-        objectStore.getKeyRange(params, accessControl, response);
+        server->objectStore().getKeyRange(params, accessControl, response);
     else
-        objectStore.getKeyRangeReversed(params, accessControl, response);
+        server->objectStore().getKeyRangeReversed(params, accessControl, response);
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -845,7 +839,7 @@ MessageHandler::processDeleteRequest(Transaction* transaction) {
         return;
     }
 
-    objectStore.deleteEntry(transaction->request->command()->body().keyvalue());
+    server->objectStore().deleteEntry(transaction->request->command()->body().keyvalue());
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -857,7 +851,7 @@ MessageHandler::processDeleteRequest(Transaction* transaction) {
 void
 MessageHandler::processFlushRequest(Transaction* transaction) {
 
-    objectStore.flush();
+    server->objectStore().flush();
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -888,7 +882,7 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
         switch (transaction->request->command()->body().pinop().pinoptype()) {
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP:
 
-                if ((!serverSettings.lockPin().empty()) && (transaction->request->pinauth().pin().compare(serverSettings.lockPin()) != 0))
+                if ((!server->settings().lockPin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
                 systemConfig.setLocked(true);
@@ -896,27 +890,27 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
 
-                if ((!serverSettings.lockPin().empty()) && (transaction->request->pinauth().pin().compare(serverSettings.lockPin()) != 0))
+                if ((!server->settings().lockPin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
                 systemConfig.setLocked(false);
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP:
-                if ((!serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(serverSettings.erasePin()) != 0))
+                if ((!server->settings().erasePin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                objectStore.erase();
-                serverSettings.setDefaults();
+                server->objectStore().erase();
+                server->settings().setDefaults();
                 break;
 
             case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
 
-                if ((!serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(serverSettings.erasePin()) != 0))
+                if ((!server->settings().erasePin().empty()) && (transaction->request->pinauth().pin().compare(server->settings().erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 4");
 
-                objectStore.erase();
-                serverSettings.setDefaults();
+                server->objectStore().erase();
+                server->settings().setDefaults();
                 break;
 
             default:
@@ -943,7 +937,7 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
 void
 MessageHandler::processOptimizeMediaRequest(Transaction* transaction) {
 
-    objectStore.optimizeMedia();
+    server->objectStore().optimizeMedia();
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -992,7 +986,7 @@ MessageHandler::processInvalidRequest(Transaction* transaction) {
 void
 MessageHandler::processStartBatchRequest(Transaction* transaction) {
 
-    if (communicationsManager.batchCount() >= systemConfig.maxBatchCountPerDevice())
+    if (transaction->connection->communicationsManager()->batchCount() >= systemConfig.maxBatchCountPerDevice())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
     if (!transaction->request->command()->header().has_batchid())
@@ -1039,10 +1033,10 @@ MessageHandler::processEndBatchRequest(Transaction* transaction) {
 
         try {
             if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT)
-                objectStore.batchedPutEntry(batch, batchRequest->command()->body().keyvalue(), batchRequest->value());
+                server->objectStore().batchedPutEntry(batch, batchRequest->command()->body().keyvalue(), batchRequest->value());
 
             else if (batchRequest->command()->header().messagetype() == Command_MessageType_DELETE)
-                objectStore.batchedDeleteEntry(batch, batchRequest->command()->body().keyvalue());
+                server->objectStore().batchedDeleteEntry(batch, batchRequest->command()->body().keyvalue());
         }
         catch (MessageException& messageException) {
             returnBatchInfo->set_failedsequence(batchRequest->command()->header().sequence());
@@ -1054,7 +1048,7 @@ MessageHandler::processEndBatchRequest(Transaction* transaction) {
         }
     }
 
-    objectStore.batchCommit(batch);
+    server->objectStore().batchCommit(batch);
     transaction->connection->deleteBatchList(batchId);
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }

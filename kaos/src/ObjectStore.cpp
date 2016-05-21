@@ -68,6 +68,9 @@ ObjectStore::~ObjectStore() {
  */
 bool ObjectStore::open() {
 
+    syncWriteOptions.sync = true;
+    asyncWriteOptions.sync = false;
+
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     defaultReadOptions.verify_checksums = false;
@@ -226,7 +229,7 @@ void ObjectStore::putEntry(const Command_KeyValue& params, const string& value) 
     if (!status.ok())
         throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
 
-    if (params.synchronization() == PersistOption::Command_Synchronization_FLUSH)
+    if (params.synchronization() == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
         sync();
 }
 
@@ -336,7 +339,7 @@ void ObjectStore::deleteEntry(const Command_KeyValue& params) {
     if (!status.ok())
         throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
 
-    if (params.synchronization() == PersistOption::Command_Synchronization_FLUSH)
+    if (params.synchronization() == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
         sync();
 }
 
@@ -737,8 +740,8 @@ void ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Comman
 /**
  * Converts the Kinetic persistence option into a level DB write option.
  */
-inline leveldb::WriteOptions& ObjectStore::getWriteOptions(PersistOption option) {
-    return option == PersistOption::Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
+inline leveldb::WriteOptions& ObjectStore::getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option) {
+    return option == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
 }
 
 

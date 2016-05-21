@@ -34,7 +34,8 @@ public:
     /*
      * Constructor
      */
-    explicit ServerSettings(std::string filename);
+    ServerSettings();
+    ServerSettings(std::string filename);
 
     /*
      * Public Member Functions
@@ -73,7 +74,5 @@ private:
 
     DISALLOW_COPY_AND_ASSIGN(ServerSettings);
 };
-
-extern ServerSettings serverSettings;
 
 #endif

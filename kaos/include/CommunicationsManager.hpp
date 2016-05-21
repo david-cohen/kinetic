@@ -20,13 +20,19 @@
  */
 #include <stdint.h>
 #include <list>
+#include <mutex>
 #include "Common.hpp"
-#include "Connection.hpp"
 #include "ListenerInterface.hpp"
 #include "HeartbeatProvider.hpp"
 
+/*
+ * Incomplete Class Definitions
+ */
+class Server;
+class Connection;
+
 /**
- * Manages the daemon's communications with clients.
+ * Manages the server's communications with clients.
  */
 class CommunicationsManager {
 
@@ -35,7 +41,8 @@ public:
     /*
      * Constructor
      */
-    CommunicationsManager();
+    explicit CommunicationsManager(Server* server);
+    Server* server() {return m_server;}
 
     /*
      * Public Member Functions
@@ -51,14 +58,13 @@ private:
     /*
      * Private Data Members
      */
-    std::mutex                      m_mutex;                //!< Mutex to make class thread safe
+    Server*                         m_server;               //!< Server that the manager belong to
     std::list<Connection*>          m_connectionList;       //!< List of active connections
     std::list<ListenerInterfacePtr> m_listenerList;         //!< List of active listeners
     HeartbeatProvider               m_heartbeatProvider;    //!< Provider of heartbeat messages
+    std::mutex                      m_mutex;                //!< Mutex to make class thread safe
 
     DISALLOW_COPY_AND_ASSIGN(CommunicationsManager);
 };
-
-extern CommunicationsManager communicationsManager;
 
 #endif

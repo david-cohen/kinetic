@@ -21,7 +21,6 @@
 #include "Common.hpp"
 #include "Translator.hpp"
 #include "Kinetic.pb.hpp"
-#include "ObjectStore.hpp"
 #include "Settings.pb.hpp"
 #include "AccessScope.hpp"
 
@@ -170,20 +169,20 @@ std::string Translator::toString(bool boolValue) {
  *
  * @return the algorithm in string form
  */
-std::string Translator::toString(Algorithm algorithm) {
+std::string Translator::toString(com::seagate::kinetic::proto::Command_Algorithm algorithm) {
 
     switch (algorithm) {
-        case Algorithm::Command_Algorithm_INVALID_ALGORITHM:
+        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_INVALID_ALGORITHM:
             return "Invalid";
-        case Algorithm::Command_Algorithm_SHA1:
+        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_SHA1:
             return "SHA1";
-        case Algorithm::Command_Algorithm_SHA2:
+        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_SHA2:
             return "SHA2";
-        case Algorithm::Command_Algorithm_SHA3:
+        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_SHA3:
             return "SHA3";
-        case Algorithm::Command_Algorithm_CRC32:
+        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_CRC32:
             return "CRC32";
-        case Algorithm::Command_Algorithm_CRC64:
+        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_CRC64:
             return "CRC64";
         default:
             return "Unsupported Algorithm (" + ::toString<uint32_t>(algorithm) + ")";

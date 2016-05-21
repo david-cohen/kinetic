@@ -22,12 +22,13 @@
 #include <iostream>
 #include <exception>
 #include "Logger.hpp"
+#include "Server.hpp"
 #include "KineticLog.hpp"
 #include "Connection.hpp"
+#include "Transaction.hpp"
 #include "MessageTrace.hpp"
 #include "SystemConfig.hpp"
 #include "KineticMessage.hpp"
-#include "ServerSettings.hpp"
 #include "MessageHandler.hpp"
 #include "CommunicationsManager.hpp"
 
@@ -39,21 +40,17 @@ static std::atomic<int64_t> nextConnectionId(1);
 /**
  * Initializes the Connection object.
  *
+ * @param   communicationsManager       Manager of the connection
  * @param   stream                      Data stream to be used for this connection
- * @param   clientServerConnectionInfo  Information about the client and server in the connection
+ * @param   lientServerConnectionInfo   Information about the client and server in the connection
  */
-Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
-    : m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()),
-      m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
-      m_clientPort(clientServerConnectionInfo.clientPort()),
-      m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()),
-      m_receiveThread(new std::thread(&Connection::receiveHandler, this)),
-      m_transmitThread(new std::thread(&Connection::transmitHandler, this)),
-      m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false),
-      m_terminated(false), m_receiverOperational(true), m_transmitterOperational(true) {
+Connection::Connection(CommunicationsManager* communicationsManager, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
+    : m_communicationsManager(communicationsManager), m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()),
+      m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()), m_clientPort(clientServerConnectionInfo.clientPort()),
+      m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()), m_thread(new std::thread(&Connection::run, this)),
+      m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
 
-    m_receiveThread->detach();
-    m_transmitThread->detach();
+    m_thread->detach();
 }
 
 /*
@@ -61,15 +58,14 @@ Connection::Connection(StreamInterface* stream, ClientServerConnectionInfo clien
  */
 Connection::~Connection() {
     delete m_stream;
-    delete m_receiveThread;
-    delete m_transmitThread;
+    delete m_thread;
 }
 
 /**
  * Performs the work of the Connection handler (with a dedicated thread).  It blocks waiting to
  * receive a message, and when it does, it calls a message handler to process it.
  */
-void Connection::receiveHandler() {
+void Connection::run() {
 
     try {
         LOG(INFO) << "Connection opened, server=" << m_serverIpAddress << ":" << m_serverPort
@@ -81,7 +77,7 @@ void Connection::receiveHandler() {
          */
         sendUnsolicitedStatusMessage();
 
-        while (!m_terminated) {
+        for (;;) {
 
             /*
              * Block waiting for a request.  When received, have the message handler process it.
@@ -91,40 +87,18 @@ void Connection::receiveHandler() {
             Transaction* transaction = new Transaction(this);
             receiveRequest(transaction);
 
-            if (transaction->error == ConnectionError::NONE)
+            if (transaction->errorCode == com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED)
+                break;
+
+            if (transaction->errorCode == com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_STATUS_CODE)
                 MessageHandler::processRequest(transaction);
-            else if (transaction->error != ConnectionError::IO_ERROR)
-                MessageHandler::processError(transaction);
             else
-                break;
-
-            m_transactionQueue.send(transaction);
-        }
-    }
-    catch (std::exception& ex) {
-        LOG(ERROR) << "Exception encounter: " << ex.what();
-    }
-    catch (...) {
-        LOG(ERROR) << "Unexpected exception encounter";
-    }
-
-    tearDownHandler(m_receiverOperational);
-}
-
-/**
- * Sends responses to completed Kinetic requests.
- */
-void Connection::transmitHandler() {
-
-    try {
-        while (!m_terminated) {
-            std::shared_ptr<Transaction> transaction(m_transactionQueue.receive());
-
-            if (m_terminated)
-                break;
+                MessageHandler::processError(transaction);
 
             if (transaction->response != nullptr)
                 sendResponse(transaction->response);
+
+            delete transaction;
         }
     }
     catch (std::exception& ex) {
@@ -134,44 +108,10 @@ void Connection::transmitHandler() {
         LOG(ERROR) << "Unexpected exception encounter";
     }
 
-    tearDownHandler(m_transmitterOperational);
-}
+    LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
+              << ", client=" << m_clientIpAddress << ":" << m_clientPort;
 
-/**
- * Performs the cleanup of a connection thread.
- *
- * @param operationalIndicator  Operations indicator of the thread being torn down
- */
-void Connection::tearDownHandler(bool& operationalIndicator) {
-
-    /*
-     * Mark the connection as terminated and the operational indicator for the handler to false.  If
-     * the receiver is still operational, send it a message so that it wakes up and terminates.
-     */
-    m_terminated = true;
-    std::unique_lock<std::mutex> m_scopedLock(m_mutex);
-    operationalIndicator = false;
-
-    if (m_transmitterOperational)
-        m_transactionQueue.send(new Transaction(this));
-
-    /*
-     * Since both handlers call this function.  When the second handler calls and both are no longer
-     * operational, free any resources still in the transaction queue, log an event that the
-     * connection is closed, and remove it from the connection manager's connection list.
-     */
-    if (!m_receiverOperational && !m_transmitterOperational) {
-
-        while (!m_transactionQueue.empty()) {
-            Transaction* transaction = m_transactionQueue.receive();
-            delete transaction;
-        }
-
-        LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
-                  << ", client=" << m_clientIpAddress << ":" << m_clientPort;
-
-        communicationsManager.removeConnection(this);
-    }
+    m_communicationsManager->removeConnection(this);
 }
 
 /**
@@ -180,24 +120,21 @@ void Connection::tearDownHandler(bool& operationalIndicator) {
  */
 void Connection::sendUnsolicitedStatusMessage() {
 
-    KineticMessagePtr response(new KineticMessage());
-
-    response->set_authtype(com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS);
-    ::com::seagate::kinetic::proto::Command* command = response->mutable_command();
+    Transaction transaction(this);
+    transaction.response.reset(new KineticMessage());
+    transaction.response->set_authtype(com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS);
+    ::com::seagate::kinetic::proto::Command* command = transaction.response->mutable_command();
     ::com::seagate::kinetic::proto::Command_Header* header = command->mutable_header();
     header->set_connectionid(m_connectionId);
-    header->set_clusterversion(serverSettings.clusterVersion());
+    header->set_clusterversion(m_communicationsManager->server()->settings().clusterVersion());
     ::com::seagate::kinetic::proto::Command_GetLog* getLogResponse = command->mutable_body()->mutable_getlog();
     getLogResponse->add_types(::com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION);
     KineticLog::getConfiguration(getLogResponse);
     getLogResponse->add_types(::com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS);
     KineticLog::getLimits(getLogResponse);
     command->mutable_status()->set_code(::com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS);
-    response->build_commandbytes();
-
-    Transaction* transaction = new Transaction(this);
-    transaction->response = response;
-    m_transactionQueue.send(transaction);
+    transaction.response->build_commandbytes();
+    sendResponse(transaction.response);
 }
 
 /**
@@ -270,7 +207,7 @@ void Connection::receiveRequest(Transaction* transaction) {
             if (systemConfig.debugEnabled())
                 MessageTrace::outputContents(messageFraming, transaction->request.get());
 
-            transaction->error = ConnectionError::VALUE_TOO_BIG;
+            transaction->errorCode = com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
             std::stringstream errorStream;
             errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
             transaction->errorMessage = errorStream.str();
@@ -289,14 +226,14 @@ void Connection::receiveRequest(Transaction* transaction) {
         if (systemConfig.debugEnabled())
             MessageTrace::outputContents(messageFraming, transaction->request.get());
 
-        transaction->error = ConnectionError::NONE;
         return;
     }
     catch (std::exception& ex) {
+        transaction->errorMessage = ex.what();
         if (std::string(ex.what()) != "Socket closed")
             LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
     }
-    transaction->error = ConnectionError::IO_ERROR;
+    transaction->errorCode = com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED;
 }
 
 /**
@@ -326,7 +263,7 @@ bool Connection::sendResponse(KineticMessagePtr response) {
             MessageTrace::outputContents(messageFraming, response.get());
     }
     catch (std::exception& ex) {
-        if (std::string(ex.what()) != "socket closed")
+        if (std::string(ex.what()) != "Socket closed")
             LOG(ERROR) << "Connection::sendResponse exception: " << ex.what();
         return false;
     }

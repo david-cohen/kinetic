@@ -125,6 +125,4 @@ private:
     StatsMap    m_statsTable;   //!< Statistics for all message types
 };
 
-extern MessageStatistics messageStatistics;
-
 #endif

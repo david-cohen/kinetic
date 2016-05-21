@@ -11,7 +11,6 @@
  * without the express written consent of WD is strictly prohibited, is a violation of the copyright
  * laws, and may subject you to criminal prosecution.
  */
-
 #pragma once
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
@@ -28,11 +27,15 @@
 #include <memory>
 #include <atomic>
 #include "Common.hpp"
-#include "Transaction.hpp"
-#include "MessageQueue.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
+#include "CommunicationsManager.hpp"
 #include "ClientServerConnectionInfo.hpp"
+
+/*
+ * Incomplete Class Definition (to avoid circular dependencies)
+ */
+class Transaction;
 
 /*
  * Batch List Pointer and Map.
@@ -49,7 +52,7 @@ public:
     /*
      * Constructor/Destructor
      */
-    Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
+    Connection(CommunicationsManager* communicationsManager, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
     ~Connection();
 
     /*
@@ -60,6 +63,7 @@ public:
     /*
      * Public Accessors
      */
+    inline CommunicationsManager* communicationsManager() {return m_communicationsManager;}
     inline int64_t connectionId() {return m_connectionId;}
     inline int64_t previousSequence() {return m_previousSequence;}
     inline bool processedFirstRequest() {return m_processedFirstRequest;}
@@ -101,30 +105,24 @@ private:
      */
     void receiveRequest(Transaction* transaction);
     void sendUnsolicitedStatusMessage();
-    void receiveHandler();
-    void transmitHandler();
-    void tearDownHandler(bool& operationalIndicator);
+    void run();
 
     /*
      * Private Data Member
      */
+    CommunicationsManager*      m_communicationsManager;    //!< Manager of the connection
     Security                    m_security;                 //!< Connection's security (SSL or None)
     StreamInterface* const      m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
     const uint32_t              m_serverPort;               //!< Server's TCP port number
     const std::string           m_serverIpAddress;          //!< Server's IP address
     const uint32_t              m_clientPort;               //!< Client's TCP port number
     const std::string           m_clientIpAddress;          //!< Client's IP address
-    std::thread* const          m_receiveThread;            //!< Thread that receives request messages
-    std::thread* const          m_transmitThread;           //!< Thread that transmits response messages
+    std::thread* const          m_thread;                   //!< Thread that receives messages
     const int64_t               m_connectionId;             //!< Identification number for connection
     std::atomic<int64_t>        m_previousSequence;         //!< Last request message sequence number
     std::atomic_bool            m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
     BatchListMap                m_batchListMap;             //!< Lists of batch commands indexed by batch ID
     std::mutex                  m_mutex;                    //!< Mutex used to make class thread safe
-    std::atomic_bool            m_terminated;               //!< True if the connection has been terminated
-    bool                        m_receiverOperational;      //!< Indicates if the receiver thread is operational
-    bool                        m_transmitterOperational;   //!< Indicates if the transmitter thread is operational
-    MessageQueue<Transaction*> m_transactionQueue;          //!< Queue containing response messages to send (in tranaction records)
 
     DISALLOW_COPY_AND_ASSIGN(Connection);
 };

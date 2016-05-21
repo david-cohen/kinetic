@@ -110,9 +110,9 @@ proto:
 # Check for suspicious coding
 
 check:
-	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string $(INCLUDE_DIR)/*.hpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string $(APP_SRC_DIR)/*.cpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string $(TEST_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string,-whitespace/newline $(INCLUDE_DIR)/*.hpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(APP_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(TEST_SRC_DIR)/*.cpp
 
 cpp-check:
 	- cppcheck $(APP_SRC_DIR) --enable=all --force --includes-file=$(APP_INCLUDES)
@@ -282,6 +282,7 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/MessageHandler.o \
 	$(BUILD_APP_OBJ_DIR)/MessageTrace.o \
 	$(BUILD_APP_OBJ_DIR)/ObjectStore.o \
+	$(BUILD_APP_OBJ_DIR)/Server.o \
 	$(BUILD_APP_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_APP_OBJ_DIR)/SslControl.o \

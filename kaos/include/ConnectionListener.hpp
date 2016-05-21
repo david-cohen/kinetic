@@ -30,10 +30,11 @@ public:
     /**
      * ConnectionListener Constructor
      *
-     * @param  port     The port to listen on for new connections
+     * @param   communicationsManager   Manager of the connections to be created
+     * @param   port                    The port to listen on for new connections
      */
-    explicit ConnectionListener(uint32_t port)
-        : m_port(port), m_terminated(false), m_thread(nullptr) {
+    explicit ConnectionListener(CommunicationsManager* communicationsManager, uint32_t port)
+        : m_communicationsManager(communicationsManager), m_port(port), m_terminated(false), m_thread(nullptr) {
     }
 
     /**
@@ -96,7 +97,7 @@ private:
             try {
                 ClientServerConnectionInfo clientServerConnectionInfo = TcpTransport::serverConnect(m_port, m_listeningSocket);
                 StreamInterface* stream = static_cast<StreamInterface*>(new StreamType(clientServerConnectionInfo.socketDescriptor()));
-                communicationsManager.addConnection(new Connection(stream, clientServerConnectionInfo));
+                m_communicationsManager->addConnection(new Connection(m_communicationsManager, stream, clientServerConnectionInfo));
             }
             catch (std::exception& ex) {
                 LOG(ERROR) << "Exception encounter: " << ex.what();
@@ -112,10 +113,11 @@ private:
     /*
      * Private Data Members
      */
-    uint32_t        m_port;             //!< Listening port
-    bool            m_terminated;       //!< Indicates if listener is terminated
-    int32_t         m_listeningSocket;  //!< File descriptor of socket listening on
-    std::thread*    m_thread;           //!< Listening thread
+    CommunicationsManager*  m_communicationsManager;    //!< Manager of the connection
+    uint32_t                m_port;                     //!< Listening port
+    bool                    m_terminated;               //!< Indicates if listener is terminated
+    int32_t                 m_listeningSocket;          //!< File descriptor of socket listening on
+    std::thread*            m_thread;                   //!< Listening thread
 
     DISALLOW_COPY_AND_ASSIGN(ConnectionListener);
 };

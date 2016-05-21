@@ -21,9 +21,9 @@
 #include <sys/statvfs.h>
 #include <string>
 #include "Logger.hpp"
+#include "Server.hpp"
 #include "Kinetic.pb.hpp"
 #include "KineticLog.hpp"
-#include "ObjectStore.hpp"
 #include "SystemConfig.hpp"
 #include "MessageStatistics.hpp"
 
@@ -87,7 +87,7 @@ KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
  */
 void
 KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response) {
-    messageStatistics.get(response);
+    server->messageStatistics().get(response);
 }
 
 /**

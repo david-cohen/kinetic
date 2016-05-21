@@ -25,6 +25,11 @@
 #include "SslControl.hpp"
 #include "SystemConfig.hpp"
 
+/*
+ * Private Data Objects
+ */
+static SslControl sslControl;
+
 /**
  * Initialize the SSL stream object.
  *

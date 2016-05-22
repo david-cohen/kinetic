@@ -138,7 +138,7 @@ SSL* SslControl::createConnection(int socketFd) {
  *
  * @param   ssl     The SSL connection object to be freed
  */
-void SslControl::tearDownConnection(SSL* ssl) {
+void SslControl::tearDownConnection(SSL* const ssl) {
     SSL_free(ssl);
 }
 

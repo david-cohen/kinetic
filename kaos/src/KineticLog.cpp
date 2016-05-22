@@ -38,7 +38,7 @@
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Configuration* configuration(response->mutable_configuration());
     configuration->set_vendor(globalConfig.vendor());
@@ -67,7 +67,7 @@ KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* respo
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Limits* limits(response->mutable_limits());
     limits->set_maxkeysize(globalConfig.maxKeySize());
@@ -92,7 +92,7 @@ KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
  * @param   messageStatistics   Object containing the message statistics
  */
 void
-KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response, MessageStatistics& messageStatistics) {
+KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* const response, MessageStatistics& messageStatistics) {
     messageStatistics.get(response);
 }
 
@@ -103,7 +103,7 @@ KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     struct statvfs fiData;
     memset(&fiData, 0, sizeof(fiData));
@@ -132,7 +132,7 @@ KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     std::string* message = response->mutable_messages();
     message->assign("System started");
@@ -162,7 +162,7 @@ KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& reques
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Temperature* temperature(response->add_temperatures());
     temperature->set_name("HDA");
@@ -178,7 +178,7 @@ KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* respon
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Utilization* utilization(response->add_utilizations());
     utilization->set_name("HDA");

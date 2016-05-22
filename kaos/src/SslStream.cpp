@@ -59,7 +59,7 @@ SslStream::~SslStream() {
  *
  * @throws  A runtime error if a fatal error was encountered
  */
-void SslStream::read(char* buffer, size_t byteCount) {
+void SslStream::read(char* const buffer, size_t byteCount) {
 
     /*
      * Loop reading from the socket until the requested amount of data has been received.

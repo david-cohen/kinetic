@@ -43,22 +43,22 @@ public:
     /*
      * Public Accessors
      */
-    inline int32_t         socketDescriptor() {return m_socketDescriptor;}
-    inline uint32_t        serverPort() {return m_serverPort;}
-    inline std::string     serverIpAddress() {return m_serverIpAddress;}
-    inline uint32_t        clientPort() {return m_clientPort;}
-    inline std::string     clientIpAddress() {return m_clientIpAddress;}
+    inline int32_t      socketDescriptor() const {return m_socketDescriptor;}
+    inline uint32_t     serverPort() const {return m_serverPort;}
+    inline std::string  serverIpAddress() const {return m_serverIpAddress;}
+    inline uint32_t     clientPort() const {return m_clientPort;}
+    inline std::string  clientIpAddress() const {return m_clientIpAddress;}
 
 private:
 
     /*
      * Private Data Members
      */
-    int32_t         m_socketDescriptor;     //!< File description of the connection's socket
-    uint32_t        m_serverPort;           //!< Port number of the server
-    std::string     m_serverIpAddress;      //!< IP address of the server
-    uint32_t        m_clientPort;           //!< Port number of the client
-    std::string     m_clientIpAddress;      //!< IP address of the client
+    const int32_t       m_socketDescriptor;     //!< File description of the connection's socket
+    const uint32_t      m_serverPort;           //!< Port number of the server
+    const std::string   m_serverIpAddress;      //!< IP address of the server
+    const uint32_t      m_clientPort;           //!< Port number of the client
+    const std::string   m_clientIpAddress;      //!< IP address of the client
 };
 
 #endif

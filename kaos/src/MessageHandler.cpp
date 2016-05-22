@@ -1002,7 +1002,7 @@ MessageHandler::processInvalidRequest(Transaction* transaction) {
 void
 MessageHandler::processStartBatchRequest(Transaction* transaction) {
 
-    if (m_connection->server()->batchCount() >= globalConfig.maxBatchCountPerDevice())
+    if (m_connection->server()->activeBatchCommands() >= globalConfig.maxBatchCountPerDevice())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
     if (!transaction->request->command()->header().has_batchid())

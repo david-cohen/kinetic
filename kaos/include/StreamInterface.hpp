@@ -40,11 +40,11 @@ enum class Security {
 class StreamInterface {
 public:
     virtual ~StreamInterface() {}
-    virtual void read(char* buffer, size_t byteCount) = 0;
+    virtual void read(char* const buffer, size_t byteCount) = 0;
     virtual void blackHoleRead(size_t byteCount) = 0;
     virtual void write(const char* const buffer, size_t byteCount) = 0;
     virtual void close() = 0;
-    virtual Security security() = 0;
+    virtual Security security() const = 0;
 };
 
 #endif

@@ -37,6 +37,7 @@
 #include <iomanip>
 #include <iostream>
 #include <typeinfo>
+#include <algorithm>
 #include "Hmac.hpp"
 #include "Logger.hpp"
 #include "Kinetic.pb.hpp"
@@ -57,14 +58,14 @@ static const char* VERSION("1.0.2-FOR-EVAL-ONLY");
 /*
  * Daemon Related Settings
  */
-static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
-static const char* DEFAULT_CONFIG_FILE_NAME("/etc/default/kaos");
+static const char* PID_FILE_NAME("/var/run/kaos.pid");
+static const char* CONFIG_FILE_NAME("/etc/default/kaos");
 static const char* DEFAULT_STORAGE_DIRECTORY("/export/dfs");
 static const char* DATABASE_DIRECTORY("objectDatabase");
 static const char* SERVER_SETTINGS_FILE("serverSettings");
 static const LogFacility LOGGING_FACILITY(LOCAL2);
 static const LogLevel DEFAULT_LOGGING_LEVEL(WARNING);
-static const bool DEFAULT_DEBUG_ENABLED(false);
+static const bool DEBUG_ENABLED(false);
 
 /*
  * Object Store Settings
@@ -155,6 +156,7 @@ static std::string createFlushDataKey() {
  */
 static LogLevel toLogLevel(std::string logLevel) {
 
+    std::transform(logLevel.begin(), logLevel.end(), logLevel.begin(), ::toupper);
     if (logLevel == "ERROR")
         return ERROR;
     else if (logLevel == "WARNING")
@@ -172,8 +174,8 @@ static LogLevel toLogLevel(std::string logLevel) {
  * set.
  */
 GlobalConfig::GlobalConfig()
-    : m_debugEnabled(DEFAULT_DEBUG_ENABLED),
-      m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
+    : m_debugEnabled(DEBUG_ENABLED),
+      m_pidFileName(PID_FILE_NAME),
       m_databaseDirectory(),
       m_serverSettingsFile(),
       m_vendor(VENDOR),
@@ -237,7 +239,7 @@ GlobalConfig::GlobalConfig()
      * Read configuration data from the default configuration file.
      */
     boost::property_tree::ptree defaultConfigData;
-    boost::property_tree::ini_parser::read_ini(DEFAULT_CONFIG_FILE_NAME, defaultConfigData);
+    boost::property_tree::ini_parser::read_ini(CONFIG_FILE_NAME, defaultConfigData);
 
     /*
      * Set the logging level first, so that events can be logged correctly fro the beginning.
@@ -263,6 +265,13 @@ GlobalConfig::GlobalConfig()
 
     m_databaseDirectory = storageDirectory + "/" + DATABASE_DIRECTORY;
     m_serverSettingsFile = storageDirectory + "/" + SERVER_SETTINGS_FILE;
+
+    /*
+     * Determine if the application is to run as a daemon.
+     */
+    string runMode = defaultConfigData.get<string>("RUN_MODE", "BACKGROUND");
+    std::transform(runMode.begin(), runMode.end(), runMode.begin(), ::toupper);
+    m_runAsDaemon = runMode != "FOREGROUND";
 
     /*
      * Discover the network interfaces.

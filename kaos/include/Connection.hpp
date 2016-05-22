@@ -75,7 +75,7 @@ public:
     inline bool processedFirstRequest() {return m_processedFirstRequest;}
     inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
     inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
-    inline uint32_t batchCount() {return m_batchListMap.size();}
+    inline uint32_t activeBatchCommands() {return m_batchListMap.size();}
     inline Security security() {return m_stream->security();}
 
     /*

@@ -39,22 +39,31 @@ class Server {
 
 public:
 
-    Server(std::string pidFileName, bool foreground);
+    /*
+     * Constructor
+     */
+    Server();
+
+    /*
+     * Public Accessors
+     */
     ServerSettings& settings() {return m_settings;}
     ObjectStore& objectStore() {return m_objectStore;}
     MessageStatistics& messageStatistics() {return m_messageStatistics;}
+
+    /*
+     * Public Member Functions
+     */
     int32_t run();
+    uint32_t activeBatchCommands();
     void addConnection(Connection* connection);
     void removeConnection(Connection* connection);
-    uint32_t batchCount();
 
 private:
 
-    std::string                     m_pidFileName;
-    bool                            m_foreground;
-    ServerSettings                  m_settings;
-    MessageStatistics               m_messageStatistics;
-    ObjectStore                     m_objectStore;
+    ServerSettings                  m_settings;             //!< User configurable server settings
+    MessageStatistics               m_messageStatistics;    //!< Statistics on messages processed
+    ObjectStore                     m_objectStore;          //!< Server's object store database
     std::list<Connection*>          m_connectionList;       //!< List of active connections
     std::list<ListenerInterfacePtr> m_listenerList;         //!< List of active listeners
     HeartbeatProvider               m_heartbeatProvider;    //!< Provider of heartbeat messages

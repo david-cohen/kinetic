@@ -110,8 +110,8 @@ proto:
 # Check for suspicious coding
 
 check:
-	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string,-whitespace/newline $(INCLUDE_DIR)/*.hpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(APP_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=150 --filter=-build/c++11,-runtime/references,-runtime/string,-whitespace/newline $(INCLUDE_DIR)/*.hpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(APP_SRC_DIR)/*.cpp
 	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(TEST_SRC_DIR)/*.cpp
 
 cpp-check:
@@ -278,7 +278,6 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/Hmac.o \
 	$(BUILD_APP_OBJ_DIR)/KineticLog.o \
 	$(BUILD_APP_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_APP_OBJ_DIR)/Main.o \
 	$(BUILD_APP_OBJ_DIR)/MessageHandler.o \
 	$(BUILD_APP_OBJ_DIR)/MessageTrace.o \
 	$(BUILD_APP_OBJ_DIR)/ObjectStore.o \

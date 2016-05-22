@@ -38,14 +38,14 @@ public:
     /*
      * Public Class Member Functions
      */
-    static void getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response);
-    static void getLimits(com::seagate::kinetic::proto::Command_GetLog* response);
-    static void getStatistics(com::seagate::kinetic::proto::Command_GetLog* response, MessageStatistics& messageStatistics);
-    static void getCapacities(com::seagate::kinetic::proto::Command_GetLog* response);
-    static void getMessage(com::seagate::kinetic::proto::Command_GetLog* response);
+    static void getConfiguration(com::seagate::kinetic::proto::Command_GetLog* const response);
+    static void getLimits(com::seagate::kinetic::proto::Command_GetLog* const response);
+    static void getStatistics(com::seagate::kinetic::proto::Command_GetLog* const response, MessageStatistics& messageStatistics);
+    static void getCapacities(com::seagate::kinetic::proto::Command_GetLog* const response);
+    static void getMessage(com::seagate::kinetic::proto::Command_GetLog* const response);
     static void getDevice(const com::seagate::kinetic::proto::Command_GetLog& request, std::string& responseValue);
-    static void getTemperatures(com::seagate::kinetic::proto::Command_GetLog* response);
-    static void getUtilizations(com::seagate::kinetic::proto::Command_GetLog* response);
+    static void getTemperatures(com::seagate::kinetic::proto::Command_GetLog* const response);
+    static void getUtilizations(com::seagate::kinetic::proto::Command_GetLog* const response);
 };
 
 #endif

@@ -46,7 +46,7 @@ public:
      * @param   server  The server that will manage the new conections
      * @param   port    The port to listen on for new connections
      */
-    explicit ConnectionListener(Server* server, uint32_t port)
+    explicit ConnectionListener(Server* const server, uint32_t port)
         : m_server(server), m_port(port), m_terminated(false), m_thread(nullptr) {
     }
 
@@ -57,7 +57,7 @@ public:
      *
      * Indicates if the listener has started.
      */
-    inline bool started() {return (m_thread != nullptr);}
+    inline bool started() const {return (m_thread != nullptr);}
 
     /**
      * Start
@@ -126,8 +126,8 @@ private:
     /*
      * Private Data Members
      */
-    Server*         m_server;           //!< Server that will manager the new connections
-    uint32_t        m_port;             //!< Listening port
+    Server* const   m_server;           //!< Server that will manager the new connections
+    const uint32_t  m_port;             //!< Listening port
     bool            m_terminated;       //!< Indicates if listener is terminated
     int32_t         m_listeningSocket;  //!< File descriptor of socket listening on
     std::thread*    m_thread;           //!< Listening thread

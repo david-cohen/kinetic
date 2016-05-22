@@ -41,7 +41,7 @@ public:
      * Public Member Functions
      */
     SSL* createConnection(int32_t socketFd);
-    void tearDownConnection(SSL* ssl);
+    void tearDownConnection(SSL* const ssl);
 
 private:
     /*

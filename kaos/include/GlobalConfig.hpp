@@ -57,8 +57,9 @@ public:
     /*
      * Public Accessors
      */
+    inline bool runAsDaemon() const {return m_runAsDaemon;}
     inline bool debugEnabled() const {return m_debugEnabled;}
-    inline std::string defaultPidFileName() const {return m_defaultPidFileName;}
+    inline const char* pidFileName() const {return m_pidFileName;}
     inline std::string databaseDirectory() const {return m_databaseDirectory;}
     inline std::string serverSettingsFile() const {return m_serverSettingsFile;}
     inline const char* vendor() const {return m_vendor;}
@@ -116,9 +117,9 @@ private:
     /*
      * Private Data Members
      */
-    bool                 m_locked;
+    bool                 m_runAsDaemon;
     bool                 m_debugEnabled;
-    std::string          m_defaultPidFileName;
+    const char*          m_pidFileName;
     std::string          m_databaseDirectory;
     std::string          m_serverSettingsFile;
     const char*          m_vendor;

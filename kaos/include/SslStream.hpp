@@ -41,19 +41,19 @@ public:
     /*
      * Public Member Functions
      */
-    void read(char* buffer, size_t byteCount);
+    void read(char* const buffer, size_t byteCount);
     void blackHoleRead(size_t byteCount);
     void write(const char* const buffer, size_t byteCount);
     void close();
-    Security security() {return Security::SSL;}
+    Security security() const {return Security::SSL;}
 
 private:
 
     /*
      * Private Data Members
      */
-    int32_t     m_streamFd;     //!< File descriptor for the stream's socket
-    SSL*        m_ssl;          //!< Object that manages the SSL connection
+    const int32_t   m_streamFd;     //!< File descriptor for the stream's socket
+    SSL* const      m_ssl;          //!< Object that manages the SSL connection
 };
 
 #endif

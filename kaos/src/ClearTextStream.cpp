@@ -52,7 +52,7 @@ ClearTextStream::ClearTextStream(int32_t streamFd)
  *
  * @throws  A runtime error if a fatal error was encountered
 */
-void ClearTextStream::read(char* buffer, size_t byteCount) {
+void ClearTextStream::read(char* const buffer, size_t byteCount) {
 
     /*
      * Loop reading from the socket until the requested amount of data has been received.

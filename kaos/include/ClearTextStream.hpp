@@ -41,18 +41,18 @@ public:
     /*
      * Public Member Functions
      */
-    void read(char* buffer, size_t byteCount);
+    void read(char* const buffer, size_t byteCount);
     void blackHoleRead(size_t byteCount);
     void write(const char* const buffer, size_t byteCount);
     void close();
-    Security security() {return Security::NONE;}
+    Security security() const {return Security::NONE;}
 
 private:
 
     /*
      * Private Data Members
      */
-    int32_t m_streamFd;  //!< File descriptor for the stream's socket
+    const int32_t   m_streamFd;  //!< File descriptor for the stream's socket
 };
 
 #endif

@@ -50,6 +50,7 @@ GlobalConfig globalConfig;
 /*
  * Private Variables
  */
+static Server server;
 static std::mutex daemonMutex;
 static std::unique_lock<std::mutex> daemonLock(daemonMutex);
 static std::condition_variable daemonTerminated;
@@ -73,9 +74,8 @@ void terminateProgram(int signum) {
  * are only two - one for encrypted communication on the SSL port and one for clear text
  * communications on the TCP port.
 */
-Server::Server(std::string pidFileName, bool foreground)
-    : m_pidFileName(!pidFileName.empty() ? pidFileName : globalConfig.defaultPidFileName()), m_foreground(foreground),
-      m_settings(), m_messageStatistics(), m_objectStore(), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
+Server::Server()
+    : m_settings(), m_messageStatistics(), m_objectStore(), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
 
     ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(this, globalConfig.sslPort()));
     ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(this, globalConfig.tcpPort()));
@@ -89,7 +89,7 @@ Server::Server(std::string pidFileName, bool foreground)
  */
 int32_t Server::run() {
 
-    if (m_foreground)
+    if (!globalConfig.runAsDaemon())
         logControl.setStandardOutEnabled(true);
 
     LOG(INFO) << "Starting application";
@@ -101,7 +101,7 @@ int32_t Server::run() {
      * to the root directory so that the daemon can't prevent the root file system from being
      * unmounted.
      */
-    if ((!m_foreground) && (daemon(0, 0) != STATUS_SUCCESS)) {
+    if ((globalConfig.runAsDaemon()) && (daemon(0, 0) != STATUS_SUCCESS)) {
         LOG(ERROR) << "Failed to become daemon: Error Code=" << errno << ", Description=" << strerror(errno);
         return EXIT_FAILURE;
     }
@@ -114,7 +114,7 @@ int32_t Server::run() {
         return EXIT_FAILURE;
     }
 
-    FILE* file = fopen(m_pidFileName.c_str(), "w");
+    FILE* file = fopen(globalConfig.pidFileName(), "w");
     if (file == nullptr)
         LOG(ERROR) << "Failed to create PID file: Error Code=" << errno << ", Description=" << strerror(errno);
     else {
@@ -146,7 +146,7 @@ int32_t Server::run() {
     for (auto listener : m_listenerList)
         listener->stop();
 
-    if (remove(m_pidFileName.c_str()) != STATUS_SUCCESS)
+    if (remove(globalConfig.pidFileName()) != STATUS_SUCCESS)
         LOG(ERROR) << "Failed to remove PID file: Error Code=" << errno << ", Description=" << strerror(errno);
 
     return EXIT_SUCCESS;
@@ -183,18 +183,28 @@ void Server::removeConnection(Connection* connection) {
 }
 
 /**
- * Determines the number of outstanding batch commands across all connections.
+ * Determines the number of active batch commands across all connections.
  *
  * @return  The number of active batch commands
  */
-uint32_t Server::batchCount() {
+uint32_t Server::activeBatchCommands() {
 
     std::unique_lock<std::mutex> scopedLock(m_mutex);
     uint32_t batchCount = 0;
     for (auto connection : m_connectionList)
-        batchCount += connection->batchCount();
+        batchCount += connection->activeBatchCommands();
 
     return batchCount;
 }
 
+/**
+ * Entry point of the Kinetic object store application, which normally runs as a daemon but can be
+ * instructed to run in the foreground.  The application will run until receiving a SIGTERM, which
+ * is normally sent by the kaos start/stop script when called to stop.
+ *
+ * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
+ */
+int32_t main() {
+    return server.run();
+}
 

@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -50,7 +55,8 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
 
     const int OPTION_SET(1);
     if (setsockopt(listeningSocketDescriptor, SOL_SOCKET, SO_REUSEADDR, &OPTION_SET, sizeof(OPTION_SET)) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to set socket option SO_REUSEADDR: error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to set socket option SO_REUSEADDR: error code=" + toString(errno)
+                                 + ", description=" + toString(strerror(errno)));
 
     /*
      * Bind the server address and port to the socket and then begin listening for client connection
@@ -63,10 +69,12 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
     server.sin_port = htons(port);
 
     if (bind(listeningSocketDescriptor, (struct sockaddr*) &server, sizeof(struct sockaddr)) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to bind socket on port " + toString(port) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to bind socket on port " + toString(port) + ": error code="
+                                 + toString(errno) + ", description=" + toString(strerror(errno)));
 
     if (listen(listeningSocketDescriptor, globalConfig.maxPendingAdminConnections()) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to listen to socket on port " + toString(port) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to listen to socket on port " + toString(port) + ": error code="
+                                 + toString(errno) + ", description=" + toString(strerror(errno)));
 
     return listeningSocketDescriptor;
 }
@@ -93,7 +101,8 @@ ClientServerConnectionInfo TcpTransport::serverConnect(uint32_t serverPort, int3
 
     int32_t newConnectionSocket = accept(listeningSocketDescriptor, (struct sockaddr*) &client, &sin_size);
     if (newConnectionSocket == STATUS_FAILURE)
-        throw std::runtime_error("Failed to accept connection on port " + toString(serverPort) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to accept connection on port " + toString(serverPort) + ": error code="
+                                 + toString(errno) + ", description=" + toString(strerror(errno)));
 
     std::string serverIpAddress("unknown");
     std::string clientIpAddress("unknown");
@@ -141,7 +150,8 @@ int32_t TcpTransport::clientConnect(std::string ipAddress, uint32_t port) {
     int32_t socketDescriptor = socket(AF_INET, SOCK_STREAM, USE_DEFAULT_PROTOCOL);
 
     if (socketDescriptor == STATUS_FAILURE)
-        throw std::runtime_error("Failed to create socket on port " + toString(port) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to create socket on port " + toString(port) + ": error code="
+                                 + toString(errno) + ", description=" + toString(strerror(errno)));
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
@@ -150,7 +160,8 @@ int32_t TcpTransport::clientConnect(std::string ipAddress, uint32_t port) {
     server.sin_port = htons(port);
 
     if (connect(socketDescriptor, (struct sockaddr*) &server, sizeof(server)) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to connect on port " + toString(port) + ": error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to connect on port " + toString(port) + ": error code="
+                                 + toString(errno) + ", description=" + toString(strerror(errno)));
 
     return socketDescriptor;
 }

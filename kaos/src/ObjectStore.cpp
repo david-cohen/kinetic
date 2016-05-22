@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -37,6 +42,11 @@
 using std::string;
 using std::unique_ptr;
 using com::seagate::kinetic::proto::Command_KeyValue;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH;
+using com::seagate::kinetic::proto::Command_Synchronization_FLUSH;
+using com::seagate::kinetic::proto::Command_Synchronization_WRITEBACK;
 
 /*
  * Constants
@@ -203,10 +213,10 @@ void ObjectStore::putEntry(const Command_KeyValue& params, const string& value) 
             unique_ptr<kaos::Entry> entry(new kaos::Entry());
             entry->ParseFromString(serializedEntryData);
             if (entry->version() != params.dbversion())
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+                throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
         }
         else if (!params.dbversion().empty()) {
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
+            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
         }
     }
 
@@ -227,9 +237,9 @@ void ObjectStore::putEntry(const Command_KeyValue& params, const string& value) 
     leveldb::Status status = m_database->Put(getWriteOptions(params.synchronization()), params.key(), serializedData);
 
     if (!status.ok())
-        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+        throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
 
-    if (params.synchronization() == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
+    if (params.synchronization() == Command_Synchronization_FLUSH)
         sync();
 }
 
@@ -265,10 +275,10 @@ void ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue
             unique_ptr<kaos::Entry> entry(new kaos::Entry());
             entry->ParseFromString(serializedEntryData);
             if (entry->version() != params.dbversion())
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+                throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
         }
         else if (!params.dbversion().empty()) {
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
+            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
         }
     }
 
@@ -319,15 +329,15 @@ void ObjectStore::deleteEntry(const Command_KeyValue& params) {
 
         if (!status.ok()) {
             if (status.IsNotFound())
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+                throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
             else
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+                throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
         }
 
         unique_ptr<kaos::Entry> entry(new kaos::Entry());
         entry->ParseFromString(serializedEntryData);
         if (entry->version() != params.dbversion())
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
     }
 
     /*
@@ -337,9 +347,9 @@ void ObjectStore::deleteEntry(const Command_KeyValue& params) {
     leveldb::Status status = m_database->Delete(getWriteOptions(params.synchronization()), key);
 
     if (!status.ok())
-        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+        throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
 
-    if (params.synchronization() == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
+    if (params.synchronization() == Command_Synchronization_FLUSH)
         sync();
 }
 
@@ -374,15 +384,15 @@ void ObjectStore::batchedDeleteEntry(BatchDescriptor& batch, const Command_KeyVa
 
         if (!status.ok()) {
             if (status.IsNotFound())
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+                throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
             else
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+                throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
         }
 
         unique_ptr<kaos::Entry> entry(new kaos::Entry());
         entry->ParseFromString(serializedEntryData);
         if (entry->version() != params.dbversion())
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
     }
 
     /*
@@ -407,7 +417,7 @@ void ObjectStore::batchCommit(BatchDescriptor& batch) {
 
     leveldb::Status status = m_database->Write(syncWriteOptions, &batch);
     if (!status.ok())
-        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+        throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
 }
 
 /**
@@ -436,9 +446,9 @@ void ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyVa
 
     if (!status.ok()) {
         if (status.IsNotFound())
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+            throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
         else
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+            throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
     }
 
     /*
@@ -478,9 +488,9 @@ void ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_
 
     if (!status.ok()) {
         if (status.IsNotFound())
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+            throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
         else
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+            throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
     }
 
     /*
@@ -532,7 +542,7 @@ void ObjectStore::getNextEntry(const string& key, string& returnValue, Command_K
         iterator->Next();
 
     if (!iterator->Valid())
-        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+        throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
 
     /*
      * Deserialize the entry data and save its value and metadata in the specified structures.
@@ -589,7 +599,7 @@ void ObjectStore::getPreviousEntry(const string& key, string& returnValue, Comma
         iterator->Prev();
 
     if (!iterator->Valid())
-        throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+        throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
 
     /*
      * Deserialize the entry data and save its value and metadata in the specified structures.
@@ -706,8 +716,10 @@ void ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Comman
      * If the iterator is positioned at the entry with the last key and it is not to be included,
      * move the iterator to the previous entry.
      */
-    else if (iterator->Valid() && ((iterator->key().ToString() > params.endkey()) || (!params.endkeyinclusive() && (iterator->key().ToString() == params.endkey()))))
+    else if (iterator->Valid() && ((iterator->key().ToString() > params.endkey())
+                                   || (!params.endkeyinclusive() && (iterator->key().ToString() == params.endkey())))) {
         iterator->Prev();
+    }
 
     /*
      * Add keys to the list following these conditions:
@@ -741,7 +753,7 @@ void ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Comman
  * Converts the Kinetic persistence option into a level DB write option.
  */
 inline leveldb::WriteOptions& ObjectStore::getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option) {
-    return option == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
+    return option == Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
 }
 
 

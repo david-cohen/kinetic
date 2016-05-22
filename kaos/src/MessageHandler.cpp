@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -94,11 +99,15 @@ using com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_FAILURE;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_BATCH;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP;
 using com::seagate::kinetic::proto::Command_Header;
 using com::seagate::kinetic::proto::Command_KeyValue;
 using com::seagate::kinetic::proto::Command_Status;
 using com::seagate::kinetic::proto::Command_GetLog;
 using com::seagate::kinetic::proto::Message_AuthType;
+
+
 
 /*
  * Private Data Objects
@@ -234,13 +243,15 @@ MessageHandler::processRequest(Transaction* transaction) {
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Requires TLS connection for request");
 
             // Note: the smoke test expected the "permission denied" test.
-            if (!transaction->accessControl->operationPermitted(operationInfo.operation, operationInfo.operationInvolvesKey, transaction->request->command()->body()))
+            if (!transaction->accessControl->operationPermitted(operationInfo.operation, operationInfo.operationInvolvesKey,
+                    transaction->request->command()->body())) {
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
+            }
         }
 
         if (m_serverSettings.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
-                                           && ((transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP)
-                                               || (transaction->request->command()->body().pinop().pinoptype() == com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP)))) {
+                                           && ((transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_UNLOCK_PINOP)
+                                               || (transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_LOCK_PINOP)))) {
 
             throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED);
         }

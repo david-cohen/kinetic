@@ -32,9 +32,14 @@
 #include <unordered_map>
 #include "leveldb/slice.h"
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "NetworkInterface.hpp"
+
+/*
+ * Commonly Used Constants
+ */
+const int32_t  STATUS_SUCCESS(0);
+const int32_t  STATUS_FAILURE(-1);
 
 typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSet;
 
@@ -165,8 +170,6 @@ private:
     const leveldb::Slice m_flushDataKey;
     GetLogTypeSet        m_defaultLogTypes;
     NetworkInterfaceMap  m_networkInterfaceMap;
-
-    DISALLOW_COPY_AND_ASSIGN(GlobalConfig);
 };
 
 extern GlobalConfig globalConfig;

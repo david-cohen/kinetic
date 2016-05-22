@@ -25,7 +25,6 @@
  */
 #include <stdint.h>
 #include <string>
-#include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
 

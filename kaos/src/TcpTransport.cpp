@@ -28,7 +28,6 @@
 #include <sys/socket.h>
 #include <string>
 #include <stdexcept>
-#include "Common.hpp"
 #include "Logger.hpp"
 #include "TcpTransport.hpp"
 #include "GlobalConfig.hpp"
@@ -51,12 +50,12 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
     int32_t listeningSocketDescriptor = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if (listeningSocketDescriptor == STATUS_FAILURE)
-        throw std::runtime_error("Failed to create socket: error code=" + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to create socket: error code=" + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
     const int OPTION_SET(1);
     if (setsockopt(listeningSocketDescriptor, SOL_SOCKET, SO_REUSEADDR, &OPTION_SET, sizeof(OPTION_SET)) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to set socket option SO_REUSEADDR: error code=" + toString(errno)
-                                 + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to set socket option SO_REUSEADDR: error code=" + std::to_string(errno)
+                                 + ", description=" + std::string(strerror(errno)));
 
     /*
      * Bind the server address and port to the socket and then begin listening for client connection
@@ -69,12 +68,12 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
     server.sin_port = htons(port);
 
     if (bind(listeningSocketDescriptor, (struct sockaddr*) &server, sizeof(struct sockaddr)) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to bind socket on port " + toString(port) + ": error code="
-                                 + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to bind socket on port " + std::to_string(port) + ": error code="
+                                 + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
     if (listen(listeningSocketDescriptor, globalConfig.maxPendingAdminConnections()) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to listen to socket on port " + toString(port) + ": error code="
-                                 + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to listen to socket on port " + std::to_string(port) + ": error code="
+                                 + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
     return listeningSocketDescriptor;
 }
@@ -101,8 +100,8 @@ ClientServerConnectionInfo TcpTransport::serverConnect(uint32_t serverPort, int3
 
     int32_t newConnectionSocket = accept(listeningSocketDescriptor, (struct sockaddr*) &client, &sin_size);
     if (newConnectionSocket == STATUS_FAILURE)
-        throw std::runtime_error("Failed to accept connection on port " + toString(serverPort) + ": error code="
-                                 + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to accept connection on port " + std::to_string(serverPort) + ": error code="
+                                 + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
     std::string serverIpAddress("unknown");
     std::string clientIpAddress("unknown");
@@ -150,8 +149,8 @@ int32_t TcpTransport::clientConnect(std::string ipAddress, uint32_t port) {
     int32_t socketDescriptor = socket(AF_INET, SOCK_STREAM, USE_DEFAULT_PROTOCOL);
 
     if (socketDescriptor == STATUS_FAILURE)
-        throw std::runtime_error("Failed to create socket on port " + toString(port) + ": error code="
-                                 + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to create socket on port " + std::to_string(port) + ": error code="
+                                 + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
@@ -160,8 +159,8 @@ int32_t TcpTransport::clientConnect(std::string ipAddress, uint32_t port) {
     server.sin_port = htons(port);
 
     if (connect(socketDescriptor, (struct sockaddr*) &server, sizeof(server)) == STATUS_FAILURE)
-        throw std::runtime_error("Failed to connect on port " + toString(port) + ": error code="
-                                 + toString(errno) + ", description=" + toString(strerror(errno)));
+        throw std::runtime_error("Failed to connect on port " + std::to_string(port) + ": error code="
+                                 + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
     return socketDescriptor;
 }

@@ -27,7 +27,6 @@
 #include <atomic>
 #include <thread>
 #include <string>
-#include "Common.hpp"
 
 /**
  * Responsible for sending Kinetic heartbeat messages to the Kinetic UDP multicast address.
@@ -63,8 +62,6 @@ private:
     std::thread*        m_thread;       //!< Thread that repeatedly sends heartbeat message
     int32_t             m_socketFd;     //!< Socket used to send heartbeat message
     struct sockaddr_in  m_address;      //!< Address information when sending message
-
-    DISALLOW_COPY_AND_ASSIGN(HeartbeatProvider);
 };
 
 #endif

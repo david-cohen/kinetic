@@ -29,7 +29,6 @@
 #include <string>
 #include <memory>
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "MessageException.hpp"
 #include "KineticMessageFraming.hpp"
@@ -123,8 +122,6 @@ private:
     std::shared_ptr<com::seagate::kinetic::proto::Message> m_protoMessage;  //!< The kinetic message
     std::shared_ptr<com::seagate::kinetic::proto::Command> m_command;       //!< The message command (which is inside in the message)
     std::string                                            m_value;         //!< Kinetic message value (which is outside the message)
-
-    DISALLOW_COPY_AND_ASSIGN(KineticMessage);
 };
 
 /*

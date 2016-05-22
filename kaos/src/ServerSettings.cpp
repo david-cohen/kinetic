@@ -28,7 +28,6 @@
 #include <fstream>
 #include <iostream>
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Logger.hpp"
 #include "Translator.hpp"
 #include "Settings.pb.hpp"

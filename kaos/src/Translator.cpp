@@ -23,7 +23,6 @@
 #include <string>
 #include <sstream>
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Translator.hpp"
 #include "Kinetic.pb.hpp"
 #include "Settings.pb.hpp"
@@ -191,7 +190,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Algorithm
         case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_CRC64:
             return "CRC64";
         default:
-            return "Unsupported Algorithm (" + ::toString<uint32_t>(algorithm) + ")";
+            return "Unsupported Algorithm (" + std::to_string(algorithm) + ")";
     }
 }
 
@@ -216,7 +215,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_PinOperat
         case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_INVALID_PINOP:
             return "Invalid PIN Operation";
         default:
-            return "Unsupported PIN Operation (" + ::toString<uint32_t>(pinop) + ")";
+            return "Unsupported PIN Operation (" + std::to_string(pinop) + ")";
     }
 }
 
@@ -235,7 +234,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_
         case com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1:
             return "HMAC-SHA1";
         default:
-            return "Unsupported HMAC Algorithm (" + ::toString<uint32_t>(algorithm) + ")";
+            return "Unsupported HMAC Algorithm (" + std::to_string(algorithm) + ")";
     }
 }
 
@@ -258,7 +257,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Message_AuthType 
         case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_UNSOLICITEDSTATUS:
             return "Unsolicited Status";
         default:
-            return "Unsupported Authentication Type (" + ::toString<uint32_t>(authType) + ")";
+            return "Unsupported Authentication Type (" + std::to_string(authType) + ")";
     }
 }
 
@@ -349,7 +348,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_MessageTy
         case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_ABORT_BATCH_RESPONSE:
             return "Abort Batch Response";
         default:
-            return "Unsupported Message Type (" + ::toString<uint32_t>(messageType) + ")";
+            return "Unsupported Message Type (" + std::to_string(messageType) + ")";
     }
 }
 
@@ -380,7 +379,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Ty
         case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_DEVICE:
             return "Device";
         default:
-            return "Unknown Type (" + ::toString<uint32_t>(type) + ")";
+            return "Unknown Type (" + std::to_string(type) + ")";
     }
 }
 
@@ -413,7 +412,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_
         case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_INVALID_PERMISSION:
             return "Invalid";
         default:
-            return "Unknown Permission (" + ::toString<uint32_t>(permission) + ")";
+            return "Unknown Permission (" + std::to_string(permission) + ")";
     }
 }
 
@@ -433,7 +432,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Synchroni
     else if (synchronization == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
         return "Flush";
 
-    return "Unsupported Synchronization Value (" + ::toString<uint32_t>(synchronization) + ")";
+    return "Unsupported Synchronization Value (" + std::to_string(synchronization) + ")";
 }
 
 /**
@@ -491,7 +490,7 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Status_St
         case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_INVALID_BATCH:
             return "Invalid Batch";
         default:
-            return "Unknown Status Code (" + ::toString<uint32_t>(statusCode) + ")";
+            return "Unknown Status Code (" + std::to_string(statusCode) + ")";
     }
 }
 

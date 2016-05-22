@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <memory>
 #include <stdexcept>
-#include "Common.hpp"
 #include "Logger.hpp"
 #include "GlobalConfig.hpp"
 #include "ClearTextStream.hpp"

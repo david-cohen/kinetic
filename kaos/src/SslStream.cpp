@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <memory>
 #include <stdexcept>
-#include "Common.hpp"
 #include "Logger.hpp"
 #include "SslStream.hpp"
 #include "SslControl.hpp"

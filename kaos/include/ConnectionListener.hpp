@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <thread>
-#include "Common.hpp"
 #include "Logger.hpp"
 #include "Server.hpp"
 #include "TcpTransport.hpp"
@@ -132,8 +131,6 @@ private:
     bool            m_terminated;       //!< Indicates if listener is terminated
     int32_t         m_listeningSocket;  //!< File descriptor of socket listening on
     std::thread*    m_thread;           //!< Listening thread
-
-    DISALLOW_COPY_AND_ASSIGN(ConnectionListener);
 };
 
 #endif

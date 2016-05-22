@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <list>
 #include <string>
-#include "Common.hpp"
 #include "AccessControl.hpp"
 
 /**
@@ -80,8 +79,6 @@ private:
     std::string         m_lockPin;              //!< Personal ID Number to lock/unlock object store
     std::string         m_erasePin;             //!< Personal ID Number to erase object store
     AccessControlMap    m_accessControlMap;     //!< Access Control map (for fast look-up)
-
-    DISALLOW_COPY_AND_ASSIGN(ServerSettings);
 };
 
 #endif

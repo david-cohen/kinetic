@@ -28,7 +28,6 @@
 #include <mutex>
 #include <string>
 #include <memory>
-#include "Common.hpp"
 #include "leveldb/db.h"
 #include "leveldb/write_batch.h"
 #include "Kinetic.pb.hpp"
@@ -80,8 +79,6 @@ private:
      */
     leveldb::DB*            m_database;     //!< Actual levelDB database
     std::recursive_mutex    m_mutex;        //!< Mutex to make object thread safe
-
-    DISALLOW_COPY_AND_ASSIGN(ObjectStore);
 };
 
 #endif

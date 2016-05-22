@@ -31,7 +31,6 @@
 #include <string>
 #include <memory>
 #include <atomic>
-#include "Common.hpp"
 #include "Server.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
@@ -130,8 +129,6 @@ private:
     std::atomic_bool        m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
     BatchListMap            m_batchListMap;             //!< Lists of batch commands indexed by batch ID
     std::mutex              m_mutex;                    //!< Mutex used to make class thread safe
-
-    DISALLOW_COPY_AND_ASSIGN(Connection);
 };
 
 #endif

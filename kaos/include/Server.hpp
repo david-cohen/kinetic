@@ -27,7 +27,6 @@
 #include <list>
 #include <mutex>
 #include <string>
-#include "Common.hpp"
 #include "ObjectStore.hpp"
 #include "ServerSettings.hpp"
 #include "HeartbeatProvider.hpp"
@@ -60,8 +59,6 @@ private:
     std::list<ListenerInterfacePtr> m_listenerList;         //!< List of active listeners
     HeartbeatProvider               m_heartbeatProvider;    //!< Provider of heartbeat messages
     std::mutex                      m_mutex;                //!< Mutex to make class thread safe
-
-    DISALLOW_COPY_AND_ASSIGN(Server);
 };
 
 #endif

@@ -58,6 +58,11 @@ using std::unordered_map;
 /*
  * Message Types
  */
+using com::seagate::kinetic::proto::Message_AuthType;
+using com::seagate::kinetic::proto::Command_Header;
+using com::seagate::kinetic::proto::Command_KeyValue;
+using com::seagate::kinetic::proto::Command_Status;
+using com::seagate::kinetic::proto::Command_GetLog;
 using com::seagate::kinetic::proto::Command_MessageType;
 using com::seagate::kinetic::proto::Command_MessageType_PUT;
 using com::seagate::kinetic::proto::Command_MessageType_GET;
@@ -101,13 +106,7 @@ using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_BATCH;
 using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP;
 using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP;
-using com::seagate::kinetic::proto::Command_Header;
-using com::seagate::kinetic::proto::Command_KeyValue;
-using com::seagate::kinetic::proto::Command_Status;
-using com::seagate::kinetic::proto::Command_GetLog;
-using com::seagate::kinetic::proto::Message_AuthType;
-
-
+using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm_HmacSHA1;
 
 /*
  * Private Data Objects
@@ -522,7 +521,7 @@ MessageHandler::processSecurityRequest(Transaction* transaction) {
                 if (!acl.has_hmacalgorithm()) {
                     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing security HMAC algorithm");
                 }
-                if (acl.hmacalgorithm() != com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1) {
+                if (acl.hmacalgorithm() != Command_Security_ACL_HMACAlgorithm_HmacSHA1) {
                     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Invalid security HMAC algorithm");
                 }
                 // verified though use of simulator
@@ -720,7 +719,8 @@ MessageHandler::processGetRequest(Transaction* transaction) {
     const Command_KeyValue& request = transaction->request->command()->body().keyvalue();
 
     if (!request.metadataonly())
-        m_objectStore.getEntry(request.key(), transaction->response->value(), transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        m_objectStore.getEntry(request.key(), transaction->response->value(),
+                               transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
     else
         m_objectStore.getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
@@ -929,7 +929,8 @@ MessageHandler::processPinOpRequest(Transaction* transaction) {
                 break;
 
             default:
-                throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Unsupported PIN Op Type " + toString<uint32_t>(transaction->request->command()->body().pinop().pinoptype()));
+                throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Unsupported PIN Op Type "
+                                       + std::to_string(transaction->request->command()->body().pinop().pinoptype()));
         }
     }
     catch (MessageException& messageException) {

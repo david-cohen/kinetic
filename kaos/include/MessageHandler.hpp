@@ -25,7 +25,6 @@
  */
 #include <stdint.h>
 #include <string>
-#include "Common.hpp"
 #include "Connection.hpp"
 #include "Kinetic.pb.hpp"
 #include "Transaction.hpp"
@@ -87,8 +86,6 @@ private:
     ObjectStoreInterface&   m_objectStore;          //!< Server's object store
     ServerSettings&         m_serverSettings;       //!< Server's user settings
     MessageStatistics&      m_messageStatistics;    //!< Statistics on processed messages
-
-    DISALLOW_COPY_AND_ASSIGN(MessageHandler);
 };
 
 #endif

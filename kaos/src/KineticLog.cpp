@@ -149,11 +149,9 @@ KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& reques
     if (!request.has_device() || !request.device().has_name())
         throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Missing device log name.");
 
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
     if (request.device().name() == "com.seagate.simulator:dummy")
         responseValue = "this is a sample log";
     else
-#endif
         throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND,
                                "No device log for the specified name: " + request.device().name());
 }
@@ -185,7 +183,6 @@ KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* respon
     com::seagate::kinetic::proto::Command_GetLog_Utilization* utilization(response->add_utilizations());
     utilization->set_name("HDA");
     utilization->set_value(.1);
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
     utilization = response->add_utilizations();
     utilization->set_name("EN0");
     utilization->set_value(.25);
@@ -195,6 +192,5 @@ KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* respon
     utilization = response->add_utilizations();
     utilization->set_name("CPU");
     utilization->set_value(.05);
-#endif
 }
 

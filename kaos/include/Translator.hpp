@@ -26,7 +26,6 @@
 #include <string>
 #include <sstream>
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "AccessScope.hpp"
 #include "Settings.pb.hpp"

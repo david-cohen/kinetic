@@ -35,7 +35,7 @@ LogControl logControl;
 /*
  * Constants
  */
-static const string UNIT_TEST_SETTINGS_FILE("/tmp/testSettings");
+static const char* UNIT_TEST_SETTINGS_FILE("/tmp/testSettings");
 
 bool
 settingsFileExist(string filename) {

@@ -178,9 +178,9 @@ MessageHandler::processRequest(Transaction* transaction) {
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Unsupported message type");
 
         OperationInfo& operationInfo = dispatchTable[dispatchTableIndex];
-        responseHeader->set_messagetype(operationInfo.responseType);
+        responseHeader->set_messagetype(operationInfo.responseType());
 
-        if (transaction->request->authtype() != operationInfo.requiredAuthenticationType)
+        if (transaction->request->authtype() != operationInfo.requiredAuthenticationType())
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Incorrect authentication type");
 
         if ((transaction->request->authtype() == Message_AuthType::Message_AuthType_HMACAUTH) && !transaction->request->hmacauth().has_identity())
@@ -238,11 +238,11 @@ MessageHandler::processRequest(Transaction* transaction) {
             /*
              * Access checks
              */
-            if (transaction->accessControl->tlsRequired(operationInfo.operation) && (m_connection->security() != Security::SSL))
+            if (transaction->accessControl->tlsRequired(operationInfo.operation()) && (m_connection->security() != Security::SSL))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Requires TLS connection for request");
 
             // Note: the smoke test expected the "permission denied" test.
-            if (!transaction->accessControl->operationPermitted(operationInfo.operation, operationInfo.operationInvolvesKey,
+            if (!transaction->accessControl->operationPermitted(operationInfo.operation(), operationInfo.operationInvolvesKey(),
                     transaction->request->command()->body())) {
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
             }
@@ -255,7 +255,7 @@ MessageHandler::processRequest(Transaction* transaction) {
             throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED);
         }
 
-        (this->*operationInfo.processRequest)(transaction);
+        (this->*operationInfo.processRequest())(transaction);
     }
     catch (MessageException& messageException) {
         Command_Status* status = transaction->response->mutable_command()->mutable_status();
@@ -315,7 +315,7 @@ MessageHandler::processError(Transaction* transaction) {
 
                 if (dispatchTableIndex < DISPATCH_TABLE_SIZE) {
                     OperationInfo& operationInfo = dispatchTable[dispatchTableIndex];
-                    responseHeader->set_messagetype(operationInfo.responseType);
+                    responseHeader->set_messagetype(operationInfo.responseType());
                 }
             }
         }

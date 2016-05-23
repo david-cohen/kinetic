@@ -42,18 +42,18 @@ public:
     /*
      * Public Accessors
      */
-    std::string name() {return m_name;}
-    std::string macAddress() {return m_macAddress;}
-    std::string ipv4() {return m_ipv4;}
-    std::string ipv6() {return m_ipv6;}
+    std::string name() const {return m_name;}
+    std::string macAddress() const {return m_macAddress;}
+    std::string ipv4() const {return m_ipv4;}
+    std::string ipv6() const {return m_ipv6;}
 private:
     /*
      * Private Data Members
      */
-    std::string m_name;         //!< Assigned name of network interface
-    std::string m_macAddress;   //!< MAC address
-    std::string m_ipv4;         //!< IP address version 4
-    std::string m_ipv6;         //!< IP address version 6
+    const std::string   m_name;         //!< Assigned name of network interface
+    const std::string   m_macAddress;   //!< MAC address
+    const std::string   m_ipv4;         //!< IP address version 4
+    const std::string   m_ipv6;         //!< IP address version 6
 };
 
 /*

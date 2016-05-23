@@ -52,25 +52,25 @@ public:
     /*
      * Command Functions
      */
-    inline bool has_command() {return m_command != nullptr;}
-    inline const ::com::seagate::kinetic::proto::Command* command() {return m_command.get();}
-    inline ::com::seagate::kinetic::proto::Command* mutable_command() {return m_command.get();}
-    inline const ::std::string& commandbytes() {return m_protoMessage->commandbytes();}
+    inline bool has_command() const {return m_command != nullptr;}
+    inline const ::com::seagate::kinetic::proto::Command* command() const {return m_command.get();}
+    inline ::com::seagate::kinetic::proto::Command* mutable_command() const {return m_command.get();}
+    inline const ::std::string& commandbytes() const {return m_protoMessage->commandbytes();}
     inline void build_commandbytes() {m_protoMessage->set_commandbytes(m_command->SerializeAsString());}
 
     /*
      * HMAC Functions
      */
-    inline bool has_authtype() {return m_protoMessage->has_authtype();}
-    inline ::com::seagate::kinetic::proto::Message_AuthType authtype() {return m_protoMessage->authtype();}
+    inline bool has_authtype() const {return m_protoMessage->has_authtype();}
+    inline ::com::seagate::kinetic::proto::Message_AuthType authtype() const {return m_protoMessage->authtype();}
     inline void set_authtype(::com::seagate::kinetic::proto::Message_AuthType authtype) {m_protoMessage->set_authtype(authtype);}
 
-    inline bool has_hmacauth() {return m_protoMessage->has_hmacauth();}
-    inline const ::com::seagate::kinetic::proto::Message_HMACauth& hmacauth() {return m_protoMessage->hmacauth();}
+    inline bool has_hmacauth() const {return m_protoMessage->has_hmacauth();}
+    inline const ::com::seagate::kinetic::proto::Message_HMACauth& hmacauth() const {return m_protoMessage->hmacauth();}
     inline ::com::seagate::kinetic::proto::Message_HMACauth* mutable_hmacauth() {return m_protoMessage->mutable_hmacauth();}
 
-    inline bool has_pinauth() {return m_protoMessage->has_pinauth();}
-    inline const ::com::seagate::kinetic::proto::Message_PINauth& pinauth() {return m_protoMessage->pinauth();}
+    inline bool has_pinauth() const {return m_protoMessage->has_pinauth();}
+    inline const ::com::seagate::kinetic::proto::Message_PINauth& pinauth() const {return m_protoMessage->pinauth();}
 
     void generateHmac(const std::string& key, HmacAlgorithm algorithm) {
         m_protoMessage->mutable_hmacauth()->set_hmac(Hmac::compute(m_protoMessage->commandbytes(), key, algorithm));
@@ -111,7 +111,7 @@ private:
     /*
      * Private Member Functions
      */
-    uint64_t getTimestamp(void) {
+    uint64_t getTimestamp(void) const {
         struct timespec time;
         return (clock_gettime(CLOCK_REALTIME, &time) != 0) ? 0 : time.tv_sec * 1000000 + time.tv_nsec / 1000;
     }

@@ -24,8 +24,8 @@
  * Include Files
  */
 #include <stdint.h>
-#include <mutex>
 #include <deque>
+#include <mutex>
 #include <utility>
 #include <condition_variable>
 
@@ -33,7 +33,6 @@
  * A thread-safe message queue that allows message passing between threads.
  */
 template <typename MessageType> class MessageQueue {
-
 public:
 
     /**
@@ -41,7 +40,7 @@ public:
      *
      * @param   message     The message to be sent
      */
-    void send(MessageType const& message) {
+    void send(MessageType& const message) {
         std::lock_guard<std::mutex> scopedLock(m_mutex);
         m_queue.push_back(std::move(message));
         m_accessControl.notify_one();
@@ -65,15 +64,15 @@ public:
      *
      * @return  true if there are no messages in the queue, false otherwise
      */
-    bool empty() {
+    bool empty() const {
         return m_queue.empty();
     }
 
 private:
 
-    std::mutex                      m_mutex;            //!< Ensures exclusive access to the queue
-    std::condition_variable         m_accessControl;    //!< Object that coordinates access to the queue
-    std::deque<MessageType>         m_queue;            //!< Message queue
+    std::mutex                  m_mutex;            //!< Ensures exclusive access to the queue
+    std::condition_variable     m_accessControl;    //!< Object that coordinates access to the queue
+    std::deque<MessageType>     m_queue;            //!< Message queue
 };
 
 

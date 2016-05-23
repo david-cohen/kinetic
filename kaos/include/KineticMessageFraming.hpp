@@ -45,9 +45,9 @@ public:
     /*
      * Getters (which convert sizes from the host format to big endian)
      */
-    inline uint8_t magicNumber() {return m_magicNumber;}
-    inline uint32_t messageSize() {return ntohl(m_messageSize);}
-    inline uint32_t valueSize() {return ntohl(m_valueSize);}
+    inline uint8_t magicNumber() const {return m_magicNumber;}
+    inline uint32_t messageSize() const {return ntohl(m_messageSize);}
+    inline uint32_t valueSize() const {return ntohl(m_valueSize);}
 
     /*
      * Setters (which convert sizes from big endian to the host format)

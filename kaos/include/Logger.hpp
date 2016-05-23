@@ -90,13 +90,13 @@ public:
      * @return  The selected log level
      */
 
-    inline LogLevel logLevel() {return m_logLevel;}
+    inline LogLevel logLevel() const {return m_logLevel;}
     /**
      * Indicates if outputting events to standard-out is enabled.
      *
      * @return  true if outputting to standard-out is enabled.
      */
-    inline bool standardOutEnabled() {return m_standardOutEnabled;}
+    inline bool standardOutEnabled() const {return m_standardOutEnabled;}
 
     /**
      * Sets the logging level
@@ -136,7 +136,9 @@ public:
      * @param  lineNumber  The line number that the event was logged from
      * @param  function    The function that the event was logged from
      */
-    LogEntry(LogLevel level, std::string filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
+    LogEntry(LogLevel level, std::string filename, int32_t lineNumber, const std::string& function)
+        : m_level(level), m_message(), m_location() {
+
         captureLevel(level);
         if (logControl.logLevel() == DEBUG)
             captureLocation(filename, lineNumber, function);
@@ -173,7 +175,7 @@ private:
      * @param  lineNumber  The line number that the event was logged from
      * @param  function    The function that the event was logged from
      */
-    inline void captureLocation(std::string filename, int32_t lineNumber, std::string function) {
+    inline void captureLocation(std::string filename, int32_t lineNumber, const std::string& function) {
         /*
          * Remove the path from the filename.
          */

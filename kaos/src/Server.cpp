@@ -92,7 +92,7 @@ int32_t Server::run() {
     if (!globalConfig.runAsDaemon())
         logControl.setStandardOutEnabled(true);
 
-    LOG(INFO) << "Starting application";
+    LOG(INFO) << "Starting application (running in " << (globalConfig.runAsDaemon() ? "background)" : "foreground)");
 
     /*
      * If the daemon is to run in the background, daemonize the process. That causes the process to
@@ -115,13 +115,16 @@ int32_t Server::run() {
     }
 
     FILE* file = fopen(globalConfig.pidFileName(), "w");
-    if (file == nullptr)
+    if (file == nullptr) {
         LOG(ERROR) << "Failed to create PID file: Error Code=" << errno << ", Description=" << strerror(errno);
+    }
     else {
-        if (fprintf(file, "%i\n", getpid()) < 0)
+        if (fprintf(file, "%i\n", getpid()) < 0) {
             LOG(ERROR) << "Failed to write PID file: Error Code=" << errno << ", Description=" << strerror(errno);
-        if (fclose(file) != STATUS_SUCCESS)
+        }
+        if (fclose(file) != STATUS_SUCCESS) {
             LOG(ERROR) << "Failed to close PID file: Error Code=" << errno << ", Description=" << strerror(errno);
+        }
     }
     signal(SIGTERM, terminateProgram);
 

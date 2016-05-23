@@ -26,10 +26,9 @@
 #include <memory>
 
 /*
- * Interface for a socket listener (used for new connections).
+ * Interface for a socket listener (used for listen for new connections).
  */
 class ListenerInterface {
-
 public:
     virtual bool start() = 0;
     virtual void stop() = 0;

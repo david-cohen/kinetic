@@ -28,6 +28,116 @@
 #include "Settings.pb.hpp"
 #include "AccessScope.hpp"
 
+/*
+ * Used Namespace Members
+ */
+using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm;
+using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm_HmacSHA1;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission;
+using com::seagate::kinetic::proto::Command_Algorithm;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType;
+using com::seagate::kinetic::proto::Message_AuthType;
+using com::seagate::kinetic::proto::Command_MessageType;
+using com::seagate::kinetic::proto::Command_GetLog_Type;
+using com::seagate::kinetic::proto::Command_Synchronization;
+using com::seagate::kinetic::proto::Command_Status_StatusCode;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_READ;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_WRITE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_DELETE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_RANGE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_SETUP;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_P2POP;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_GETLOG;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_SECURITY;
+using com::seagate::kinetic::proto::Command_Algorithm_INVALID_ALGORITHM;
+using com::seagate::kinetic::proto::Command_Algorithm_SHA1;
+using com::seagate::kinetic::proto::Command_Algorithm_SHA2;
+using com::seagate::kinetic::proto::Command_Algorithm_SHA3;
+using com::seagate::kinetic::proto::Command_Algorithm_CRC32;
+using com::seagate::kinetic::proto::Command_Algorithm_CRC64;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_SECURE_ERASE_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_INVALID_PINOP;
+using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm_INVALID_HMAC_ALGORITHM;
+using com::seagate::kinetic::proto::Message_AuthType_INVALID_AUTH_TYPE;
+using com::seagate::kinetic::proto::Message_AuthType_HMACAUTH;
+using com::seagate::kinetic::proto::Message_AuthType_PINAUTH;
+using com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS;
+using com::seagate::kinetic::proto::Command_MessageType_GET;
+using com::seagate::kinetic::proto::Command_MessageType_GET_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_PUT;
+using com::seagate::kinetic::proto::Command_MessageType_PUT_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_DELETE;
+using com::seagate::kinetic::proto::Command_MessageType_DELETE_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_GETNEXT;
+using com::seagate::kinetic::proto::Command_MessageType_GETNEXT_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_GETPREVIOUS;
+using com::seagate::kinetic::proto::Command_MessageType_GETPREVIOUS_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_GETKEYRANGE;
+using com::seagate::kinetic::proto::Command_MessageType_GETKEYRANGE_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_GETVERSION;
+using com::seagate::kinetic::proto::Command_MessageType_GETVERSION_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_SETUP;
+using com::seagate::kinetic::proto::Command_MessageType_SETUP_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_GETLOG;
+using com::seagate::kinetic::proto::Command_MessageType_GETLOG_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_SECURITY;
+using com::seagate::kinetic::proto::Command_MessageType_SECURITY_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_PEER2PEERPUSH;
+using com::seagate::kinetic::proto::Command_MessageType_PEER2PEERPUSH_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_NOOP;
+using com::seagate::kinetic::proto::Command_MessageType_NOOP_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_FLUSHALLDATA;
+using com::seagate::kinetic::proto::Command_MessageType_FLUSHALLDATA_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_PINOP;
+using com::seagate::kinetic::proto::Command_MessageType_PINOP_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_MEDIASCAN;
+using com::seagate::kinetic::proto::Command_MessageType_MEDIASCAN_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_MEDIAOPTIMIZE;
+using com::seagate::kinetic::proto::Command_MessageType_MEDIAOPTIMIZE_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_START_BATCH;
+using com::seagate::kinetic::proto::Command_MessageType_START_BATCH_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_END_BATCH;
+using com::seagate::kinetic::proto::Command_MessageType_END_BATCH_RESPONSE;
+using com::seagate::kinetic::proto::Command_MessageType_ABORT_BATCH;
+using com::seagate::kinetic::proto::Command_MessageType_ABORT_BATCH_RESPONSE;
+using com::seagate::kinetic::proto::Command_GetLog_Type_UTILIZATIONS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_TEMPERATURES;
+using com::seagate::kinetic::proto::Command_GetLog_Type_CAPACITIES;
+using com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION;
+using com::seagate::kinetic::proto::Command_GetLog_Type_STATISTICS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_MESSAGES;
+using com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_DEVICE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_INVALID_PERMISSION;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_ATTEMPTED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_HMAC_FAILURE;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_AUTHORIZED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_FAILURE;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_HEADER_REQUIRED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_SERVICE_BUSY;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_EXPIRED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_DATA_ERROR;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_PERM_DATA_ERROR;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_REMOTE_CONNECTION_ERROR;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NO_SPACE;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NO_SUCH_HMAC_ALGORITHM;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_NESTED_OPERATION_ERRORS;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_ALREADY_UNLOCKED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_BATCH;
+using com::seagate::kinetic::proto::Command_Synchronization_WRITETHROUGH;
+using com::seagate::kinetic::proto::Command_Synchronization_WRITEBACK;
+using com::seagate::kinetic::proto::Command_Synchronization_FLUSH;
+
 /**
  * Translates HMAC algorithm from settings format.
  *
@@ -59,8 +169,8 @@ kaos::Settings_ACL_HmacAlgorithm Translator::toSettingsFormat(HmacAlgorithm hmac
  *
  * @return  The HMAC algorithm in the internal format
  */
-HmacAlgorithm Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm hmacAlgorithm) {
-    if (hmacAlgorithm == com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1)
+HmacAlgorithm Translator::fromMessageFormat(Command_Security_ACL_HMACAlgorithm hmacAlgorithm) {
+    if (hmacAlgorithm == Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1)
         return HmacAlgorithm::SHA1;
     else
         return HmacAlgorithm::UNKNOWN;
@@ -133,23 +243,23 @@ kaos::Settings_ACL_Operation Translator::toSettingsFormat(Operation operation) {
  *
  * @return  The operation in the internal format
  */
-Operation Translator::fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
+Operation Translator::fromMessageFormat(Command_Security_ACL_Permission permission) {
     switch (permission) {
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_READ:
+        case Command_Security_ACL_Permission_READ:
             return Operation::READ;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_WRITE:
+        case Command_Security_ACL_Permission_WRITE:
             return Operation::WRITE;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_DELETE:
+        case Command_Security_ACL_Permission_DELETE:
             return Operation::DELETE;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_RANGE:
+        case Command_Security_ACL_Permission_RANGE:
             return Operation::RANGE;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_SETUP:
+        case Command_Security_ACL_Permission_SETUP:
             return Operation::SETUP;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_P2POP:
+        case Command_Security_ACL_Permission_P2POP:
             return Operation::P2POP;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_GETLOG:
+        case Command_Security_ACL_Permission_GETLOG:
             return Operation::GETLOG;
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_SECURITY:
+        case Command_Security_ACL_Permission_SECURITY:
             return Operation::SECURITY;
         default:
             return Operation::INVALID;
@@ -174,20 +284,20 @@ std::string Translator::toString(bool boolValue) {
  *
  * @return the algorithm in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_Algorithm algorithm) {
+std::string Translator::toString(Command_Algorithm algorithm) {
 
     switch (algorithm) {
-        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_INVALID_ALGORITHM:
+        case Command_Algorithm_INVALID_ALGORITHM:
             return "Invalid";
-        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_SHA1:
+        case Command_Algorithm_SHA1:
             return "SHA1";
-        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_SHA2:
+        case Command_Algorithm_SHA2:
             return "SHA2";
-        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_SHA3:
+        case Command_Algorithm_SHA3:
             return "SHA3";
-        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_CRC32:
+        case Command_Algorithm_CRC32:
             return "CRC32";
-        case com::seagate::kinetic::proto::Command_Algorithm::Command_Algorithm_CRC64:
+        case Command_Algorithm_CRC64:
             return "CRC64";
         default:
             return "Unsupported Algorithm (" + std::to_string(algorithm) + ")";
@@ -201,18 +311,18 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Algorithm
  *
  * @return the PIN operation type in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpType pinop) {
+std::string Translator::toString(Command_PinOperation_PinOpType pinop) {
 
     switch (pinop) {
-        case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
+        case Command_PinOperation_PinOpType_UNLOCK_PINOP:
             return "Unlock";
-        case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP:
+        case Command_PinOperation_PinOpType_LOCK_PINOP:
             return "Lock";
-        case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP:
+        case Command_PinOperation_PinOpType_ERASE_PINOP:
             return "Erase";
-        case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
+        case Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
             return "Secure Erase";
-        case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_INVALID_PINOP:
+        case Command_PinOperation_PinOpType_INVALID_PINOP:
             return "Invalid PIN Operation";
         default:
             return "Unsupported PIN Operation (" + std::to_string(pinop) + ")";
@@ -226,12 +336,12 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_PinOperat
  *
  * @return the HMAC algorithm in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm algorithm) {
+std::string Translator::toString(Command_Security_ACL_HMACAlgorithm algorithm) {
 
     switch (algorithm) {
-        case com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_INVALID_HMAC_ALGORITHM:
+        case Command_Security_ACL_HMACAlgorithm_INVALID_HMAC_ALGORITHM:
             return "Invalid";
-        case com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm::Command_Security_ACL_HMACAlgorithm_HmacSHA1:
+        case Command_Security_ACL_HMACAlgorithm_HmacSHA1:
             return "HMAC-SHA1";
         default:
             return "Unsupported HMAC Algorithm (" + std::to_string(algorithm) + ")";
@@ -245,16 +355,16 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_
  *
  * @return the authentication type in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Message_AuthType authType) {
+std::string Translator::toString(Message_AuthType authType) {
 
     switch (authType) {
-        case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_INVALID_AUTH_TYPE:
+        case Message_AuthType_INVALID_AUTH_TYPE:
             return "Invalid";
-        case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_HMACAUTH:
+        case Message_AuthType_HMACAUTH:
             return "HMAC Authentication";
-        case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_PINAUTH:
+        case Message_AuthType_PINAUTH:
             return "PIN Authentication";
-        case com::seagate::kinetic::proto::Message_AuthType::Message_AuthType_UNSOLICITEDSTATUS:
+        case Message_AuthType_UNSOLICITEDSTATUS:
             return "Unsolicited Status";
         default:
             return "Unsupported Authentication Type (" + std::to_string(authType) + ")";
@@ -268,84 +378,84 @@ std::string Translator::toString(com::seagate::kinetic::proto::Message_AuthType 
  *
  * @return the message type in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_MessageType messageType) {
+std::string Translator::toString(Command_MessageType messageType) {
 
     switch (messageType) {
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GET:
+        case Command_MessageType_GET:
             return "Get";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GET_RESPONSE:
+        case Command_MessageType_GET_RESPONSE:
             return "Get Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_PUT:
+        case Command_MessageType_PUT:
             return "Put";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_PUT_RESPONSE:
+        case Command_MessageType_PUT_RESPONSE:
             return "Put Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_DELETE:
+        case Command_MessageType_DELETE:
             return "Delete";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_DELETE_RESPONSE:
+        case Command_MessageType_DELETE_RESPONSE:
             return "Delete Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETNEXT:
+        case Command_MessageType_GETNEXT:
             return "Get Next";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETNEXT_RESPONSE:
+        case Command_MessageType_GETNEXT_RESPONSE:
             return "Get Next Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETPREVIOUS:
+        case Command_MessageType_GETPREVIOUS:
             return "Get Previous";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETPREVIOUS_RESPONSE:
+        case Command_MessageType_GETPREVIOUS_RESPONSE:
             return "Get Previous Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETKEYRANGE:
+        case Command_MessageType_GETKEYRANGE:
             return "Get Key Range";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETKEYRANGE_RESPONSE:
+        case Command_MessageType_GETKEYRANGE_RESPONSE:
             return "Get Key Range Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETVERSION:
+        case Command_MessageType_GETVERSION:
             return "Get Version";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETVERSION_RESPONSE:
+        case Command_MessageType_GETVERSION_RESPONSE:
             return "Get Version Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_SETUP:
+        case Command_MessageType_SETUP:
             return "Setup";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_SETUP_RESPONSE:
+        case Command_MessageType_SETUP_RESPONSE:
             return "Setup Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETLOG:
+        case Command_MessageType_GETLOG:
             return "Get Log";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_GETLOG_RESPONSE:
+        case Command_MessageType_GETLOG_RESPONSE:
             return "Get Log Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_SECURITY:
+        case Command_MessageType_SECURITY:
             return "Security";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_SECURITY_RESPONSE:
+        case Command_MessageType_SECURITY_RESPONSE:
             return "Security Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_PEER2PEERPUSH:
+        case Command_MessageType_PEER2PEERPUSH:
             return "Peer-to-Peer Push";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_PEER2PEERPUSH_RESPONSE:
+        case Command_MessageType_PEER2PEERPUSH_RESPONSE:
             return "Peer-to-Peer Push Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_NOOP:
+        case Command_MessageType_NOOP:
             return "No-Op";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_NOOP_RESPONSE:
+        case Command_MessageType_NOOP_RESPONSE:
             return "No-Op Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_FLUSHALLDATA:
+        case Command_MessageType_FLUSHALLDATA:
             return "Flush All Data";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_FLUSHALLDATA_RESPONSE:
+        case Command_MessageType_FLUSHALLDATA_RESPONSE:
             return "Flush All Data Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_PINOP:
+        case Command_MessageType_PINOP:
             return "PIN-Op";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_PINOP_RESPONSE:
+        case Command_MessageType_PINOP_RESPONSE:
             return "PIN-Op Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_MEDIASCAN:
+        case Command_MessageType_MEDIASCAN:
             return "Media Scan";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_MEDIASCAN_RESPONSE:
+        case Command_MessageType_MEDIASCAN_RESPONSE:
             return "Media Scan Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_MEDIAOPTIMIZE:
+        case Command_MessageType_MEDIAOPTIMIZE:
             return "Media Optimize";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_MEDIAOPTIMIZE_RESPONSE:
+        case Command_MessageType_MEDIAOPTIMIZE_RESPONSE:
             return "Media Optimize Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_START_BATCH:
+        case Command_MessageType_START_BATCH:
             return "Start Batch";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_START_BATCH_RESPONSE:
+        case Command_MessageType_START_BATCH_RESPONSE:
             return "Start Batch Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_END_BATCH:
+        case Command_MessageType_END_BATCH:
             return "End Batch";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_END_BATCH_RESPONSE:
+        case Command_MessageType_END_BATCH_RESPONSE:
             return "End Batch Response";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_ABORT_BATCH:
+        case Command_MessageType_ABORT_BATCH:
             return "Abort Batch";
-        case com::seagate::kinetic::proto::Command_MessageType::Command_MessageType_ABORT_BATCH_RESPONSE:
+        case Command_MessageType_ABORT_BATCH_RESPONSE:
             return "Abort Batch Response";
         default:
             return "Unsupported Message Type (" + std::to_string(messageType) + ")";
@@ -359,24 +469,24 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_MessageTy
  *
  * @return the type in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Type type) {
+std::string Translator::toString(Command_GetLog_Type type) {
 
     switch (type) {
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_UTILIZATIONS:
+        case Command_GetLog_Type_UTILIZATIONS:
             return "Utilizations";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_TEMPERATURES:
+        case Command_GetLog_Type_TEMPERATURES:
             return "Temperatures";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_CAPACITIES:
+        case Command_GetLog_Type_CAPACITIES:
             return "Capacities";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_CONFIGURATION:
+        case Command_GetLog_Type_CONFIGURATION:
             return "Configuration";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_STATISTICS:
+        case Command_GetLog_Type_STATISTICS:
             return "Statistics";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_MESSAGES:
+        case Command_GetLog_Type_MESSAGES:
             return "Messages";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_LIMITS:
+        case Command_GetLog_Type_LIMITS:
             return "Limits";
-        case com::seagate::kinetic::proto::Command_GetLog_Type::Command_GetLog_Type_DEVICE:
+        case Command_GetLog_Type_DEVICE:
             return "Device";
         default:
             return "Unknown Type (" + std::to_string(type) + ")";
@@ -390,26 +500,26 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_GetLog_Ty
  *
  * @return the permission in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
+std::string Translator::toString(Command_Security_ACL_Permission permission) {
 
     switch (permission) {
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_READ:
+        case Command_Security_ACL_Permission_READ:
             return "Read";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_WRITE:
+        case Command_Security_ACL_Permission_WRITE:
             return "Write";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_DELETE:
+        case Command_Security_ACL_Permission_DELETE:
             return "Delete";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_RANGE:
+        case Command_Security_ACL_Permission_RANGE:
             return "Range";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_SETUP:
+        case Command_Security_ACL_Permission_SETUP:
             return "Setup";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_P2POP:
+        case Command_Security_ACL_Permission_P2POP:
             return "Peer-to-Peer Operation";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_GETLOG:
+        case Command_Security_ACL_Permission_GETLOG:
             return "Get Log";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_SECURITY:
+        case Command_Security_ACL_Permission_SECURITY:
             return "Security";
-        case com::seagate::kinetic::proto::Command_Security_ACL_Permission::Command_Security_ACL_Permission_INVALID_PERMISSION:
+        case Command_Security_ACL_Permission_INVALID_PERMISSION:
             return "Invalid";
         default:
             return "Unknown Permission (" + std::to_string(permission) + ")";
@@ -423,13 +533,13 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Security_
  *
  * @return the synchronization in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_Synchronization synchronization) {
+std::string Translator::toString(Command_Synchronization synchronization) {
 
-    if (synchronization == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_WRITETHROUGH)
+    if (synchronization == Command_Synchronization::Command_Synchronization_WRITETHROUGH)
         return "Write-Through";
-    else if (synchronization == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_WRITEBACK)
+    else if (synchronization == Command_Synchronization::Command_Synchronization_WRITEBACK)
         return "Write-Back";
-    else if (synchronization == com::seagate::kinetic::proto::Command_Synchronization::Command_Synchronization_FLUSH)
+    else if (synchronization == Command_Synchronization::Command_Synchronization_FLUSH)
         return "Flush";
 
     return "Unsupported Synchronization Value (" + std::to_string(synchronization) + ")";
@@ -442,52 +552,52 @@ std::string Translator::toString(com::seagate::kinetic::proto::Command_Synchroni
  *
  * @return the statusCode in string form
  */
-std::string Translator::toString(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode) {
+std::string Translator::toString(Command_Status_StatusCode statusCode) {
 
     switch (statusCode) {
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NOT_ATTEMPTED:
+        case Command_Status_StatusCode_NOT_ATTEMPTED:
             return "Not Attempted";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_SUCCESS:
+        case Command_Status_StatusCode_SUCCESS:
             return "Success";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_HMAC_FAILURE:
+        case Command_Status_StatusCode_HMAC_FAILURE:
             return "HMAC Failure";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NOT_AUTHORIZED:
+        case Command_Status_StatusCode_NOT_AUTHORIZED:
             return "Not Authorized";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_VERSION_FAILURE:
+        case Command_Status_StatusCode_VERSION_FAILURE:
             return "Version Failure";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_INTERNAL_ERROR:
+        case Command_Status_StatusCode_INTERNAL_ERROR:
             return "Internal Error";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_HEADER_REQUIRED:
+        case Command_Status_StatusCode_HEADER_REQUIRED:
             return "Header Required";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NOT_FOUND:
+        case Command_Status_StatusCode_NOT_FOUND:
             return "Not Found";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_VERSION_MISMATCH:
+        case Command_Status_StatusCode_VERSION_MISMATCH:
             return "Version Mismatch";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_SERVICE_BUSY:
+        case Command_Status_StatusCode_SERVICE_BUSY:
             return "service Busy";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_EXPIRED:
+        case Command_Status_StatusCode_EXPIRED:
             return "Expired";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_DATA_ERROR:
+        case Command_Status_StatusCode_DATA_ERROR:
             return "Data Error";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_PERM_DATA_ERROR:
+        case Command_Status_StatusCode_PERM_DATA_ERROR:
             return "Perm Data Error";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_REMOTE_CONNECTION_ERROR:
+        case Command_Status_StatusCode_REMOTE_CONNECTION_ERROR:
             return "Remote Connection Error";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NO_SPACE:
+        case Command_Status_StatusCode_NO_SPACE:
             return "No Space";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NO_SUCH_HMAC_ALGORITHM:
+        case Command_Status_StatusCode_NO_SUCH_HMAC_ALGORITHM:
             return "No_Such_HMAC Algorithm";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_INVALID_REQUEST:
+        case Command_Status_StatusCode_INVALID_REQUEST:
             return "Invalid Request";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_NESTED_OPERATION_ERRORS:
+        case Command_Status_StatusCode_NESTED_OPERATION_ERRORS:
             return "Nested Operation Errors";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_DEVICE_LOCKED:
+        case Command_Status_StatusCode_DEVICE_LOCKED:
             return "Device Locked";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_DEVICE_ALREADY_UNLOCKED:
+        case Command_Status_StatusCode_DEVICE_ALREADY_UNLOCKED:
             return "Device Already Unlocked";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_CONNECTION_TERMINATED:
+        case Command_Status_StatusCode_CONNECTION_TERMINATED:
             return "Connection Terminated";
-        case com::seagate::kinetic::proto::Command_Status_StatusCode::Command_Status_StatusCode_INVALID_BATCH:
+        case Command_Status_StatusCode_INVALID_BATCH:
             return "Invalid Batch";
         default:
             return "Unknown Status Code (" + std::to_string(statusCode) + ")";

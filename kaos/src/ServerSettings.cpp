@@ -54,7 +54,7 @@ ServerSettings::ServerSettings()
  *
  * @param   filename    Name of the file used to maintain the server settings
  */
-ServerSettings::ServerSettings(std::string filename)
+ServerSettings::ServerSettings(const std::string& filename)
     : m_filename(filename) {
 
     /*

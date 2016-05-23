@@ -143,7 +143,7 @@ void TcpTransport::serverShutdown(int32_t socketDescriptor) {
  *
  * @throws  A runtime error if socket or connection creation fails
  */
-int32_t TcpTransport::clientConnect(std::string ipAddress, uint32_t port) {
+int32_t TcpTransport::clientConnect(const std::string& ipAddress, uint32_t port) {
 
     const int USE_DEFAULT_PROTOCOL(0);
     int32_t socketDescriptor = socket(AF_INET, SOCK_STREAM, USE_DEFAULT_PROTOCOL);

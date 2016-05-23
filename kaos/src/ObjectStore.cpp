@@ -37,14 +37,16 @@
 #include "MessageException.hpp"
 
 /*
- * Used Namespaces
+ * Used Namespace Members
  */
 using std::string;
 using std::unique_ptr;
 using com::seagate::kinetic::proto::Command_KeyValue;
+using com::seagate::kinetic::proto::Command_Range;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_VERSION_MISMATCH;
+using com::seagate::kinetic::proto::Command_Synchronization;
 using com::seagate::kinetic::proto::Command_Synchronization_FLUSH;
 using com::seagate::kinetic::proto::Command_Synchronization_WRITEBACK;
 
@@ -625,8 +627,7 @@ void ObjectStore::getPreviousEntry(const string& key, string& returnValue, Comma
  * @param  accessControl    Describe the keys the user has access to
  * @param  returnData       Where the list or keys to be returned are saved
  */
-void ObjectStore::getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
-                              com::seagate::kinetic::proto::Command_Range* returnData) {
+void ObjectStore::getKeyRange(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -688,8 +689,7 @@ void ObjectStore::getKeyRange(const com::seagate::kinetic::proto::Command_Range&
  * @param  accessControl    Describe the keys the user has access to
  * @param  returnData       Where the list or keys to be returned are saved
  */
-void ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
-                                      com::seagate::kinetic::proto::Command_Range* returnData) {
+void ObjectStore::getKeyRangeReversed(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -752,7 +752,7 @@ void ObjectStore::getKeyRangeReversed(const com::seagate::kinetic::proto::Comman
 /**
  * Converts the Kinetic persistence option into a level DB write option.
  */
-inline leveldb::WriteOptions& ObjectStore::getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option) {
+inline leveldb::WriteOptions& ObjectStore::getWriteOptions(Command_Synchronization option) {
     return option == Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
 }
 

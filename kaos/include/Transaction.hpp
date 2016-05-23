@@ -24,7 +24,6 @@
  * Include Files
  */
 #include <string>
-#include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
 
@@ -40,14 +39,11 @@ class Connection;
  */
 struct Transaction {
     Transaction()
-        : request(new KineticMessage()), response(new KineticMessage()), accessControl(),
-          errorCode(com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_STATUS_CODE), errorMessage() {}
+        : request(new KineticMessage()), response(new KineticMessage()), accessControl() {}
 
-    KineticMessagePtr                                       request;        //!< Request message
-    KineticMessagePtr                                       response;       //!< Response message (may not be used)
-    AccessControlPtr                                        accessControl;  //!< Access allowed for transaction
-    com::seagate::kinetic::proto::Command_Status_StatusCode errorCode;      //!< Error code of encountered error (if any)
-    std::string                                             errorMessage;   //!< Text description of error (if any)
+    KineticMessagePtr   request;        //!< Request message
+    KineticMessagePtr   response;       //!< Response message (may not be used)
+    AccessControlPtr    accessControl;  //!< Access allowed for transaction
 };
 
 #endif

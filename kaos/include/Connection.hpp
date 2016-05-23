@@ -109,7 +109,7 @@ private:
     /*
      * Private Member Functions
      */
-    void receiveRequest(Transaction* transaction);
+    void receiveRequest(KineticMessagePtr& request);
     void sendUnsolicitedStatusMessage();
     void run();
 

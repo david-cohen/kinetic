@@ -42,32 +42,33 @@ public:
     /*
      * Constructor
      */
-    explicit MessageHandler(Connection* connection);
+    explicit MessageHandler(Connection* const connection);
 
     /*
      * Public Class Member Functions
      */
-    void processRequest(Transaction* transaction);
-    void processError(Transaction* transaction);
-    void processPutRequest(Transaction* transaction);
-    void processSetupRequest(Transaction* transaction);
-    void processSecurityRequest(Transaction* transaction);
-    void processGetRequest(Transaction* transaction);
-    void processGetNextRequest(Transaction* transaction);
-    void processGetPreviousRequest(Transaction* transaction);
-    void processGetVersionRequest(Transaction* transaction);
-    void processGetKeyRangeRequest(Transaction* transaction);
-    void processDeleteRequest(Transaction* transaction);
-    void processFlushRequest(Transaction* transaction);
-    void processNoopRequest(Transaction* transaction);
-    void processPinOpRequest(Transaction* transaction);
-    void processOptimizeMediaRequest(Transaction* transaction);
-    void processP2pPushRequest(Transaction* transaction);
-    void processGetLogRequest(Transaction* transaction);
-    void processStartBatchRequest(Transaction* transaction);
-    void processEndBatchRequest(Transaction* transaction);
-    void processAbortBatchRequest(Transaction* transaction);
-    void processInvalidRequest(Transaction* transaction);
+    void processRequest(Transaction* const transaction);
+    void processError(Transaction* const transaction, com::seagate::kinetic::proto::Command_Status_StatusCode errorCode,
+                      const std::string& errorMessage);
+    void processPutRequest(Transaction* const transaction);
+    void processSetupRequest(Transaction* const transaction);
+    void processSecurityRequest(Transaction* const transaction);
+    void processGetRequest(Transaction* const transaction);
+    void processGetNextRequest(Transaction* const transaction);
+    void processGetPreviousRequest(Transaction* const transaction);
+    void processGetVersionRequest(Transaction* const transaction);
+    void processGetKeyRangeRequest(Transaction* const transaction);
+    void processDeleteRequest(Transaction* const transaction);
+    void processFlushRequest(Transaction* const transaction);
+    void processNoopRequest(Transaction* const transaction);
+    void processPinOpRequest(Transaction* const transaction);
+    void processOptimizeMediaRequest(Transaction* const transaction);
+    void processP2pPushRequest(Transaction* const transaction);
+    void processGetLogRequest(Transaction* const transaction);
+    void processStartBatchRequest(Transaction* const transaction);
+    void processEndBatchRequest(Transaction* const transaction);
+    void processAbortBatchRequest(Transaction* const transaction);
+    void processInvalidRequest(Transaction* const transaction);
 
 private:
 

@@ -44,7 +44,7 @@
 #include "GlobalConfig.hpp"
 
 /*
- * Used Namespaces
+ * Used Namespace Members
  */
 using std::string;
 

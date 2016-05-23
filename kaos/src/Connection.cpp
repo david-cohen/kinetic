@@ -37,6 +37,19 @@
 #include "MessageHandler.hpp"
 
 /*
+ * Used Namespace Members
+ */
+using com::seagate::kinetic::proto::Command;
+using com::seagate::kinetic::proto::Command_Header;
+using com::seagate::kinetic::proto::Command_GetLog;
+using com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED;
+using com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS;
+
+/*
  * Private Data Objects
  */
 static std::atomic<int64_t> nextConnectionId(1);
@@ -90,15 +103,20 @@ void Connection::run() {
              * response before attempting to send one.
              */
             Transaction* transaction = new Transaction();
-            receiveRequest(transaction);
 
-            if (transaction->errorCode == com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED)
-                break;
+            try {
+                receiveRequest(transaction->request);
 
-            if (transaction->errorCode == com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_STATUS_CODE)
+                // send to message handler thread
                 messageHandler->processRequest(transaction);
-            else
-                messageHandler->processError(transaction);
+            }
+            catch (MessageException& messageException) {
+
+                if (messageException.statusCode() == Command_Status_StatusCode_CONNECTION_TERMINATED)
+                    break;
+
+                messageHandler->processError(transaction, messageException.statusCode(), messageException.statusMessage());
+            }
 
             if (transaction->response != nullptr)
                 sendResponse(transaction->response);
@@ -107,7 +125,8 @@ void Connection::run() {
         }
     }
     catch (std::exception& ex) {
-        LOG(ERROR) << "Exception encounter: " << ex.what();
+        if (std::string(ex.what()) != "Socket closed")
+            LOG(ERROR) << "Exception encounter: " << ex.what();
     }
     catch (...) {
         LOG(ERROR) << "Unexpected exception encounter";
@@ -125,21 +144,20 @@ void Connection::run() {
  */
 void Connection::sendUnsolicitedStatusMessage() {
 
-    Transaction transaction;
-    transaction.response.reset(new KineticMessage());
-    transaction.response->set_authtype(com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS);
-    ::com::seagate::kinetic::proto::Command* command = transaction.response->mutable_command();
-    ::com::seagate::kinetic::proto::Command_Header* header = command->mutable_header();
+    KineticMessagePtr response(new KineticMessage());
+    response->set_authtype(Message_AuthType_UNSOLICITEDSTATUS);
+    Command* const command = response->mutable_command();
+    Command_Header* const header = command->mutable_header();
     header->set_connectionid(m_connectionId);
     header->set_clusterversion(m_server->settings().clusterVersion());
-    ::com::seagate::kinetic::proto::Command_GetLog* getLogResponse = command->mutable_body()->mutable_getlog();
-    getLogResponse->add_types(::com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION);
+    Command_GetLog* getLogResponse = command->mutable_body()->mutable_getlog();
+    getLogResponse->add_types(Command_GetLog_Type_CONFIGURATION);
     KineticLog::getConfiguration(getLogResponse);
-    getLogResponse->add_types(::com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS);
+    getLogResponse->add_types(Command_GetLog_Type_LIMITS);
     KineticLog::getLimits(getLogResponse);
-    command->mutable_status()->set_code(::com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS);
-    transaction.response->build_commandbytes();
-    sendResponse(transaction.response);
+    command->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
+    response->build_commandbytes();
+    sendResponse(response);
 }
 
 /**
@@ -151,94 +169,81 @@ void Connection::sendUnsolicitedStatusMessage() {
  *
  * @throws  A runtime error if an error is encountered
  */
-void Connection::receiveRequest(Transaction* transaction) {
+void Connection::receiveRequest(KineticMessagePtr& request) {
 
-    try {
+    /*
+     * First, read in the framing data, which consists of a magic number, the size of the
+     * protocol buffer message and the size of the (optional) value.  Then, validate the framing
+     * data.  If the magic number is not correct or the sizes specified are invalid, throw an
+     * exception, which will cause the connection to be fail.
+     */
+    KineticMessageFraming messageFraming;
+    m_stream->read(reinterpret_cast<char*>(&messageFraming), sizeof(messageFraming));
 
-        /*
-         * First, read in the framing data, which consists of a magic number, the size of the
-         * protocol buffer message and the size of the (optional) value.  Then, validate the framing
-         * data.  If the magic number is not correct or the sizes specified are invalid, throw an
-         * exception, which will cause the connection to be fail.
-         */
-        KineticMessageFraming messageFraming;
-        m_stream->read(reinterpret_cast<char*>(&messageFraming), sizeof(messageFraming));
+    if (messageFraming.magicNumber() != KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER)
+        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "Invalid PDU magic number");
 
-        if (messageFraming.magicNumber() != KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER)
-            throw std::runtime_error("Invalid PDU magic number");
+    uint32_t messageSize = messageFraming.messageSize();
+    uint32_t valueSize = messageFraming.valueSize();
 
-        uint32_t messageSize = messageFraming.messageSize();
-        uint32_t valueSize = messageFraming.valueSize();
+    if (messageSize == 0)
+        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "message size too small");
 
-        if (messageSize == 0)
-            throw std::runtime_error("message size too small");
-
-        /*
-         * If the size of the message exceeds the support maximum value, read and save as much as
-         * possible so that the response will contain the correct header information.  Read and
-         * dispose of the remaining data (which should be the value, not the command).
-         */
-        if (messageSize > globalConfig.maxMessageSize()) {
-            std::unique_ptr<char> messageBuffer(new char[globalConfig.maxMessageSize()]);
-            m_stream->read(messageBuffer.get(), messageSize);
-            try {
-                m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
-                transaction->request->deserializeData(messageBuffer.get(), messageSize);
-            }
-            catch (std::exception& ex) {
-                LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
-            }
-
-            if (globalConfig.debugEnabled())
-                MessageTrace::outputContents(messageFraming, transaction->request.get());
-
-            throw std::runtime_error("message size too large");
-        }
-
-        /*
-         * Read in the protocol buffer message.  If a value is included, also attempt to read in the
-         * value. If the value is too large, read and discard the value then fail the request.
-         * Otherwise, create a Kinetic Message to hold both the deserialized protocol buffer
-         * message and its value.
-         */
-        std::unique_ptr<char> messageBuffer(new char[messageSize]);
+    /*
+     * If the size of the message exceeds the support maximum value, read and save as much as
+     * possible so that the response will contain the correct header information.  Read and
+     * dispose of the remaining data (which should be the value, not the command).
+     */
+    if (messageSize > globalConfig.maxMessageSize()) {
+        std::unique_ptr<char> messageBuffer(new char[globalConfig.maxMessageSize()]);
         m_stream->read(messageBuffer.get(), messageSize);
-
-        if (valueSize > globalConfig.maxValueSize()) {
-            m_stream->blackHoleRead(valueSize);
-            if (!transaction->request->deserializeData(messageBuffer.get(), messageSize))
-                throw std::runtime_error("invalid message format");
-
-            if (globalConfig.debugEnabled())
-                MessageTrace::outputContents(messageFraming, transaction->request.get());
-
-            transaction->errorCode = com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
-            std::stringstream errorStream;
-            errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
-            transaction->errorMessage = errorStream.str();
-            return;
+        try {
+            m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
+            request->deserializeData(messageBuffer.get(), messageSize);
         }
-
-        if (valueSize > 0) {
-            std::unique_ptr<char> valueBuffer(new char[valueSize]);
-            m_stream->read(valueBuffer.get(), valueSize);
-            transaction->request->setValue(valueBuffer.get(), valueSize);
+        catch (std::exception& ex) {
+            LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
         }
-
-        if (!transaction->request->deserializeData(messageBuffer.get(), messageSize))
-            throw std::runtime_error("invalid message format");
 
         if (globalConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, transaction->request.get());
+            MessageTrace::outputContents(messageFraming, request.get());
 
-        return;
+        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "message size too large");
     }
-    catch (std::exception& ex) {
-        transaction->errorMessage = ex.what();
-        if (std::string(ex.what()) != "Socket closed")
-            LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
+
+    /*
+     * Read in the protocol buffer message.  If a value is included, also attempt to read in the
+     * value. If the value is too large, read and discard the value then fail the request.
+     * Otherwise, create a Kinetic Message to hold both the deserialized protocol buffer
+     * message and its value.
+     */
+    std::unique_ptr<char> messageBuffer(new char[messageSize]);
+    m_stream->read(messageBuffer.get(), messageSize);
+
+    if (valueSize > globalConfig.maxValueSize()) {
+        m_stream->blackHoleRead(valueSize);
+        if (!request->deserializeData(messageBuffer.get(), messageSize))
+            throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "invalid message format");
+
+        if (globalConfig.debugEnabled())
+            MessageTrace::outputContents(messageFraming, request.get());
+
+        std::stringstream errorStream;
+        errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
+        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, errorStream.str());
     }
-    transaction->errorCode = com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED;
+
+    if (valueSize > 0) {
+        std::unique_ptr<char> valueBuffer(new char[valueSize]);
+        m_stream->read(valueBuffer.get(), valueSize);
+        request->setValue(valueBuffer.get(), valueSize);
+    }
+
+    if (!request->deserializeData(messageBuffer.get(), messageSize))
+        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "invalid message format");
+
+    if (globalConfig.debugEnabled())
+        MessageTrace::outputContents(messageFraming, request.get());
 }
 
 /**

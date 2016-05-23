@@ -43,11 +43,11 @@ public:
     /*
      * Public Accessors
      */
-    inline int32_t      socketDescriptor() const {return m_socketDescriptor;}
-    inline uint32_t     serverPort() const {return m_serverPort;}
-    inline std::string  serverIpAddress() const {return m_serverIpAddress;}
-    inline uint32_t     clientPort() const {return m_clientPort;}
-    inline std::string  clientIpAddress() const {return m_clientIpAddress;}
+    inline int32_t socketDescriptor() const {return m_socketDescriptor;}
+    inline uint32_t serverPort() const {return m_serverPort;}
+    inline std::string serverIpAddress() const {return m_serverIpAddress;}
+    inline uint32_t clientPort() const {return m_clientPort;}
+    inline std::string clientIpAddress() const {return m_clientIpAddress;}
 
 private:
 

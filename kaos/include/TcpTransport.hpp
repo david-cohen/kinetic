@@ -36,10 +36,10 @@ public:
     /*
      * Public Class Function
      */
-    static int32_t                    clientConnect(std::string ipAddress, uint32_t port);
-    static int32_t                    serverSetup(uint32_t port);
+    static int32_t clientConnect(const std::string& ipAddress, uint32_t port);
+    static int32_t serverSetup(uint32_t port);
     static ClientServerConnectionInfo serverConnect(uint32_t serverPort, int32_t listeningSocketDescriptor);
-    static void                       serverShutdown(int32_t socketDescriptor);
+    static void serverShutdown(int32_t socketDescriptor);
 };
 
 #endif

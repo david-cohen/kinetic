@@ -1,15 +1,20 @@
 /*
- * Copyright (c) 2016 Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
 #ifndef NETWORK_INTERFACE_HPP
@@ -37,18 +42,18 @@ public:
     /*
      * Public Accessors
      */
-    std::string name() {return m_name;}
-    std::string macAddress() {return m_macAddress;}
-    std::string ipv4() {return m_ipv4;}
-    std::string ipv6() {return m_ipv6;}
+    std::string name() const {return m_name;}
+    std::string macAddress() const {return m_macAddress;}
+    std::string ipv4() const {return m_ipv4;}
+    std::string ipv6() const {return m_ipv6;}
 private:
     /*
      * Private Data Members
      */
-    std::string m_name;         //!< Assigned name of network interface
-    std::string m_macAddress;   //!< MAC address
-    std::string m_ipv4;         //!< IP address version 4
-    std::string m_ipv6;         //!< IP address version 6
+    const std::string   m_name;         //!< Assigned name of network interface
+    const std::string   m_macAddress;   //!< MAC address
+    const std::string   m_ipv4;         //!< IP address version 4
+    const std::string   m_ipv6;         //!< IP address version 6
 };
 
 /*

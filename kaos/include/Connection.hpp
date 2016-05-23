@@ -1,17 +1,21 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
-
 #pragma once
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
@@ -27,12 +31,17 @@
 #include <string>
 #include <memory>
 #include <atomic>
-#include "Common.hpp"
-#include "Transaction.hpp"
-#include "MessageQueue.hpp"
+#include "Server.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
 #include "ClientServerConnectionInfo.hpp"
+
+/*
+ * Incomplete Class Definition (to avoid circular dependencies)
+ */
+
+class Server;
+class Transaction;
 
 /*
  * Batch List Pointer and Map.
@@ -49,7 +58,7 @@ public:
     /*
      * Constructor/Destructor
      */
-    Connection(StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
+    Connection(Server* server, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo);
     ~Connection();
 
     /*
@@ -60,12 +69,13 @@ public:
     /*
      * Public Accessors
      */
+    inline Server* server() {return m_server;}
     inline int64_t connectionId() {return m_connectionId;}
     inline int64_t previousSequence() {return m_previousSequence;}
     inline bool processedFirstRequest() {return m_processedFirstRequest;}
     inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
     inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
-    inline uint32_t batchCount() {return m_batchListMap.size();}
+    inline uint32_t activeBatchCommands() {return m_batchListMap.size();}
     inline Security security() {return m_stream->security();}
 
     /*
@@ -101,32 +111,24 @@ private:
      */
     void receiveRequest(Transaction* transaction);
     void sendUnsolicitedStatusMessage();
-    void receiveHandler();
-    void transmitHandler();
-    void tearDownHandler(bool& operationalIndicator);
+    void run();
 
     /*
      * Private Data Member
      */
-    Security                    m_security;                 //!< Connection's security (SSL or None)
-    StreamInterface* const      m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
-    const uint32_t              m_serverPort;               //!< Server's TCP port number
-    const std::string           m_serverIpAddress;          //!< Server's IP address
-    const uint32_t              m_clientPort;               //!< Client's TCP port number
-    const std::string           m_clientIpAddress;          //!< Client's IP address
-    std::thread* const          m_receiveThread;            //!< Thread that receives request messages
-    std::thread* const          m_transmitThread;           //!< Thread that transmits response messages
-    const int64_t               m_connectionId;             //!< Identification number for connection
-    std::atomic<int64_t>        m_previousSequence;         //!< Last request message sequence number
-    std::atomic_bool            m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
-    BatchListMap                m_batchListMap;             //!< Lists of batch commands indexed by batch ID
-    std::mutex                  m_mutex;                    //!< Mutex used to make class thread safe
-    std::atomic_bool            m_terminated;               //!< True if the connection has been terminated
-    bool                        m_receiverOperational;      //!< Indicates if the receiver thread is operational
-    bool                        m_transmitterOperational;   //!< Indicates if the transmitter thread is operational
-    MessageQueue<Transaction*> m_transactionQueue;          //!< Queue containing response messages to send (in tranaction records)
-
-    DISALLOW_COPY_AND_ASSIGN(Connection);
+    Server*                 m_server;                   //!< Manager of the connection
+    Security                m_security;                 //!< Connection's security (SSL or None)
+    StreamInterface* const  m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
+    const uint32_t          m_serverPort;               //!< Server's TCP port number
+    const std::string       m_serverIpAddress;          //!< Server's IP address
+    const uint32_t          m_clientPort;               //!< Client's TCP port number
+    const std::string       m_clientIpAddress;          //!< Client's IP address
+    std::thread* const      m_thread;                   //!< Thread that receives messages
+    const int64_t           m_connectionId;             //!< Identification number for connection
+    std::atomic<int64_t>    m_previousSequence;         //!< Last request message sequence number
+    std::atomic_bool        m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
+    BatchListMap            m_batchListMap;             //!< Lists of batch commands indexed by batch ID
+    std::mutex              m_mutex;                    //!< Mutex used to make class thread safe
 };
 
 #endif

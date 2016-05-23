@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
 #ifndef MESSAGE_STATISTICS_HPP
@@ -32,16 +37,42 @@
 class MessageStatistics {
 
     /**
-     * Private Stats Record (plain old data)
+     * Private Stats Record
      *
      * Maintains the count for number of times a message type has been processed and the number of
      * bytes transferred for the request and response messages.  There is one stats object for every
      * message type.
      */
-    struct Stats {
-        Stats() : count(0), byteCount(0) {}
-        uint32_t    count;         //!< Number of times message has been processed
-        uint64_t    byteCount;     //!< Number of bytes received and send in processing of message
+    class Stats {
+    public:
+
+        /**
+         * Constructor
+         */
+        Stats() : m_count(0), m_byteCount(0) {}
+
+        /*
+         * Public Accessors
+         */
+        inline int32_t  count() const {return m_count;}
+        inline uint64_t byteCount() const {return m_byteCount;}
+
+        /**
+         * Increments the message count and add the size of the message to the total bytes.
+         *
+         * @param size The size of the message
+         */
+        void add(uint32_t size) {
+            m_byteCount += size;
+            m_count++;
+        }
+
+    private:
+        /*
+         * Private Data Members
+         */
+        uint32_t    m_count;        //!< Number of times message has been processed
+        uint64_t    m_byteCount;    //!< Number of bytes received and send in processing of message
     };
 
     typedef std::map<com::seagate::kinetic::proto::Command_MessageType, Stats*> StatsMap;
@@ -87,14 +118,13 @@ public:
      * batched put).  In those cases, there is still a response message, but it is unused and will
      * have a message size of zero.
      */
-    void update(KineticMessagePtr& requestMessage, KineticMessagePtr& responseMessage) {
+    void update(const KineticMessagePtr& requestMessage, const KineticMessagePtr& responseMessage) {
 
         std::unique_lock<std::mutex> scopedLock(m_mutex);
         StatsMap::iterator iter = m_statsTable.find(requestMessage->command()->header().messagetype());
         if (iter != m_statsTable.end()) {
             Stats* messageStats = iter->second;
-            messageStats->byteCount += requestMessage->totalSize() + responseMessage->totalSize();
-            messageStats->count++;
+            messageStats->add(requestMessage->totalSize() + responseMessage->totalSize());
         }
     }
 
@@ -105,14 +135,14 @@ public:
      *
      * Sets the statistic values for all the message types.
      */
-    void get(com::seagate::kinetic::proto::Command_GetLog* response) {
+    void get(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
         std::unique_lock<std::mutex> scopedLock(m_mutex);
         for (auto& messageStats : m_statsTable) {
             com::seagate::kinetic::proto::Command_GetLog_Statistics* statistics(response->add_statistics());
             statistics->set_messagetype(messageStats.first);
-            statistics->set_count(messageStats.second->count);
-            statistics->set_bytes(messageStats.second->byteCount);
+            statistics->set_count(messageStats.second->count());
+            statistics->set_bytes(messageStats.second->byteCount());
         }
     }
 
@@ -124,7 +154,5 @@ private:
     std::mutex  m_mutex;        //!< Mutex to make the class thread safe
     StatsMap    m_statsTable;   //!< Statistics for all message types
 };
-
-extern MessageStatistics messageStatistics;
 
 #endif

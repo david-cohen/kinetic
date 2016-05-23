@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -20,7 +25,7 @@
 #include <stdexcept>
 #include "Logger.hpp"
 #include "SslControl.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Constants
@@ -53,11 +58,11 @@ SslControl::SslControl()
     /*
      * Load the certificate and the private key and then make sure they are consistent.
      */
-    if (SSL_CTX_use_certificate_file(m_context, systemConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
+    if (SSL_CTX_use_certificate_file(m_context, globalConfig.sslCertificateFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to load certificate";
         return;
     }
-    if (SSL_CTX_use_PrivateKey_file(m_context, systemConfig.sslPrivateKeyFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
+    if (SSL_CTX_use_PrivateKey_file(m_context, globalConfig.sslPrivateKeyFile().c_str(), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
         LOG(ERROR) << "Failed to load private key";
         return;
     }
@@ -73,11 +78,14 @@ SslControl::SslControl()
  */
 SslControl::~SslControl() {
 
-    if (m_context != nullptr)
-        SSL_CTX_free(m_context);
+    if (m_operational) {
+        if (m_context != nullptr)
+            SSL_CTX_free(m_context);
 
-    EVP_cleanup();
-    ERR_free_strings();
+        EVP_cleanup();
+        ERR_free_strings();
+        m_operational = false;
+    }
 }
 
 /**
@@ -90,6 +98,11 @@ SslControl::~SslControl() {
  * @throws  A runtime error if a connection could not be created
  */
 SSL* SslControl::createConnection(int socketFd) {
+
+    if (!m_operational) {
+        LOG(ERROR) << "Failed to create SSL connection due to non-operational SSL control";
+        throw std::runtime_error("Failed to create SSL connection due to non-operational SSL control");
+    }
 
     SSL* ssl = SSL_new(m_context);
 
@@ -125,7 +138,7 @@ SSL* SslControl::createConnection(int socketFd) {
  *
  * @param   ssl     The SSL connection object to be freed
  */
-void SslControl::tearDownConnection(SSL* ssl) {
+void SslControl::tearDownConnection(SSL* const ssl) {
     SSL_free(ssl);
 }
 

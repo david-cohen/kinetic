@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
 #ifndef KINETIC_MESSAGE_HPP
@@ -24,7 +29,6 @@
 #include <string>
 #include <memory>
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Kinetic.pb.hpp"
 #include "MessageException.hpp"
 #include "KineticMessageFraming.hpp"
@@ -48,25 +52,25 @@ public:
     /*
      * Command Functions
      */
-    inline bool has_command() {return m_command != nullptr;}
-    inline const ::com::seagate::kinetic::proto::Command* command() {return m_command.get();}
-    inline ::com::seagate::kinetic::proto::Command* mutable_command() {return m_command.get();}
-    inline const ::std::string& commandbytes() {return m_protoMessage->commandbytes();}
+    inline bool has_command() const {return m_command != nullptr;}
+    inline const ::com::seagate::kinetic::proto::Command* command() const {return m_command.get();}
+    inline ::com::seagate::kinetic::proto::Command* mutable_command() const {return m_command.get();}
+    inline const ::std::string& commandbytes() const {return m_protoMessage->commandbytes();}
     inline void build_commandbytes() {m_protoMessage->set_commandbytes(m_command->SerializeAsString());}
 
     /*
      * HMAC Functions
      */
-    inline bool has_authtype() {return m_protoMessage->has_authtype();}
-    inline ::com::seagate::kinetic::proto::Message_AuthType authtype() {return m_protoMessage->authtype();}
+    inline bool has_authtype() const {return m_protoMessage->has_authtype();}
+    inline ::com::seagate::kinetic::proto::Message_AuthType authtype() const {return m_protoMessage->authtype();}
     inline void set_authtype(::com::seagate::kinetic::proto::Message_AuthType authtype) {m_protoMessage->set_authtype(authtype);}
 
-    inline bool has_hmacauth() {return m_protoMessage->has_hmacauth();}
-    inline const ::com::seagate::kinetic::proto::Message_HMACauth& hmacauth() {return m_protoMessage->hmacauth();}
+    inline bool has_hmacauth() const {return m_protoMessage->has_hmacauth();}
+    inline const ::com::seagate::kinetic::proto::Message_HMACauth& hmacauth() const {return m_protoMessage->hmacauth();}
     inline ::com::seagate::kinetic::proto::Message_HMACauth* mutable_hmacauth() {return m_protoMessage->mutable_hmacauth();}
 
-    inline bool has_pinauth() {return m_protoMessage->has_pinauth();}
-    inline const ::com::seagate::kinetic::proto::Message_PINauth& pinauth() {return m_protoMessage->pinauth();}
+    inline bool has_pinauth() const {return m_protoMessage->has_pinauth();}
+    inline const ::com::seagate::kinetic::proto::Message_PINauth& pinauth() const {return m_protoMessage->pinauth();}
 
     void generateHmac(const std::string& key, HmacAlgorithm algorithm) {
         m_protoMessage->mutable_hmacauth()->set_hmac(Hmac::compute(m_protoMessage->commandbytes(), key, algorithm));
@@ -107,7 +111,7 @@ private:
     /*
      * Private Member Functions
      */
-    uint64_t getTimestamp(void) {
+    uint64_t getTimestamp(void) const {
         struct timespec time;
         return (clock_gettime(CLOCK_REALTIME, &time) != 0) ? 0 : time.tv_sec * 1000000 + time.tv_nsec / 1000;
     }
@@ -118,8 +122,6 @@ private:
     std::shared_ptr<com::seagate::kinetic::proto::Message> m_protoMessage;  //!< The kinetic message
     std::shared_ptr<com::seagate::kinetic::proto::Command> m_command;       //!< The message command (which is inside in the message)
     std::string                                            m_value;         //!< Kinetic message value (which is outside the message)
-
-    DISALLOW_COPY_AND_ASSIGN(KineticMessage);
 };
 
 /*

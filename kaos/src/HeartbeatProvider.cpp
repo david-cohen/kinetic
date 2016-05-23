@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2015 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -27,7 +32,7 @@
 #include <sstream>
 #include <exception>
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "HeartbeatProvider.hpp"
 
 /**
@@ -38,8 +43,8 @@ HeartbeatProvider::HeartbeatProvider()
 
     memset(&m_address, 0, sizeof(m_address));
     m_address.sin_family = AF_INET;
-    m_address.sin_addr.s_addr = inet_addr(systemConfig.multicastIpAddress());
-    m_address.sin_port = htons(systemConfig.multicastPort());
+    m_address.sin_addr.s_addr = inet_addr(globalConfig.multicastIpAddress());
+    m_address.sin_port = htons(globalConfig.multicastPort());
 }
 
 /**
@@ -93,18 +98,18 @@ void HeartbeatProvider::sendHeartbeatMessage() {
 
     std::stringstream stream;
     stream << "{"
-           << "\"manufacturer\":\"" << systemConfig.vendor() << "\","
-           << "\"model\":\"" << systemConfig.model() << "\","
-           << "\"firmware_version\":\"" << systemConfig.version() << "\","
-           << "\"serial_number\":\"" << systemConfig.serialNumber() << "\","
-           << "\"world_wide_name\":\"" << systemConfig.worldWideName() << "\","
-           << "\"protocol_version\":\"" << systemConfig.protocolVersion() << "\","
-           << "\"port\":" << systemConfig.tcpPort() << ","
-           << "\"tlsPort\":" << systemConfig.sslPort() << ","
+           << "\"manufacturer\":\"" << globalConfig.vendor() << "\","
+           << "\"model\":\"" << globalConfig.model() << "\","
+           << "\"firmware_version\":\"" << globalConfig.version() << "\","
+           << "\"serial_number\":\"" << globalConfig.serialNumber() << "\","
+           << "\"world_wide_name\":\"" << globalConfig.worldWideName() << "\","
+           << "\"protocol_version\":\"" << globalConfig.protocolVersion() << "\","
+           << "\"port\":" << globalConfig.tcpPort() << ","
+           << "\"tlsPort\":" << globalConfig.sslPort() << ","
            << "\"network_interfaces\":[";
 
-    auto interfaceCount = systemConfig.networkInterfaceMap().size();
-    for (auto networkInterfaceSet : systemConfig.networkInterfaceMap()) {
+    auto interfaceCount = globalConfig.networkInterfaceMap().size();
+    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
         auto networkInterface = networkInterfaceSet.second;
         stream << "{\"name\":\"" << networkInterface->name() << "\","
                << "\"ipv4_addr\":\"" << networkInterface->ipv4() << "\","
@@ -133,12 +138,12 @@ void HeartbeatProvider::run() {
             openSocket();
             while (m_active) {
                 sendHeartbeatMessage();
-                sleep(systemConfig.heartbeatSendInterval());
+                sleep(globalConfig.heartbeatSendInterval());
             }
         }
         catch (std::exception& ex) {
             LOG(ERROR) << "Heartbeat provider thread failure, description: " << ex.what();
-            sleep(systemConfig.heartbeatConnectionRetryInterval());
+            sleep(globalConfig.heartbeatConnectionRetryInterval());
         }
     }
 }

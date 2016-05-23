@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -23,16 +28,31 @@
 #include <fstream>
 #include <iostream>
 #include "Hmac.hpp"
-#include "Common.hpp"
 #include "Logger.hpp"
 #include "Translator.hpp"
 #include "Settings.pb.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
 
 /*
  * Initializes the Server Settings object.
+ */
+ServerSettings::ServerSettings()
+    : m_filename(globalConfig.serverSettingsFile()) {
+
+    /*
+     * If possible, load the setting from persistent store.  Otherwise, set them to their default
+     * values.
+     */
+    if (!load())
+        setDefaults();
+}
+
+/*
+ * Initializes the Server Settings object.
+ *
+ * @param   filename    Name of the file used to maintain the server settings
  */
 ServerSettings::ServerSettings(std::string filename)
     : m_filename(filename) {
@@ -77,6 +97,7 @@ void ServerSettings::save() {
     std::unique_ptr<kaos::Settings> settings(new kaos::Settings());
 
     settings->set_clusterversion(m_clusterVersion);
+    settings->set_locked(m_locked);
     settings->set_lockpin(m_lockPin);
     settings->set_erasepin(m_erasePin);
 
@@ -108,21 +129,22 @@ void ServerSettings::save() {
  */
 void ServerSettings::setDefaults() {
 
-    setClusterVersion(systemConfig.defaultClusterVersion());
-    m_lockPin = systemConfig.defaultLockPin();
-    m_erasePin = systemConfig.defaultErasePin();
+    setClusterVersion(globalConfig.defaultClusterVersion());
+    m_locked = globalConfig.defaultLocked();
+    m_lockPin = globalConfig.defaultLockPin();
+    m_erasePin = globalConfig.defaultErasePin();
     m_accessControlMap.clear();
 
     OperationSizedBoolArray operationArray;
     operationArray.fill(true);
-    AccessScope scope(systemConfig.accessControlDefaultTlsRequired(),
-                      systemConfig.accessScopeDefaultKeySubstring(),
-                      systemConfig.accessScopeDefaultKeySubstringOffset(), operationArray);
+    AccessScope scope(globalConfig.accessControlDefaultTlsRequired(),
+                      globalConfig.accessScopeDefaultKeySubstring(),
+                      globalConfig.accessScopeDefaultKeySubstringOffset(), operationArray);
     AccessScopeList scopeList;
     scopeList.push_back(scope);
-    AccessControlPtr accessControl(new AccessControl(systemConfig.accessControlDefaultIdentity(),
-                                   systemConfig.accessControlDefaultHmacKey(),
-                                   systemConfig.accessControlDefaultHmacAlgorithm(), scopeList));
+    AccessControlPtr accessControl(new AccessControl(globalConfig.accessControlDefaultIdentity(),
+                                   globalConfig.accessControlDefaultHmacKey(),
+                                   globalConfig.accessControlDefaultHmacAlgorithm(), scopeList));
     std::list<AccessControlPtr> accessControlList;
     accessControlList.push_back(accessControl);
     updateAccessControl(accessControlList);
@@ -146,6 +168,7 @@ bool ServerSettings::load() {
     }
 
     setClusterVersion(settings->clusterversion());
+    setLocked(settings->locked());
     setLockPin(settings->lockpin());
     setErasePin(settings->erasepin());
 

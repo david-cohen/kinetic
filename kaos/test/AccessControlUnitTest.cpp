@@ -12,14 +12,14 @@
 #include <utility>
 #include "gtest/gtest.h"
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
 
 /*
  * Global Variables
  */
-SystemConfig systemConfig;
+GlobalConfig globalConfig;
 LogControl logControl;
 
 /**
@@ -29,7 +29,7 @@ LogControl logControl;
  */
 std::string createLargeString() {
 
-    uint32_t stringSize = systemConfig.maxHmacKeySize();
+    uint32_t stringSize = globalConfig.maxHmacKeySize();
     std::string pattern = "0123456789abcdef";
     std::string sizedString;
     for (uint32_t index = 0; index < (stringSize / pattern.size()); index++)
@@ -82,10 +82,10 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
  */
 AccessControl createAccessControl(std::string keySubstring, uint32_t keySubstringOffset) {
 
-    int64_t identity = systemConfig.accessControlDefaultIdentity();
-    std::string hmacKey = systemConfig.accessControlDefaultHmacKey();
-    HmacAlgorithm hmacAlgorithm = systemConfig.accessControlDefaultHmacAlgorithm();
-    bool tlsRequired = systemConfig.accessControlDefaultTlsRequired();
+    int64_t identity = globalConfig.accessControlDefaultIdentity();
+    std::string hmacKey = globalConfig.accessControlDefaultHmacKey();
+    HmacAlgorithm hmacAlgorithm = globalConfig.accessControlDefaultHmacAlgorithm();
+    bool tlsRequired = globalConfig.accessControlDefaultTlsRequired();
     OperationSizedBoolArray operationArray;
     operationArray.fill(true);
 
@@ -109,7 +109,7 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
     std::vector<HmacAlgorithm> hmacAlgorithmArray = {HmacAlgorithm::SHA1, HmacAlgorithm::UNKNOWN};
     std::vector<bool> tlsRequiredArray = {false, true};
     std::vector<std::string> keySubstringArray = {"", "0", createBinaryString(), createLargeString()};
-    std::vector<size_t> keySubstringOffsetArray = {0, 1, systemConfig.maxKeySize() / 4, systemConfig.maxKeySize() - 1};
+    std::vector<size_t> keySubstringOffsetArray = {0, 1, globalConfig.maxKeySize() / 4, globalConfig.maxKeySize() - 1};
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key("SampleKey");
 

@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -32,10 +37,11 @@
 #include <iomanip>
 #include <iostream>
 #include <typeinfo>
+#include <algorithm>
 #include "Hmac.hpp"
 #include "Logger.hpp"
 #include "Kinetic.pb.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 
 /*
  * Used Namespaces
@@ -52,15 +58,14 @@ static const char* VERSION("1.0.2-FOR-EVAL-ONLY");
 /*
  * Daemon Related Settings
  */
-static const char* DEFAULT_PID_FILE_NAME("/var/run/kaos.pid");
-static const char* DEFAULT_CONFIG_FILE_NAME("/etc/default/kaos");
+static const char* PID_FILE_NAME("/var/run/kaos.pid");
+static const char* CONFIG_FILE_NAME("/etc/default/kaos");
 static const char* DEFAULT_STORAGE_DIRECTORY("/export/dfs");
 static const char* DATABASE_DIRECTORY("objectDatabase");
 static const char* SERVER_SETTINGS_FILE("serverSettings");
 static const LogFacility LOGGING_FACILITY(LOCAL2);
 static const LogLevel DEFAULT_LOGGING_LEVEL(WARNING);
-static const bool DEFAULT_LOCKED(false);
-static const bool DEFAULT_DEBUG_ENABLED(false);
+static const bool DEBUG_ENABLED(false);
 
 /*
  * Object Store Settings
@@ -112,6 +117,7 @@ static const char* SSL_CERTIFICATE_FILE("/etc/kaos/cert.pem");
  * Setup Settings
  */
 static const int64_t DEFAULT_CLUSTER_VERSION(0);
+static const bool DEFAULT_LOCKED(false);
 static const char* DEFAULT_LOCK_PIN("");
 static const char* DEFAULT_ERASE_PIN("");
 
@@ -150,6 +156,7 @@ static std::string createFlushDataKey() {
  */
 static LogLevel toLogLevel(std::string logLevel) {
 
+    std::transform(logLevel.begin(), logLevel.end(), logLevel.begin(), ::toupper);
     if (logLevel == "ERROR")
         return ERROR;
     else if (logLevel == "WARNING")
@@ -166,10 +173,9 @@ static LogLevel toLogLevel(std::string logLevel) {
  * Initializes the system configuration object, which contains the attributes that a user can not
  * set.
  */
-SystemConfig::SystemConfig()
-    : m_locked(DEFAULT_LOCKED),
-      m_debugEnabled(DEFAULT_DEBUG_ENABLED),
-      m_defaultPidFileName(DEFAULT_PID_FILE_NAME),
+GlobalConfig::GlobalConfig()
+    : m_debugEnabled(DEBUG_ENABLED),
+      m_pidFileName(PID_FILE_NAME),
       m_databaseDirectory(),
       m_serverSettingsFile(),
       m_vendor(VENDOR),
@@ -209,6 +215,7 @@ SystemConfig::SystemConfig()
       m_sslPrivateKeyFile(SSL_PRIVATE_KEY_FILE),
       m_sslCertificateFile(SSL_CERTIFICATE_FILE),
       m_defaultClusterVersion(DEFAULT_CLUSTER_VERSION),
+      m_defaultLocked(DEFAULT_LOCKED),
       m_defaultLockPin(DEFAULT_LOCK_PIN),
       m_defaultErasePin(DEFAULT_ERASE_PIN),
       m_accessControlDefaultTlsRequired(ACCESS_CONTROL_DEFAULT_TLS_REQUIRED),
@@ -232,7 +239,7 @@ SystemConfig::SystemConfig()
      * Read configuration data from the default configuration file.
      */
     boost::property_tree::ptree defaultConfigData;
-    boost::property_tree::ini_parser::read_ini(DEFAULT_CONFIG_FILE_NAME, defaultConfigData);
+    boost::property_tree::ini_parser::read_ini(CONFIG_FILE_NAME, defaultConfigData);
 
     /*
      * Set the logging level first, so that events can be logged correctly fro the beginning.
@@ -250,12 +257,21 @@ SystemConfig::SystemConfig()
         struct stat info;
         if (stat(specifiedStorageDirectory.c_str(), &info) == STATUS_SUCCESS)
             storageDirectory = specifiedStorageDirectory;
-        else
-            LOG(ERROR) << "Specified storage directory (" << specifiedStorageDirectory << ") failed stat: error code=" << errno << ", description=" << strerror(errno);
+        else {
+            LOG(ERROR) << "Specified storage directory (" << specifiedStorageDirectory << ") failed stat: error code="
+                       << errno << ", description=" << strerror(errno);
+        }
     }
 
     m_databaseDirectory = storageDirectory + "/" + DATABASE_DIRECTORY;
     m_serverSettingsFile = storageDirectory + "/" + SERVER_SETTINGS_FILE;
+
+    /*
+     * Determine if the application is to run as a daemon.
+     */
+    string runMode = defaultConfigData.get<string>("RUN_MODE", "BACKGROUND");
+    std::transform(runMode.begin(), runMode.end(), runMode.begin(), ::toupper);
+    m_runAsDaemon = runMode != "FOREGROUND";
 
     /*
      * Discover the network interfaces.

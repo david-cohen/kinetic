@@ -1,17 +1,21 @@
 /*
- * Copyright (c) 2016 Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
-
 #pragma once
 #ifndef MESSAGE_QUEUE_HPP
 #define MESSAGE_QUEUE_HPP
@@ -20,8 +24,8 @@
  * Include Files
  */
 #include <stdint.h>
-#include <mutex>
 #include <deque>
+#include <mutex>
 #include <utility>
 #include <condition_variable>
 
@@ -29,7 +33,6 @@
  * A thread-safe message queue that allows message passing between threads.
  */
 template <typename MessageType> class MessageQueue {
-
 public:
 
     /**
@@ -37,7 +40,7 @@ public:
      *
      * @param   message     The message to be sent
      */
-    void send(MessageType const& message) {
+    void send(MessageType& const message) {
         std::lock_guard<std::mutex> scopedLock(m_mutex);
         m_queue.push_back(std::move(message));
         m_accessControl.notify_one();
@@ -61,15 +64,15 @@ public:
      *
      * @return  true if there are no messages in the queue, false otherwise
      */
-    bool empty() {
+    bool empty() const {
         return m_queue.empty();
     }
 
 private:
 
-    std::mutex                      m_mutex;            //!< Ensures exclusive access to the queue
-    std::condition_variable         m_accessControl;    //!< Object that coordinates access to the queue
-    std::deque<MessageType>         m_queue;            //!< Message queue
+    std::mutex                  m_mutex;            //!< Ensures exclusive access to the queue
+    std::condition_variable     m_accessControl;    //!< Object that coordinates access to the queue
+    std::deque<MessageType>     m_queue;            //!< Message queue
 };
 
 

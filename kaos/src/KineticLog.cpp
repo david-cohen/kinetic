@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -21,10 +26,10 @@
 #include <sys/statvfs.h>
 #include <string>
 #include "Logger.hpp"
+#include "Server.hpp"
 #include "Kinetic.pb.hpp"
 #include "KineticLog.hpp"
-#include "ObjectStore.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "MessageStatistics.hpp"
 
 /**
@@ -33,20 +38,20 @@
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Configuration* configuration(response->mutable_configuration());
-    configuration->set_vendor(systemConfig.vendor());
-    configuration->set_model(systemConfig.model());
-    configuration->set_version(systemConfig.version());
-    configuration->set_serialnumber(systemConfig.serialNumber());
-    configuration->set_compilationdate(systemConfig.compilationDate());
-    configuration->set_sourcehash(systemConfig.sourceHash());
-    configuration->set_port(systemConfig.tcpPort());
-    configuration->set_tlsport(systemConfig.sslPort());
-    configuration->set_worldwidename(systemConfig.worldWideName());
+    configuration->set_vendor(globalConfig.vendor());
+    configuration->set_model(globalConfig.model());
+    configuration->set_version(globalConfig.version());
+    configuration->set_serialnumber(globalConfig.serialNumber());
+    configuration->set_compilationdate(globalConfig.compilationDate());
+    configuration->set_sourcehash(globalConfig.sourceHash());
+    configuration->set_port(globalConfig.tcpPort());
+    configuration->set_tlsport(globalConfig.sslPort());
+    configuration->set_worldwidename(globalConfig.worldWideName());
 
-    for (auto networkInterfaceSet : systemConfig.networkInterfaceMap()) {
+    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
         auto networkInterfaceConfig = networkInterfaceSet.second;
         ::com::seagate::kinetic::proto::Command_GetLog_Configuration_Interface* networkInterface = configuration->add_interface();
         networkInterface->set_name(networkInterfaceConfig->name());
@@ -62,31 +67,32 @@ KineticLog::getConfiguration(com::seagate::kinetic::proto::Command_GetLog* respo
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getLimits(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Limits* limits(response->mutable_limits());
-    limits->set_maxkeysize(systemConfig.maxKeySize());
-    limits->set_maxvaluesize(systemConfig.maxValueSize());
-    limits->set_maxversionsize(systemConfig.maxVersionSize());
-    limits->set_maxtagsize(systemConfig.maxTagSize());
-    limits->set_maxconnections(systemConfig.maxConnections());
-    limits->set_maxoutstandingreadrequests(systemConfig.maxOutstandingReadRequests());
-    limits->set_maxoutstandingwriterequests(systemConfig.maxOutstandingWriteRequests());
-    limits->set_maxmessagesize(systemConfig.maxMessageSize());
-    limits->set_maxkeyrangecount(systemConfig.maxKeyRangeCount());
-    limits->set_maxidentitycount(systemConfig.maxIdentityCount());
-    limits->set_maxpinsize(systemConfig.maxPinSize());
-    limits->set_maxoperationcountperbatch(systemConfig.maxOperationCountPerBatch());
-    limits->set_maxbatchcountperdevice(systemConfig.maxBatchCountPerDevice());
+    limits->set_maxkeysize(globalConfig.maxKeySize());
+    limits->set_maxvaluesize(globalConfig.maxValueSize());
+    limits->set_maxversionsize(globalConfig.maxVersionSize());
+    limits->set_maxtagsize(globalConfig.maxTagSize());
+    limits->set_maxconnections(globalConfig.maxConnections());
+    limits->set_maxoutstandingreadrequests(globalConfig.maxOutstandingReadRequests());
+    limits->set_maxoutstandingwriterequests(globalConfig.maxOutstandingWriteRequests());
+    limits->set_maxmessagesize(globalConfig.maxMessageSize());
+    limits->set_maxkeyrangecount(globalConfig.maxKeyRangeCount());
+    limits->set_maxidentitycount(globalConfig.maxIdentityCount());
+    limits->set_maxpinsize(globalConfig.maxPinSize());
+    limits->set_maxoperationcountperbatch(globalConfig.maxOperationCountPerBatch());
+    limits->set_maxbatchcountperdevice(globalConfig.maxBatchCountPerDevice());
 }
 
 /**
  * Builds the response with the requested statistics information.
  *
- * @param   response    Pointer to the get log response to be populated
+ * @param   response            Pointer to the get log response to be populated
+ * @param   messageStatistics   Object containing the message statistics
  */
 void
-KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* const response, MessageStatistics& messageStatistics) {
     messageStatistics.get(response);
 }
 
@@ -97,17 +103,18 @@ KineticLog::getStatistics(com::seagate::kinetic::proto::Command_GetLog* response
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     struct statvfs fiData;
     memset(&fiData, 0, sizeof(fiData));
-    std::string mountPoint = systemConfig.databaseDirectory();
+    std::string mountPoint = globalConfig.databaseDirectory();
 
     float totalCapacity(0);
     float remainingCapacity(0);
 
     if ((statvfs(mountPoint.c_str(), &fiData)) != STATUS_SUCCESS) {
-        LOG(ERROR) << "Failed to get file system information for mount point " << mountPoint << ", Error Code=" << errno << ", Description=" << strerror(errno);
+        LOG(ERROR) << "Failed to get file system information for mount point " << mountPoint
+                   << ", Error Code=" << errno << ", Description=" << strerror(errno);
     }
     else {
         totalCapacity = static_cast<float>(fiData.f_bsize) * static_cast<float>(fiData.f_blocks);
@@ -125,7 +132,7 @@ KineticLog::getCapacities(com::seagate::kinetic::proto::Command_GetLog* response
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getMessage(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     std::string* message = response->mutable_messages();
     message->assign("System started");
@@ -142,11 +149,9 @@ KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& reques
     if (!request.has_device() || !request.device().has_name())
         throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND, "Missing device log name.");
 
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
     if (request.device().name() == "com.seagate.simulator:dummy")
         responseValue = "this is a sample log";
     else
-#endif
         throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_NOT_FOUND,
                                "No device log for the specified name: " + request.device().name());
 }
@@ -157,7 +162,7 @@ KineticLog::getDevice(const com::seagate::kinetic::proto::Command_GetLog& reques
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Temperature* temperature(response->add_temperatures());
     temperature->set_name("HDA");
@@ -173,12 +178,11 @@ KineticLog::getTemperatures(com::seagate::kinetic::proto::Command_GetLog* respon
  * @param   response    Pointer to the get log response to be populated
  */
 void
-KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* response) {
+KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* const response) {
 
     com::seagate::kinetic::proto::Command_GetLog_Utilization* utilization(response->add_utilizations());
     utilization->set_name("HDA");
     utilization->set_value(.1);
-#ifdef WORK_WITH_JAVA_SMOKE_TEST
     utilization = response->add_utilizations();
     utilization->set_name("EN0");
     utilization->set_value(.25);
@@ -188,6 +192,5 @@ KineticLog::getUtilizations(com::seagate::kinetic::proto::Command_GetLog* respon
     utilization = response->add_utilizations();
     utilization->set_name("CPU");
     utilization->set_value(.05);
-#endif
 }
 

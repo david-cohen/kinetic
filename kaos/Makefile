@@ -98,21 +98,21 @@ run-tests:
 
 proto:
 	[ -d $(BUILD_PROTO_DIR) ] || mkdir -p $(BUILD_PROTO_DIR)
-	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BASE_DIR)/$(BUILD_PROTO_DIR) $(PROTO_DIR)/Kinetic.proto
-	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BASE_DIR)/$(BUILD_PROTO_DIR) $(PROTO_DIR)/Entry.proto
-	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BASE_DIR)/$(BUILD_PROTO_DIR) $(PROTO_DIR)/Settings.proto
-	$(BASE_DIR)/tools/clean-proto-file.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Entry
-	$(BASE_DIR)/tools/clean-proto-file.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Kinetic
-	$(BASE_DIR)/tools/clean-proto-file.sh $(BASE_DIR)/$(BUILD_PROTO_DIR) Settings
-	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.cpp $(APP_SRC_DIR)/
-	mv $(BASE_DIR)/$(BUILD_PROTO_DIR)/*.hpp $(INCLUDE_DIR)/
+	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Kinetic.proto
+	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Entry.proto
+	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Settings.proto
+	$(BASE_DIR)/tools/clean-proto-file.sh $(BUILD_PROTO_DIR) Entry
+	$(BASE_DIR)/tools/clean-proto-file.sh $(BUILD_PROTO_DIR) Kinetic
+	$(BASE_DIR)/tools/clean-proto-file.sh $(BUILD_PROTO_DIR) Settings
+	mv $(BUILD_PROTO_DIR)/*.cpp $(APP_SRC_DIR)/
+	mv $(BUILD_PROTO_DIR)/*.hpp $(INCLUDE_DIR)/
 
 # Check for suspicious coding
 
 check:
-	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string $(INCLUDE_DIR)/*.hpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string $(APP_SRC_DIR)/*.cpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string $(TEST_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=150 --filter=-build/c++11,-runtime/references,-runtime/string,-whitespace/newline $(INCLUDE_DIR)/*.hpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(APP_SRC_DIR)/*.cpp
+	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(TEST_SRC_DIR)/*.cpp
 
 cpp-check:
 	- cppcheck $(APP_SRC_DIR) --enable=all --force --includes-file=$(APP_INCLUDES)
@@ -271,22 +271,21 @@ all:	clean kaos test package doxygen
 $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/AccessControl.o \
 	$(BUILD_APP_OBJ_DIR)/ClearTextStream.o \
-	$(BUILD_APP_OBJ_DIR)/CommunicationsManager.o \
 	$(BUILD_APP_OBJ_DIR)/Connection.o \
 	$(BUILD_APP_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_APP_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_APP_OBJ_DIR)/HeartbeatProvider.o \
 	$(BUILD_APP_OBJ_DIR)/Hmac.o \
 	$(BUILD_APP_OBJ_DIR)/KineticLog.o \
 	$(BUILD_APP_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_APP_OBJ_DIR)/Main.o \
 	$(BUILD_APP_OBJ_DIR)/MessageHandler.o \
 	$(BUILD_APP_OBJ_DIR)/MessageTrace.o \
 	$(BUILD_APP_OBJ_DIR)/ObjectStore.o \
+	$(BUILD_APP_OBJ_DIR)/Server.o \
 	$(BUILD_APP_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_APP_OBJ_DIR)/SslControl.o \
 	$(BUILD_APP_OBJ_DIR)/SslStream.o \
-	$(BUILD_APP_OBJ_DIR)/SystemConfig.o \
 	$(BUILD_APP_OBJ_DIR)/TcpTransport.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
@@ -318,34 +317,34 @@ $(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest: \
 $(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettingsUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/translatorUnitTest: \
-	$(BUILD_TEST_OBJ_DIR)/TranslatorUnitTest.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/Translator.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
+	$(BUILD_TEST_OBJ_DIR)/TranslatorUnitTest.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/accessScopeUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/AccessScopeUnitTest.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/accessControlUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
 	$(BUILD_TEST_OBJ_DIR)/AccessControlUnitTest.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
@@ -357,36 +356,36 @@ $(BUILD_TEST_BIN_DIR)/hmacUnitTest: \
 
 $(BUILD_TEST_BIN_DIR)/perfTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
-	$(BUILD_TEST_OBJ_DIR)/PerformanceTest.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
-	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
+	$(BUILD_TEST_OBJ_DIR)/PerformanceTest.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/objectStoreTest: \
 	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStoreTest.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
+	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
 	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
 	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStoreTest.o \
+	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o \
-	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
+	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 
 $(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest: \
+	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_TEST_OBJ_DIR)/HeartbeatProvider.o \
-	$(BUILD_TEST_OBJ_DIR)/HeartbeatProviderUnitTest.o \
-	$(BUILD_TEST_OBJ_DIR)/SystemConfig.o
+	$(BUILD_TEST_OBJ_DIR)/HeartbeatProviderUnitTest.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 

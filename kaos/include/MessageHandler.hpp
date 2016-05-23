@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
 #ifndef MESSAGE_HANDLER_HPP
@@ -20,10 +25,12 @@
  */
 #include <stdint.h>
 #include <string>
-#include "Common.hpp"
 #include "Connection.hpp"
 #include "Kinetic.pb.hpp"
 #include "Transaction.hpp"
+#include "ServerSettings.hpp"
+#include "MessageStatistics.hpp"
+#include "ObjectStoreInterface.hpp"
 
 /**
  * A message handler for Kinetic messages.  A message handler is called for each Kinetic request
@@ -33,38 +40,52 @@ class MessageHandler {
 public:
 
     /*
+     * Constructor
+     */
+    explicit MessageHandler(Connection* connection);
+
+    /*
      * Public Class Member Functions
      */
-    static void processRequest(Transaction* transaction);
-    static void processError(Transaction* transaction);
-    static void processPutRequest(Transaction* transaction);
-    static void processSetupRequest(Transaction* transaction);
-    static void processSecurityRequest(Transaction* transaction);
-    static void processGetRequest(Transaction* transaction);
-    static void processGetNextRequest(Transaction* transaction);
-    static void processGetPreviousRequest(Transaction* transaction);
-    static void processGetVersionRequest(Transaction* transaction);
-    static void processGetKeyRangeRequest(Transaction* transaction);
-    static void processDeleteRequest(Transaction* transaction);
-    static void processFlushRequest(Transaction* transaction);
-    static void processNoopRequest(Transaction* transaction);
-    static void processPinOpRequest(Transaction* transaction);
-    static void processOptimizeMediaRequest(Transaction* transaction);
-    static void processP2pPushRequest(Transaction* transaction);
-    static void processGetLogRequest(Transaction* transaction);
-    static void processStartBatchRequest(Transaction* transaction);
-    static void processEndBatchRequest(Transaction* transaction);
-    static void processAbortBatchRequest(Transaction* transaction);
-    static void processInvalidRequest(Transaction* transaction);
+    void processRequest(Transaction* transaction);
+    void processError(Transaction* transaction);
+    void processPutRequest(Transaction* transaction);
+    void processSetupRequest(Transaction* transaction);
+    void processSecurityRequest(Transaction* transaction);
+    void processGetRequest(Transaction* transaction);
+    void processGetNextRequest(Transaction* transaction);
+    void processGetPreviousRequest(Transaction* transaction);
+    void processGetVersionRequest(Transaction* transaction);
+    void processGetKeyRangeRequest(Transaction* transaction);
+    void processDeleteRequest(Transaction* transaction);
+    void processFlushRequest(Transaction* transaction);
+    void processNoopRequest(Transaction* transaction);
+    void processPinOpRequest(Transaction* transaction);
+    void processOptimizeMediaRequest(Transaction* transaction);
+    void processP2pPushRequest(Transaction* transaction);
+    void processGetLogRequest(Transaction* transaction);
+    void processStartBatchRequest(Transaction* transaction);
+    void processEndBatchRequest(Transaction* transaction);
+    void processAbortBatchRequest(Transaction* transaction);
+    void processInvalidRequest(Transaction* transaction);
 
 private:
 
     /*
      * Private Inline Member Functions
      */
-    static inline uint32_t messageTypeToIndex(::com::seagate::kinetic::proto::Command_MessageType messageType) {return static_cast<uint32_t>(messageType) >> 1;}
+    inline uint32_t messageTypeToIndex(::com::seagate::kinetic::proto::Command_MessageType messageType) {
+        return static_cast<uint32_t>(messageType) >> 1;
+    }
 
-    DISALLOW_COPY_AND_ASSIGN(MessageHandler);
+    /*
+     * Private Data Members
+     */
+
+    Connection* const       m_connection;           //!< Connection messages are tranferred through
+    ObjectStoreInterface&   m_objectStore;          //!< Server's object store
+    ServerSettings&         m_serverSettings;       //!< Server's user settings
+    MessageStatistics&      m_messageStatistics;    //!< Statistics on processed messages
 };
 
 #endif

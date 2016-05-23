@@ -1,15 +1,20 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
  *
- * This code is CONFIDENTIAL and a TRADE SECRET of Western Digital Technologies, Inc. and its
- * affiliates ("WD").  This code is protected under copyright laws as an unpublished work of WD.
- * Notice is for informational purposes only and does not imply publication.
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
  *
- * The receipt or possession of this code does not convey any rights to reproduce or disclose its
- * contents, or to manufacture, use, or sell anything that it may describe, in whole or in part,
- * without the specific written consent of WD.  Any reproduction or distribution of this code
- * without the express written consent of WD is strictly prohibited, is a violation of the copyright
- * laws, and may subject you to criminal prosecution.
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
 #ifndef LOGGER_HPP
@@ -85,13 +90,13 @@ public:
      * @return  The selected log level
      */
 
-    inline LogLevel logLevel() {return m_logLevel;}
+    inline LogLevel logLevel() const {return m_logLevel;}
     /**
      * Indicates if outputting events to standard-out is enabled.
      *
      * @return  true if outputting to standard-out is enabled.
      */
-    inline bool standardOutEnabled() {return m_standardOutEnabled;}
+    inline bool standardOutEnabled() const {return m_standardOutEnabled;}
 
     /**
      * Sets the logging level
@@ -131,7 +136,9 @@ public:
      * @param  lineNumber  The line number that the event was logged from
      * @param  function    The function that the event was logged from
      */
-    LogEntry(LogLevel level, std::string filename, int32_t lineNumber, std::string function) : m_level(level), m_message(), m_location() {
+    LogEntry(LogLevel level, std::string filename, int32_t lineNumber, const std::string& function)
+        : m_level(level), m_message(), m_location() {
+
         captureLevel(level);
         if (logControl.logLevel() == DEBUG)
             captureLocation(filename, lineNumber, function);
@@ -168,7 +175,7 @@ private:
      * @param  lineNumber  The line number that the event was logged from
      * @param  function    The function that the event was logged from
      */
-    inline void captureLocation(std::string filename, int32_t lineNumber, std::string function) {
+    inline void captureLocation(std::string filename, int32_t lineNumber, const std::string& function) {
         /*
          * Remove the path from the filename.
          */

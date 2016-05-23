@@ -16,7 +16,7 @@
 #include <climits>
 #include "gtest/gtest.h"
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
 #include "KineticMessage.hpp"
@@ -29,16 +29,16 @@ using std::string;
 /*
  * Global Variables
  */
-SystemConfig systemConfig;
+GlobalConfig globalConfig;
 LogControl logControl;
 
 /*
  * Constants
  */
-static const string UNIT_TEST_SETTINGS_FILE("/tmp/testSettings");
+static const char* UNIT_TEST_SETTINGS_FILE("/tmp/testSettings");
 
 bool
-settingsFileExist(std::string filename) {
+settingsFileExist(string filename) {
     struct stat info;
     return stat(filename.c_str(), &info) == STATUS_SUCCESS;
 }
@@ -47,7 +47,7 @@ void
 deleteSavedSettings() {
 
     if (settingsFileExist(UNIT_TEST_SETTINGS_FILE)) {
-        string deleteCommand("rm " + UNIT_TEST_SETTINGS_FILE);
+        string deleteCommand("rm " + string(UNIT_TEST_SETTINGS_FILE));
         system(deleteCommand.c_str());
     }
 }
@@ -67,10 +67,10 @@ protected:
  *
  * @return a string with the maximum key size
  */
-std::string createTextString(uint32_t stringSize) {
+string createTextString(uint32_t stringSize) {
 
-    std::string pattern = "0123456789abcdef";
-    std::string sizedString;
+    string pattern = "0123456789abcdef";
+    string sizedString;
     for (uint32_t index = 0; index < (stringSize / pattern.size()); index++)
         sizedString += pattern;
 
@@ -85,9 +85,9 @@ std::string createTextString(uint32_t stringSize) {
  *
  * @return a string contains binary values from 0 to 0xff
  */
-std::string createBinaryString(uint32_t stringSize) {
+string createBinaryString(uint32_t stringSize) {
 
-    std::string binaryString;
+    string binaryString;
     for (uint32_t index = 0; index < stringSize; index++)
         binaryString += (index & 0xff);
 
@@ -122,20 +122,21 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
     /*
      * Check server settings default values.
      */
-    ASSERT_TRUE(serverSettings.lockPin() == systemConfig.defaultLockPin());
-    ASSERT_TRUE(serverSettings.erasePin() == systemConfig.defaultErasePin());
-    ASSERT_EQ(serverSettings.clusterVersion(), systemConfig.defaultClusterVersion());
+    ASSERT_TRUE(serverSettings.locked() == globalConfig.defaultLocked());
+    ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+    ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+    ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
     ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
 
     /*
      * Check access control default values.
      */
-    AccessControlPtr accessControl(serverSettings.accessControl(systemConfig.accessControlDefaultIdentity()));
+    AccessControlPtr accessControl(serverSettings.accessControl(globalConfig.accessControlDefaultIdentity()));
     ASSERT_NE(accessControl, nullptr);
 
-    ASSERT_EQ(accessControl->identity(), systemConfig.accessControlDefaultIdentity());
-    ASSERT_STREQ(accessControl->hmacKey().c_str(), systemConfig.accessControlDefaultHmacKey().c_str());
-    ASSERT_TRUE(accessControl->hmacAlgorithm() == systemConfig.accessControlDefaultHmacAlgorithm());
+    ASSERT_EQ(accessControl->identity(), globalConfig.accessControlDefaultIdentity());
+    ASSERT_STREQ(accessControl->hmacKey().c_str(), globalConfig.accessControlDefaultHmacKey().c_str());
+    ASSERT_TRUE(accessControl->hmacAlgorithm() == globalConfig.accessControlDefaultHmacAlgorithm());
 
     KineticMessagePtr message(new KineticMessage());
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; operation++) {
@@ -156,10 +157,10 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
      * Check access scope default values.
      */
     const AccessScope& accessScope = accessControl->scopeList().front();
-    ASSERT_EQ(accessScope.tlsRequired(), systemConfig.accessControlDefaultTlsRequired());
-    ASSERT_STREQ(accessScope.keySubstring().c_str(), systemConfig.accessScopeDefaultKeySubstring().c_str());
-    ASSERT_EQ(accessScope.keySubstringOffset(), systemConfig.accessScopeDefaultKeySubstringOffset());
-    ASSERT_EQ(accessScope.minimumKeySize(), systemConfig.accessScopeDefaultKeySubstring().size() + systemConfig.accessScopeDefaultKeySubstringOffset());
+    ASSERT_EQ(accessScope.tlsRequired(), globalConfig.accessControlDefaultTlsRequired());
+    ASSERT_STREQ(accessScope.keySubstring().c_str(), globalConfig.accessScopeDefaultKeySubstring().c_str());
+    ASSERT_EQ(accessScope.keySubstringOffset(), globalConfig.accessScopeDefaultKeySubstringOffset());
+    ASSERT_EQ(accessScope.minimumKeySize(), globalConfig.accessScopeDefaultKeySubstring().size() + globalConfig.accessScopeDefaultKeySubstringOffset());
 
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; ++operation)
         ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), true);
@@ -177,20 +178,21 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
     /*
      * Check server settings default values.
      */
-    ASSERT_TRUE(serverSettings.lockPin() == systemConfig.defaultLockPin());
-    ASSERT_TRUE(serverSettings.erasePin() == systemConfig.defaultErasePin());
-    ASSERT_EQ(serverSettings.clusterVersion(), systemConfig.defaultClusterVersion());
+    ASSERT_TRUE(serverSettings.locked() == globalConfig.defaultLocked());
+    ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+    ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+    ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
     ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
 
     /*
      * Check access control default values.
      */
-    AccessControlPtr accessControl(serverSettings.accessControl(systemConfig.accessControlDefaultIdentity()));
+    AccessControlPtr accessControl(serverSettings.accessControl(globalConfig.accessControlDefaultIdentity()));
     ASSERT_NE(accessControl, nullptr);
 
-    ASSERT_EQ(accessControl->identity(), systemConfig.accessControlDefaultIdentity());
-    ASSERT_STREQ(accessControl->hmacKey().c_str(), systemConfig.accessControlDefaultHmacKey().c_str());
-    ASSERT_TRUE(accessControl->hmacAlgorithm() == systemConfig.accessControlDefaultHmacAlgorithm());
+    ASSERT_EQ(accessControl->identity(), globalConfig.accessControlDefaultIdentity());
+    ASSERT_STREQ(accessControl->hmacKey().c_str(), globalConfig.accessControlDefaultHmacKey().c_str());
+    ASSERT_TRUE(accessControl->hmacAlgorithm() == globalConfig.accessControlDefaultHmacAlgorithm());
 
     KineticMessagePtr message(new KineticMessage());
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; operation++) {
@@ -211,13 +213,73 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
      * Check access scope default values.
      */
     const AccessScope& accessScope = accessControl->scopeList().front();
-    ASSERT_EQ(accessScope.tlsRequired(), systemConfig.accessControlDefaultTlsRequired());
-    ASSERT_STREQ(accessScope.keySubstring().c_str(), systemConfig.accessScopeDefaultKeySubstring().c_str());
-    ASSERT_EQ(accessScope.keySubstringOffset(), systemConfig.accessScopeDefaultKeySubstringOffset());
-    ASSERT_EQ(accessScope.minimumKeySize(), systemConfig.accessScopeDefaultKeySubstring().size() + systemConfig.accessScopeDefaultKeySubstringOffset());
+    ASSERT_EQ(accessScope.tlsRequired(), globalConfig.accessControlDefaultTlsRequired());
+    ASSERT_STREQ(accessScope.keySubstring().c_str(), globalConfig.accessScopeDefaultKeySubstring().c_str());
+    ASSERT_EQ(accessScope.keySubstringOffset(), globalConfig.accessScopeDefaultKeySubstringOffset());
+    ASSERT_EQ(accessScope.minimumKeySize(), globalConfig.accessScopeDefaultKeySubstring().size() + globalConfig.accessScopeDefaultKeySubstringOffset());
 
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; ++operation)
         ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), true);
+}
+
+TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Locked_Test) {
+
+    /*
+     * Make sure that the test settings file does not exist (it should have been deleted in setup).
+     */
+    ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
+
+    /*
+     * Check server settings default values.
+     */
+    {
+        ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
+        ASSERT_TRUE(serverSettings.locked() == globalConfig.defaultLocked());
+        ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+        ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+        ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
+        ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
+
+        serverSettings.setLocked(true);
+        ASSERT_TRUE(serverSettings.locked());
+        ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+        ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+        ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
+        ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
+        serverSettings.save();
+    }
+
+    /*
+     * Check that the locked value was saved and restored correctly when true.
+     */
+    {
+        ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
+        ASSERT_TRUE(serverSettings.locked());
+        ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+        ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+        ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
+        ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
+
+        serverSettings.setLocked(false);
+        ASSERT_FALSE(serverSettings.locked());
+        ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+        ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+        ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
+        ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
+        serverSettings.save();
+    }
+
+    /*
+     * Check that the locked value was saved and restored correctly when false.
+     */
+    {
+        ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
+        ASSERT_FALSE(serverSettings.locked());
+        ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+        ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
+        ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
+        ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
+    }
 }
 
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
@@ -227,10 +289,10 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
      */
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
 
-    std::vector<std::string> pinArray = {"a", createBinaryString(systemConfig.maxPinSize()), createTextString(systemConfig.maxPinSize()), ""};
+    std::vector<string> pinArray = {"a", createBinaryString(globalConfig.maxPinSize()), createTextString(globalConfig.maxPinSize()), ""};
     for (uint32_t pinIndex = 0; pinIndex < pinArray.size(); ++pinIndex) {
-        std::string newLockPin = pinArray[pinIndex];
-        std::string newErasePin = pinArray[pinArray.size() - 1 - pinIndex];
+        string newLockPin = pinArray[pinIndex];
+        string newErasePin = pinArray[pinArray.size() - 1 - pinIndex];
         {
             ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
             serverSettings.setLockPin(newLockPin);
@@ -238,15 +300,16 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
             serverSettings.save();
             ASSERT_TRUE(serverSettings.lockPin() == newLockPin);
             ASSERT_TRUE(serverSettings.erasePin() == newErasePin);
-            ASSERT_EQ(serverSettings.clusterVersion(), systemConfig.defaultClusterVersion());
+            ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
             ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
         }
 
         {
             ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
+            ASSERT_TRUE(serverSettings.locked() == globalConfig.defaultLocked());
             ASSERT_TRUE(serverSettings.lockPin() == newLockPin);
             ASSERT_TRUE(serverSettings.erasePin() == newErasePin);
-            ASSERT_EQ(serverSettings.clusterVersion(), systemConfig.defaultClusterVersion());
+            ASSERT_EQ(serverSettings.clusterVersion(), globalConfig.defaultClusterVersion());
             ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
         }
     }
@@ -267,15 +330,17 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Cluster_Version_Test) {
             serverSettings.setClusterVersion(newClusterVersion);
             serverSettings.save();
             ASSERT_EQ(serverSettings.clusterVersion(), newClusterVersion);
-            ASSERT_TRUE(serverSettings.lockPin() == systemConfig.defaultLockPin());
-            ASSERT_TRUE(serverSettings.erasePin() == systemConfig.defaultErasePin());
+            ASSERT_TRUE(serverSettings.locked() == globalConfig.defaultLocked());
+            ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+            ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
             ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
         }
         {
             ServerSettings serverSettings(UNIT_TEST_SETTINGS_FILE);
             ASSERT_EQ(serverSettings.clusterVersion(), newClusterVersion);
-            ASSERT_TRUE(serverSettings.lockPin() == systemConfig.defaultLockPin());
-            ASSERT_TRUE(serverSettings.erasePin() == systemConfig.defaultErasePin());
+            ASSERT_TRUE(serverSettings.locked() == globalConfig.defaultLocked());
+            ASSERT_TRUE(serverSettings.lockPin() == globalConfig.defaultLockPin());
+            ASSERT_TRUE(serverSettings.erasePin() == globalConfig.defaultErasePin());
             ASSERT_EQ(serverSettings.accessControlMap().size(), 1U);
         }
     }
@@ -290,11 +355,11 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
     ASSERT_FALSE(settingsFileExist(UNIT_TEST_SETTINGS_FILE));
 
     std::vector<int64_t> identityArray = {0, LLONG_MAX};
-    std::vector<std::string> hmacKeyArray = {"0", createBinaryString(systemConfig.maxHmacKeySize()), createTextString(systemConfig.maxHmacKeySize())};
+    std::vector<string> hmacKeyArray = {"0", createBinaryString(globalConfig.maxHmacKeySize()), createTextString(globalConfig.maxHmacKeySize())};
     std::vector<HmacAlgorithm> hmacAlgorithmArray = {HmacAlgorithm::SHA1, HmacAlgorithm::UNKNOWN};
     std::vector<bool> tlsRequiredArray = {false, true};
-    std::vector<std::string> keySubstringArray = {"", "0", createBinaryString(systemConfig.maxKeySize()), createTextString(systemConfig.maxKeySize())};
-    std::vector<size_t> keySubstringOffsetArray = {0, 1, systemConfig.maxKeySize() - 1};
+    std::vector<string> keySubstringArray = {"", "0", createBinaryString(globalConfig.maxKeySize()), createTextString(globalConfig.maxKeySize())};
+    std::vector<size_t> keySubstringOffsetArray = {0, 1, globalConfig.maxKeySize() - 1};
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key("SampleKey");
 
@@ -304,14 +369,14 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
     for (uint32_t identityIndex = 0; identityIndex < identityArray.size(); ++identityIndex) {
         int64_t identity = identityArray[identityIndex];
         for (uint32_t hmacKeyIndex = 0; hmacKeyIndex < hmacKeyArray.size(); ++hmacKeyIndex) {
-            std::string hmacKey = hmacKeyArray[hmacKeyIndex];
+            string hmacKey = hmacKeyArray[hmacKeyIndex];
             for (uint32_t hmacAlgorithmIndex = 0; hmacAlgorithmIndex < hmacAlgorithmArray.size(); ++hmacAlgorithmIndex) {
                 HmacAlgorithm hmacAlgorithm = hmacAlgorithmArray[hmacAlgorithmIndex];
 
                 for (uint32_t tlsRequiredIndex = 0; tlsRequiredIndex < tlsRequiredArray.size(); ++tlsRequiredIndex) {
                     bool tlsRequired = tlsRequiredArray[tlsRequiredIndex];
                     for (uint32_t keySubstringIndex = 0; keySubstringIndex < keySubstringArray.size(); ++keySubstringIndex) {
-                        std::string keySubstring = keySubstringArray[keySubstringIndex];
+                        string keySubstring = keySubstringArray[keySubstringIndex];
                         for (uint32_t keySubstringOffsetIndex = 0; keySubstringOffsetIndex < keySubstringOffsetArray.size(); ++keySubstringOffsetIndex) {
                             uint32_t keySubstringOffset = keySubstringOffsetArray[keySubstringOffsetIndex];
                             for (uint32_t patternCount = 0; patternCount < ((1 << NUMBER_OF_OPERATIONS) - 1); ++patternCount) {

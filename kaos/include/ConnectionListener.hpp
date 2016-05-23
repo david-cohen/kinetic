@@ -1,5 +1,20 @@
 /*
- * Copyright (c) [2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
+ *
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
 #ifndef CONNECTION_LISTENER_HPP
@@ -11,15 +26,13 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <thread>
-#include "Common.hpp"
 #include "Logger.hpp"
-#include "SystemConfig.hpp"
+#include "Server.hpp"
 #include "TcpTransport.hpp"
 #include "ListenerInterface.hpp"
-#include "CommunicationsManager.hpp"
 
 /**
- * A stream agnostic connection listener for Kinetic clients.  Kinetic support both encrypted and
+ * A stream agnostic connection listener for Kinetic clients.  Kinetic supports both encrypted and
  * clear text data streams for its connections.  This listener is used for both.  When a client is
  * discovered through the listening port, a connection is created with the proper data stream.
  */
@@ -30,10 +43,11 @@ public:
     /**
      * ConnectionListener Constructor
      *
-     * @param  port     The port to listen on for new connections
+     * @param   server  The server that will manage the new conections
+     * @param   port    The port to listen on for new connections
      */
-    explicit ConnectionListener(uint32_t port)
-        : m_port(port), m_terminated(false), m_thread(nullptr) {
+    explicit ConnectionListener(Server* const server, uint32_t port)
+        : m_server(server), m_port(port), m_terminated(false), m_thread(nullptr) {
     }
 
     /**
@@ -43,7 +57,7 @@ public:
      *
      * Indicates if the listener has started.
      */
-    inline bool started() {return (m_thread != nullptr);}
+    inline bool started() const {return (m_thread != nullptr);}
 
     /**
      * Start
@@ -96,7 +110,7 @@ private:
             try {
                 ClientServerConnectionInfo clientServerConnectionInfo = TcpTransport::serverConnect(m_port, m_listeningSocket);
                 StreamInterface* stream = static_cast<StreamInterface*>(new StreamType(clientServerConnectionInfo.socketDescriptor()));
-                communicationsManager.addConnection(new Connection(stream, clientServerConnectionInfo));
+                m_server->addConnection(new Connection(m_server, stream, clientServerConnectionInfo));
             }
             catch (std::exception& ex) {
                 LOG(ERROR) << "Exception encounter: " << ex.what();
@@ -112,12 +126,11 @@ private:
     /*
      * Private Data Members
      */
-    uint32_t        m_port;             //!< Listening port
+    Server* const   m_server;           //!< Server that will manager the new connections
+    const uint32_t  m_port;             //!< Listening port
     bool            m_terminated;       //!< Indicates if listener is terminated
     int32_t         m_listeningSocket;  //!< File descriptor of socket listening on
     std::thread*    m_thread;           //!< Listening thread
-
-    DISALLOW_COPY_AND_ASSIGN(ConnectionListener);
 };
 
 #endif

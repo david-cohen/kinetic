@@ -1,7 +1,21 @@
 #!/bin/sh
-# Start/stop the Kinetic (kaos) daemon
-# Copyright (c) [2016] Western Digital Technologies, Inc. All rights reserved.
-#
+# Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+# 
+# SPDX-License-Identifier: GPL-2.0+
+# This file is part of Kinetic Advanced Object Store (KAOS).
+# 
+# This program is free software: you may copy, redistribute and/or modify it under the terms of the
+# GNU General Public License as published by the Free Software Foundation, either version 2 of the
+# License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along with this program; if
+# not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA. <http://www.gnu.org/licenses/>
+
 ### BEGIN INIT INFO
 # Provides:          kaos
 # Required-Start:    $network $syslog
@@ -15,7 +29,6 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=kaos
 DAEMON=/usr/sbin/"$NAME"
 PIDFILE=/var/run/"$NAME".pid
-EXTRA_OPTS="--pid $PIDFILE"
 
 . /lib/lsb/init-functions
 . /etc/default/kaos
@@ -23,7 +36,7 @@ EXTRA_OPTS="--pid $PIDFILE"
 case "$1" in
 start)
         log_daemon_msg "Starting Kinetic daemon" "$NAME"
-        start_daemon -p $PIDFILE $DAEMON $EXTRA_OPTS
+        start_daemon -p $PIDFILE $DAEMON
         log_end_msg $?
 	;;
 stop)
@@ -37,7 +50,7 @@ restart | force-reload)
         $0 start
         ;;
 clean-restart)
-        log_daemon_msg "Cleanly Restarting Kinetic daemon" "$NAME" 
+        log_daemon_msg "Cleanly Restarting Kinetic daemon" "$NAME"
         $0 stop
 	rm -rf $ROOT_STORAGE_DIRECTORY/objectDatabase
 	rm -rf $ROOT_STORAGE_DIRECTORY/serverSettings

@@ -17,8 +17,8 @@
  * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 #pragma once
-#ifndef LEVEL_DB_OBJECT_STORE_HPP
-#define LEVEL_DB_OBJECT_STORE_HPP
+#ifndef ROCKS_DB_OBJECT_STORE_HPP
+#define ROCKS_DB_OBJECT_STORE_HPP
 
 /*
  * Include Files
@@ -28,8 +28,8 @@
 #include <mutex>
 #include <string>
 #include <memory>
-#include "leveldb/db.h"
-#include "leveldb/write_batch.h"
+#include "rocksdb/db.h"
+#include "rocksdb/write_batch.h"
 #include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
 #include "ObjectStoreInterface.hpp"
@@ -37,20 +37,20 @@
 /*
  * Incomplete Class Definition
  */
-class LevelDbBatch;
+class RocksDbBatch;
 
 /**
  * Level DB object store with a Kinetic API.
  */
-class LevelDbObjectStore : public ObjectStoreInterface {
+class RocksDbObjectStore : public ObjectStoreInterface {
 
 public:
 
     /*
      * Constructor/Destructor
      */
-    LevelDbObjectStore();
-    ~LevelDbObjectStore();
+    RocksDbObjectStore();
+    ~RocksDbObjectStore();
 
     /*
      * Public Member Functions
@@ -71,21 +71,21 @@ public:
                      com::seagate::kinetic::proto::Command_Range* returnData);
     void getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
                              com::seagate::kinetic::proto::Command_Range* returnData);
-    void batchedPutEntry(leveldb::WriteBatch& batch, const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
-    void batchedDeleteEntry(leveldb::WriteBatch& batch, const com::seagate::kinetic::proto::Command_KeyValue& params);
-    void batchCommit(leveldb::WriteBatch& batch);
+    void batchedPutEntry(rocksdb::WriteBatch& batch, const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
+    void batchedDeleteEntry(rocksdb::WriteBatch& batch, const com::seagate::kinetic::proto::Command_KeyValue& params);
+    void batchCommit(rocksdb::WriteBatch& batch);
 
 private:
 
     /*
      * Private Member Functions
      */
-    leveldb::WriteOptions& getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option);
+    rocksdb::WriteOptions& getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option);
 
     /*
      * Private Data Members
      */
-    leveldb::DB*            m_database;     //!< Actual levelDB database
+    rocksdb::DB*            m_database;     //!< Actual levelDB database
     std::recursive_mutex    m_mutex;        //!< Mutex to make object thread safe
 };
 

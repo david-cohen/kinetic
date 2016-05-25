@@ -30,7 +30,6 @@
 #include <sstream>
 #include <typeinfo>
 #include <unordered_map>
-#include "leveldb/slice.h"
 #include "Hmac.hpp"
 #include "Kinetic.pb.hpp"
 #include "NetworkInterface.hpp"
@@ -108,7 +107,7 @@ public:
     inline HmacAlgorithm accessControlDefaultHmacAlgorithm() const {return m_accessControlDefaultHmacAlgorithm;}
     inline std::string accessScopeDefaultKeySubstring() const {return m_accessScopeDefaultKeySubstring;}
     inline uint32_t accessScopeDefaultKeySubstringOffset() const {return m_accessScopeDefaultKeySubstringOffset;}
-    inline const leveldb::Slice& flushDataKey() const {return m_flushDataKey;}
+    inline const std::string& flushDataKey() const {return m_flushDataKey;}
     inline std::set<com::seagate::kinetic::proto::Command_GetLog_Type> defaultLogTypes() const {return m_defaultLogTypes;}
     inline NetworkInterfaceMap networkInterfaceMap() const {return m_networkInterfaceMap;}
 
@@ -168,7 +167,7 @@ private:
     HmacAlgorithm        m_accessControlDefaultHmacAlgorithm;
     std::string          m_accessScopeDefaultKeySubstring;
     uint32_t             m_accessScopeDefaultKeySubstringOffset;
-    const leveldb::Slice m_flushDataKey;
+    const std::string    m_flushDataKey;
     GetLogTypeSet        m_defaultLogTypes;
     NetworkInterfaceMap  m_networkInterfaceMap;
 };

@@ -50,31 +50,28 @@ GlobalConfig globalConfig;
  * Private Variables
  */
 static Server server;
-static std::mutex daemonMutex;
-static std::unique_lock<std::mutex> daemonLock(daemonMutex);
-static std::condition_variable daemonTerminated;
+static std::condition_variable serverTerminated;
 
 /**
  * Terminates the program due to being signalled to exit (using SIGTERM).
  *
  * @param   signum  Signal number sent to process
  */
-void terminateProgram(int signum) {
+static void terminateProgram(int signum) {
 
     /*
-     * Signal the daemon to terminate (and eliminate the unused args warning for signum).
+     * Signal the server to terminate (and eliminate the unused args warning for signum).
      */
-    daemonTerminated.notify_one();
+    serverTerminated.notify_one();
     static_cast<void>(signum);
 }
 
 /**
- * Initializes the server object by initializing its list of connection listeners. Currently, there
- * are only two - one for encrypted communication on the SSL port and one for clear text
- * communications on the TCP port.
-*/
+ * Initialize the server object, which consists of its settings, object store, statistics,
+ * connection listeners, and its heartbeat provider
+ */
 Server::Server()
-    : m_settings(), m_messageStatistics(), m_objectStore(), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
+    : m_settings(), m_objectStore(), m_messageStatistics(), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
 
     ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(this, globalConfig.sslPort()));
     ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(this, globalConfig.tcpPort()));
@@ -83,12 +80,16 @@ Server::Server()
 }
 
 /**
- * The server's entry point.
+ * The server's entry point.  It daemonizes the application (unless otherwise directed), starts the
+ * TCP connection listeners and heartbeat provider, and then waits to be shutdown.
  *
  * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
  */
 int32_t Server::run() {
 
+    /*
+     * If the application is running in the foreground, output logs to stdout.
+     */
     if (!globalConfig.runAsDaemon())
         logControl.setStandardOutEnabled(true);
 
@@ -107,7 +108,8 @@ int32_t Server::run() {
     }
 
     /*
-     * Setup the object store.
+     * Open the object store, create the process ID file (used to get status and shutdown the
+     * application), and load the sigterm handler.
      */
     if (!m_objectStore.open()) {
         LOG(ERROR) << "Failed to open object store";
@@ -137,7 +139,12 @@ int32_t Server::run() {
     for (auto listener : m_listenerList)
         listener->start();
 
-    daemonTerminated.wait(daemonLock);
+    /*
+     * Block waiting to be shutdown (by the init.d kaos script stop command).
+     */
+    std::mutex terminationMutex;
+    std::unique_lock<std::mutex> terminationLock(terminationMutex);
+    serverTerminated.wait(terminationLock);
     LOG(INFO) << "Stopping application";
 
     /*
@@ -149,6 +156,9 @@ int32_t Server::run() {
     for (auto listener : m_listenerList)
         listener->stop();
 
+    /*
+     * Delete the process ID file and exit.
+     */
     if (remove(globalConfig.pidFileName()) != STATUS_SUCCESS)
         LOG(ERROR) << "Failed to remove PID file: Error Code=" << errno << ", Description=" << strerror(errno);
 

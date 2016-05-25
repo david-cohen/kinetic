@@ -31,7 +31,7 @@
 #include "HeartbeatProvider.hpp"
 #include "MessageStatistics.hpp"
 #include "ListenerInterface.hpp"
-#include "LevelDbObjectStore.hpp"
+#include "RocksDbObjectStore.hpp"
 
 /*
  * Incomplete Class Definition
@@ -54,7 +54,7 @@ public:
      * Public Accessors
      */
     ServerSettings& settings() {return m_settings;}
-    LevelDbObjectStore& objectStore() {return m_objectStore;}
+    RocksDbObjectStore& objectStore() {return m_objectStore;}
     MessageStatistics& messageStatistics() {return m_messageStatistics;}
 
     /*
@@ -68,8 +68,8 @@ public:
 private:
 
     ServerSettings                  m_settings;             //!< User configurable server settings
+    RocksDbObjectStore              m_objectStore;          //!< Server's object store database
     MessageStatistics               m_messageStatistics;    //!< Statistics on messages processed
-    LevelDbObjectStore              m_objectStore;          //!< Server's object store database
     std::list<Connection*>          m_connectionList;       //!< List of active connections
     std::list<ListenerInterfacePtr> m_listenerList;         //!< List of active listeners
     HeartbeatProvider               m_heartbeatProvider;    //!< Provider of heartbeat messages

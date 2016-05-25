@@ -29,7 +29,7 @@ USE_COMPRESSION=false
 # are: ERROR, WARNING, INFO, and DEBUG".  If the logging level is not specified or unrecognized,
 # then the WARNING level will be used. 
 
-LOGGING_LEVEL=WARN
+LOGGING_LEVEL=WARNING
 
 # Specify if the application is to run in the background as a daemon or in foreground outputting
 # log and debug (if enabled) information to stdout.  Possible values are: FOREGROUND or BACKGROUND.

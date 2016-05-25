@@ -1,6 +1,6 @@
 # Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
 
-BASE_DIR	:= $(shell pwd)
+BASE_DIR    := $(shell pwd)
 TIMESTAMP   := $(shell date)
 SOURCE_HASH := $(shell ./tools/create-source-hash.sh)
 PACKAGE_NAME = wdc-kinetic
@@ -8,30 +8,30 @@ PACKAGE_NAME = wdc-kinetic
 # Cross Compile for ARM and native compile for everything else
 
 ifdef (ARM_CROSS_COMPILER)
-COMPILER_PREFIX 	= arm-marvell-linux-gnueabi-
+COMPILER_PREFIX     = arm-marvell-linux-gnueabi-
 TOOLCHAIN_BIN_DIR   = $(BASE_DIR)/a370-tool-chain/bin
 TOOLCHAIN_LIB_DIR   = $(BASE_DIR)/a370-tool-chain/arm-marvell-linux-gnueabi/libc/lib
 else
-COMPILER_PREFIX 	=
+COMPILER_PREFIX     =
 TOOLCHAIN_BIN_DIR   = /usr/bin
 TOOLCHAIN_LIB_DIR   = /usr/lib/x86_64-linux-gnu
 endif
 
 # Build Input Directories
 
-APP_SRC_DIR 	= $(BASE_DIR)/src
-INCLUDE_DIR 	= $(BASE_DIR)/include
-PROTO_DIR   	= $(BASE_DIR)/proto
-TEST_SRC_DIR	= $(BASE_DIR)/test
-PACKAGE_DIR 	= $(BASE_DIR)/package
-CONF_DIR 		= $(BASE_DIR)/conf
+APP_SRC_DIR     = $(BASE_DIR)/src
+INCLUDE_DIR     = $(BASE_DIR)/include
+PROTO_DIR       = $(BASE_DIR)/proto
+TEST_SRC_DIR    = $(BASE_DIR)/test
+PACKAGE_DIR     = $(BASE_DIR)/package
+CONF_DIR        = $(BASE_DIR)/conf
 
 # Build Output Directories
 
-BUILD_DIR   		= $(BASE_DIR)/build
+BUILD_DIR           = $(BASE_DIR)/build
 BUILD_APP_BIN_DIR   = $(BUILD_DIR)/bin/app
 BUILD_APP_OBJ_DIR   = $(BUILD_DIR)/obj/app
-BUILD_PROTO_DIR 	= $(BUILD_DIR)/proto
+BUILD_PROTO_DIR     = $(BUILD_DIR)/proto
 BUILD_TEST_BIN_DIR  = $(BUILD_DIR)/bin/test
 BUILD_TEST_OBJ_DIR  = $(BUILD_DIR)/obj/test
 BUILD_PACKAGE_DIR   = $(BUILD_DIR)/package
@@ -39,52 +39,33 @@ BUILD_DOXYGEN_DIR   = $(BUILD_DIR)/doxygen
 
 # Dependencies Library Directories
 
-DEPENDENCIES_DIR	= $(BASE_DIR)/dependencies
-ASTYLE_DIR  		= $(DEPENDENCIES_DIR)/astyle/build/gcc/bin
-BOOST_DIR   		= $(DEPENDENCIES_DIR)/boost
-GOOGLE_TEST_DIR 	= $(DEPENDENCIES_DIR)/googletest
-ifeq ($(USE_ENV_DB),rocksdb)
-ROCKSDB_DIR 		= $(DEPENDENCIES_DIR)/rocksdb
-else
-LEVELDB_DIR 		= $(DEPENDENCIES_DIR)/leveldb
-endif
-LINT_DIR		= $(DEPENDENCIES_DIR)/styleguide/cpplint
-PROTOBUF_DIR		= $(DEPENDENCIES_DIR)/protobuf
-OPENSSL_DIR 		= $(DEPENDENCIES_DIR)/openssl
-CONFIG_DIR  		= /etc/kaos
+DEPENDENCIES_DIR    = $(BASE_DIR)/dependencies
+ASTYLE_DIR          = $(DEPENDENCIES_DIR)/astyle/build/gcc/bin
+BOOST_DIR           = $(DEPENDENCIES_DIR)/boost
+GOOGLE_TEST_DIR     = $(DEPENDENCIES_DIR)/googletest
+ROCKSDB_DIR         = $(DEPENDENCIES_DIR)/rocksdb
+LEVELDB_DIR         = $(DEPENDENCIES_DIR)/leveldb
+LINT_DIR            = $(DEPENDENCIES_DIR)/styleguide/cpplint
+PROTOBUF_DIR        = $(DEPENDENCIES_DIR)/protobuf
+OPENSSL_DIR         = $(DEPENDENCIES_DIR)/openssl
+CONFIG_DIR          = /etc/kaos
 
 # Dependencies Libraries
 
-GTEST_LIBRARY   	= $(GOOGLE_TEST_DIR)/make/gtest_main.a
-ifeq ($(USE_ENV_DB),rocksdb)
-ROCKSDB_LIBRARY 	= $(ROCKSDB_DIR)/librocksdb.a
-else
+GTEST_LIBRARY       = $(GOOGLE_TEST_DIR)/make/gtest_main.a
+ROCKSDB_LIBRARY     = $(ROCKSDB_DIR)/librocksdb.a
 LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
-endif
 PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
 
 # Compiler/Linker Parameters
 
-CC  			= $(COMPILER_PREFIX)gcc
-CXX 			= $(COMPILER_PREFIX)g++
+CC              = $(COMPILER_PREFIX)gcc
+CXX             = $(COMPILER_PREFIX)g++
 CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DTIMESTAMP="\"$(TIMESTAMP)\"" -DSOURCE_HASH="\"$(SOURCE_HASH)\""
 CXX_TEST_FLAGS  = $(CXX_APP_FLAGS) -DUNIT_TEST -DTIMESTAMP="\"$(TIMESTAMP)\""
-
-APP_INCLUDES	= -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
-ifeq ($(USE_ENV_DB),rocksdb)
-APP_INCLUDES	+= -I$(ROCKSDB_DIR)/include
-else
-APP_INCLUDES	+= -I$(LEVELDB_DIR)/include
-endif
-
-ifeq ($(USE_ENV_DB),rocksdb)
-APP_LIBRARIES	= $(ROCKSDB_LIBRARY)
-else
-APP_LIBRARIES	= $(LEVELDB_LIBRARY)
-endif
-APP_LIBRARIES   += $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
-
+APP_INCLUDES    = -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(LEVELDB_DIR)/include -I$(ROCKSDB_DIR)/include -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
+APP_LIBRARIES   = $(LEVELDB_LIBRARY) $(ROCKSDB_LIBRARY) $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
 TEST_INCLUDES   = $(APP_INCLUDES) -I$(GOOGLE_TEST_DIR)/include
 TEST_LIBRARIES  = $(GTEST_LIBRARY) $(APP_LIBRARIES)
 
@@ -161,11 +142,7 @@ install-cert:
 
 # Build the required dependencies
 
-ifndef USE_ENV_DB
 dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
-else
-dependencies: dependencies-dir boost $(USE_ENV_DB) openssl protobuf googletest lint astyle install-cert
-endif
 
 dependencies-dir:
 	mkdir -p $(DEPENDENCIES_DIR)
@@ -190,7 +167,7 @@ leveldb:
 	export CC=$(CC) && export CXX=$(CXX) && cd $(LEVELDB_DIR) && \
 	./build_detect_platform config $(LEVELDB_DIR) && make
 
-# Build the rocksDB library	
+# Build the rocksDB library
 
 rocksdb:
 	wget -P $(DEPENDENCIES_DIR) https://github.com/facebook/rocksdb/archive/4.8.fb.tar.gz
@@ -300,7 +277,7 @@ all:	clean kaos test package doxygen
 
 # Identify the targets that are not files
 
-.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb $(USE_ENV_DB) boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
+.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb rocksdb boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
 
 # Build kaos application
 
@@ -317,6 +294,7 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/LevelDbObjectStore.o \
 	$(BUILD_APP_OBJ_DIR)/MessageHandler.o \
 	$(BUILD_APP_OBJ_DIR)/MessageTrace.o \
+	$(BUILD_APP_OBJ_DIR)/RocksDbObjectStore.o \
 	$(BUILD_APP_OBJ_DIR)/Server.o \
 	$(BUILD_APP_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \

@@ -37,17 +37,10 @@
 #include "ClientServerConnectionInfo.hpp"
 
 /*
- * Incomplete Class Definition (to avoid circular dependencies)
+ * Incomplete Class Definition
  */
-
 class Server;
 class Transaction;
-
-/*
- * Batch List Pointer and Map.
- */
-typedef std::shared_ptr<KineticMessageList> BatchListPtr;
-typedef std::map<uint32_t, BatchListPtr> BatchListMap;
 
 /**
  * Describes a single Kinetic network connection between the server and a client.
@@ -85,15 +78,15 @@ public:
         std::unique_lock<std::mutex> m_scopedLock(m_mutex);
         if (m_batchListMap.find(batchId) != m_batchListMap.end())
             return false;
-        BatchListPtr batchList(new KineticMessageList());
+        KineticMessageListPtr batchList(new KineticMessageList());
         m_batchListMap[batchId] = batchList;
         return true;
     }
 
-    inline BatchListPtr getBatchList(uint32_t batchId) {
+    inline KineticMessageListPtr getBatchList(uint32_t batchId) {
         std::unique_lock<std::mutex> m_scopedLock(m_mutex);
         if (m_batchListMap.find(batchId) == m_batchListMap.end())  {
-            BatchListPtr nullListPtr;
+            KineticMessageListPtr nullListPtr;
             return nullListPtr;
         }
         return m_batchListMap[batchId];
@@ -127,7 +120,7 @@ private:
     const int64_t           m_connectionId;             //!< Identification number for connection
     std::atomic<int64_t>    m_previousSequence;         //!< Last request message sequence number
     std::atomic_bool        m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
-    BatchListMap            m_batchListMap;             //!< Lists of batch commands indexed by batch ID
+    KineticMessageListMap   m_batchListMap;             //!< Lists of batch commands indexed by batch ID
     std::mutex              m_mutex;                    //!< Mutex used to make class thread safe
 };
 

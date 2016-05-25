@@ -27,14 +27,20 @@
 #include <list>
 #include <mutex>
 #include <string>
-#include "ObjectStore.hpp"
 #include "ServerSettings.hpp"
 #include "HeartbeatProvider.hpp"
 #include "MessageStatistics.hpp"
 #include "ListenerInterface.hpp"
+#include "LevelDbObjectStore.hpp"
 
+/*
+ * Incomplete Class Definition
+ */
 class Connection;
 
+/**
+ * Kinetic Object Store Server.
+ */
 class Server {
 
 public:
@@ -48,7 +54,7 @@ public:
      * Public Accessors
      */
     ServerSettings& settings() {return m_settings;}
-    ObjectStore& objectStore() {return m_objectStore;}
+    LevelDbObjectStore& objectStore() {return m_objectStore;}
     MessageStatistics& messageStatistics() {return m_messageStatistics;}
 
     /*
@@ -63,7 +69,7 @@ private:
 
     ServerSettings                  m_settings;             //!< User configurable server settings
     MessageStatistics               m_messageStatistics;    //!< Statistics on messages processed
-    ObjectStore                     m_objectStore;          //!< Server's object store database
+    LevelDbObjectStore              m_objectStore;          //!< Server's object store database
     std::list<Connection*>          m_connectionList;       //!< List of active connections
     std::list<ListenerInterfacePtr> m_listenerList;         //!< List of active listeners
     HeartbeatProvider               m_heartbeatProvider;    //!< Provider of heartbeat messages

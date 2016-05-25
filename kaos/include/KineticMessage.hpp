@@ -25,6 +25,7 @@
  */
 #include <time.h>
 #include <stdint.h>
+#include <map>
 #include <list>
 #include <string>
 #include <memory>
@@ -125,10 +126,11 @@ private:
 };
 
 /*
- * Shared pointer and list for the Kinetic message
+ * Map, list, and pointers for Kinetic messages
  */
-
 typedef std::shared_ptr<KineticMessage> KineticMessagePtr;
 typedef std::list<KineticMessagePtr> KineticMessageList;
+typedef std::shared_ptr<KineticMessageList> KineticMessageListPtr;
+typedef std::map<uint32_t, KineticMessageListPtr> KineticMessageListMap;
 
 #endif

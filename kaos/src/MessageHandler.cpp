@@ -36,7 +36,6 @@
 #include "Translator.hpp"
 #include "Transaction.hpp"
 #include "KineticLog.hpp"
-#include "ObjectStore.hpp"
 #include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "OperationInfo.hpp"
@@ -55,10 +54,17 @@ using std::string;
 using std::unordered_set;
 using std::unordered_map;
 using com::seagate::kinetic::proto::Message_AuthType;
+using com::seagate::kinetic::proto::Command_Batch;
 using com::seagate::kinetic::proto::Command_Header;
-using com::seagate::kinetic::proto::Command_KeyValue;
-using com::seagate::kinetic::proto::Command_Status;
 using com::seagate::kinetic::proto::Command_GetLog;
+using com::seagate::kinetic::proto::Command_GetLog_Type;
+using com::seagate::kinetic::proto::Command_KeyValue;
+using com::seagate::kinetic::proto::Command_Range;
+using com::seagate::kinetic::proto::Command_Setup;
+using com::seagate::kinetic::proto::Command_Security;
+using com::seagate::kinetic::proto::Command_Security_ACL;
+using com::seagate::kinetic::proto::Command_Security_ACL_Scope;
+using com::seagate::kinetic::proto::Command_Status;
 using com::seagate::kinetic::proto::Command_MessageType;
 using com::seagate::kinetic::proto::Command_MessageType_PUT;
 using com::seagate::kinetic::proto::Command_MessageType_GET;
@@ -102,9 +108,21 @@ using com::seagate::kinetic::proto::Command_Status_StatusCode_INTERNAL_ERROR;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_BATCH;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_HEADER_REQUIRED;
-using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP;
-using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_HMAC_FAILURE;
+using com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED;
 using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm_HmacSHA1;
+using com::seagate::kinetic::proto::Command_GetLog_Type_STATISTICS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION;
+using com::seagate::kinetic::proto::Command_GetLog_Type_CAPACITIES;
+using com::seagate::kinetic::proto::Command_GetLog_Type_TEMPERATURES;
+using com::seagate::kinetic::proto::Command_GetLog_Type_UTILIZATIONS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_MESSAGES;
+using com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS;
+using com::seagate::kinetic::proto::Command_GetLog_Type_DEVICE;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP;
+using com::seagate::kinetic::proto::Command_PinOperation_PinOpType_SECURE_ERASE_PINOP;
 
 /*
  * Private Data Objects
@@ -157,7 +175,7 @@ MessageHandler::processRequest(Transaction* const transaction) {
          */
 
         if (!transaction->request->command()->has_header())
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_HEADER_REQUIRED, "Command missing Header");
+            throw MessageException(Command_Status_StatusCode_HEADER_REQUIRED, "Command missing Header");
 
         const Command_Header& requestHeader = transaction->request->command()->header();
 
@@ -230,7 +248,7 @@ MessageHandler::processRequest(Transaction* const transaction) {
 
             string hmacKey = transaction->accessControl->hmacKey();
             if (!transaction->request->validateHmac(hmacKey, transaction->accessControl->hmacAlgorithm())) {
-                throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_HMAC_FAILURE, "Incorrect HMAC");
+                throw MessageException(Command_Status_StatusCode_HMAC_FAILURE, "Incorrect HMAC");
             }
 
             /*
@@ -250,7 +268,7 @@ MessageHandler::processRequest(Transaction* const transaction) {
                                            && ((transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_UNLOCK_PINOP)
                                                || (transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_LOCK_PINOP)))) {
 
-            throw MessageException(com::seagate::kinetic::proto::Command_Status_StatusCode_DEVICE_LOCKED);
+            throw MessageException(Command_Status_StatusCode_DEVICE_LOCKED);
         }
 
         (this->*operationInfo.processRequest())(transaction);
@@ -363,7 +381,7 @@ MessageHandler::processSetupRequest(Transaction* const transaction) {
     if (!transaction->request->command()->body().has_setup())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Setup parameters not specified");
 
-    const com::seagate::kinetic::proto::Command_Setup& setupRequest(transaction->request->command()->body().setup());
+    const Command_Setup& setupRequest(transaction->request->command()->body().setup());
 
     uint32_t operationCount(0);
     if (setupRequest.firmwaredownload())
@@ -446,7 +464,7 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
         if (!transaction->request->command()->body().has_security()) {
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing security parameters");
         }
-        const com::seagate::kinetic::proto::Command_Security& security = transaction->request->command()->body().security();
+        const Command_Security& security = transaction->request->command()->body().security();
 
         int32_t operationCount(0);
         if (security.acl_size() > 0)
@@ -497,7 +515,7 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
              */
             std::set<int64_t> identitySet;
             for (auto aclIndex = 0; aclIndex < security.acl_size(); aclIndex++) {
-                const com::seagate::kinetic::proto::Command_Security_ACL& acl = security.acl(aclIndex);
+                const Command_Security_ACL& acl = security.acl(aclIndex);
                 if (acl.has_identity() && (acl.identity() < 0))
                     identitySet.insert(acl.identity());
             }
@@ -508,7 +526,7 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
             list<AccessControlPtr> accessControlList;
 
             for (auto aclIndex = 0; aclIndex < security.acl_size(); aclIndex++) {
-                const com::seagate::kinetic::proto::Command_Security_ACL& acl = security.acl(aclIndex);
+                const Command_Security_ACL& acl = security.acl(aclIndex);
 
                 if (!acl.has_identity()) {
                     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing security identity");
@@ -539,7 +557,7 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
                 AccessScopeList scopeList;
 
                 for (auto scopeIndex = 0; scopeIndex < acl.scope_size(); scopeIndex++) {
-                    const com::seagate::kinetic::proto::Command_Security_ACL_Scope& aclScope = acl.scope(scopeIndex);
+                    const Command_Security_ACL_Scope& aclScope = acl.scope(scopeIndex);
 
                     // verified though use of simulator
 
@@ -607,7 +625,7 @@ MessageHandler::processGetLogRequest(Transaction* const transaction) {
     /*
      * If no log types were specified, then send all types.
      */
-    std::set<com::seagate::kinetic::proto::Command_GetLog_Type> logTypeSet;
+    std::set<Command_GetLog_Type> logTypeSet;
     if (getLogRequest.types_size() == 0)
         logTypeSet = globalConfig.defaultLogTypes();
 
@@ -623,28 +641,28 @@ MessageHandler::processGetLogRequest(Transaction* const transaction) {
     for (auto logType : logTypeSet) {
         getLogResponse->add_types(logType);
         switch (logType) {
-            case com::seagate::kinetic::proto::Command_GetLog_Type_STATISTICS:
+            case Command_GetLog_Type_STATISTICS:
                 KineticLog::getStatistics(getLogResponse, m_messageStatistics);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION:
+            case Command_GetLog_Type_CONFIGURATION:
                 KineticLog::getConfiguration(getLogResponse);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_CAPACITIES:
+            case Command_GetLog_Type_CAPACITIES:
                 KineticLog::getCapacities(getLogResponse);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_TEMPERATURES:
+            case Command_GetLog_Type_TEMPERATURES:
                 KineticLog::getTemperatures(getLogResponse);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_UTILIZATIONS:
+            case Command_GetLog_Type_UTILIZATIONS:
                 KineticLog::getUtilizations(getLogResponse);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_MESSAGES:
+            case Command_GetLog_Type_MESSAGES:
                 KineticLog::getMessage(getLogResponse);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS:
+            case Command_GetLog_Type_LIMITS:
                 KineticLog::getLimits(getLogResponse);
                 break;
-            case com::seagate::kinetic::proto::Command_GetLog_Type_DEVICE:
+            case Command_GetLog_Type_DEVICE:
                 KineticLog::getDevice(getLogRequest, transaction->response->value());
                 break;
             default:
@@ -672,7 +690,7 @@ MessageHandler::processPutRequest(Transaction* const transaction) {
      */
     if (transaction->request->command()->header().has_batchid()) {
 
-        BatchListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
+        KineticMessageListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
 
         if (batchList == nullptr)
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
@@ -796,7 +814,7 @@ MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
 void
 MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
 
-    const com::seagate::kinetic::proto::Command_Range& params(transaction->request->command()->body().range());
+    const Command_Range& params(transaction->request->command()->body().range());
 
 #if 0
     int32_t maxReturned = params.maxreturned() > globalConfig.maxKeyRangeCount() ? globalConfig.maxKeyRangeCount() : params.maxreturned();
@@ -819,7 +837,7 @@ MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
     }
 #endif
 
-    com::seagate::kinetic::proto::Command_Range* response(transaction->response->mutable_command()->mutable_body()->mutable_range());
+    Command_Range* response(transaction->response->mutable_command()->mutable_body()->mutable_range());
 
     if (!params.reverse())
         m_objectStore.getKeyRange(params, accessControl, response);
@@ -842,7 +860,7 @@ MessageHandler::processDeleteRequest(Transaction* const transaction) {
 
     if (transaction->request->command()->header().has_batchid()) {
 
-        BatchListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
+        KineticMessageListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
 
         if (batchList == nullptr)
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
@@ -893,7 +911,7 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing PIN operation parameters");
 
         switch (transaction->request->command()->body().pinop().pinoptype()) {
-            case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_LOCK_PINOP:
+            case Command_PinOperation_PinOpType_LOCK_PINOP:
 
                 if ((!m_serverSettings.lockPin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
@@ -901,7 +919,7 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
                 m_serverSettings.setLocked(true);
                 break;
 
-            case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_UNLOCK_PINOP:
+            case Command_PinOperation_PinOpType_UNLOCK_PINOP:
 
                 if ((!m_serverSettings.lockPin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.lockPin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
@@ -909,7 +927,7 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
                 m_serverSettings.setLocked(false);
                 break;
 
-            case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_ERASE_PINOP:
+            case Command_PinOperation_PinOpType_ERASE_PINOP:
                 if ((!m_serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
@@ -917,7 +935,7 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
                 m_serverSettings.setDefaults();
                 break;
 
-            case com::seagate::kinetic::proto::Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
+            case Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
 
                 if ((!m_serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 4");
@@ -1031,26 +1049,26 @@ MessageHandler::processEndBatchRequest(Transaction* const transaction) {
      * Handle this differently depending on if it had been aborted (see Kinetic java simulator)
      */
     uint32_t batchId = transaction->request->command()->header().batchid();
-    BatchListPtr batchList = m_connection->getBatchList(batchId);
+    KineticMessageListPtr batchList = m_connection->getBatchList(batchId);
 
     if (batchList == nullptr)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
-    com::seagate::kinetic::proto::Command_Batch* returnBatchInfo(transaction->response->mutable_command()->mutable_body()->mutable_batch());
+    Command_Batch* returnBatchInfo(transaction->response->mutable_command()->mutable_body()->mutable_batch());
 
     returnBatchInfo->set_count(batchList->size());
     for (auto batchRequest : *batchList)
         returnBatchInfo->add_sequence(batchRequest->command()->header().sequence());
 
-    BatchDescriptor batch;
+    BatchInterfacePtr batch(m_objectStore.createBatch());
     for (auto batchRequest : *batchList) {
 
         try {
             if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT)
-                m_objectStore.batchedPutEntry(batch, batchRequest->command()->body().keyvalue(), batchRequest->value());
+                batch->putEntry(batchRequest->command()->body().keyvalue(), batchRequest->value());
 
             else if (batchRequest->command()->header().messagetype() == Command_MessageType_DELETE)
-                m_objectStore.batchedDeleteEntry(batch, batchRequest->command()->body().keyvalue());
+                batch->deleteEntry(batchRequest->command()->body().keyvalue());
         }
         catch (MessageException& messageException) {
             returnBatchInfo->set_failedsequence(batchRequest->command()->header().sequence());
@@ -1062,7 +1080,7 @@ MessageHandler::processEndBatchRequest(Transaction* const transaction) {
         }
     }
 
-    m_objectStore.batchCommit(batch);
+    batch->commit();
     m_connection->deleteBatchList(batchId);
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }

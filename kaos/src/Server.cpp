@@ -31,7 +31,6 @@
 #include "Logger.hpp"
 #include "SslStream.hpp"
 #include "Connection.hpp"
-#include "ObjectStore.hpp"
 #include "GlobalConfig.hpp"
 #include "ServerSettings.hpp"
 #include "ClearTextStream.hpp"
@@ -41,8 +40,8 @@
 /*
  * Global Variable
  *
- * The System Configuration class must be declared first because other classes depend on using its
- * values.
+ * The log control and global configuration classes must be created first because they are used by
+ * almost all the other classes.
  */
 LogControl logControl;
 GlobalConfig globalConfig;
@@ -84,6 +83,7 @@ Server::Server()
 }
 
 /**
+ * The server's entry point.
  *
  * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
  */

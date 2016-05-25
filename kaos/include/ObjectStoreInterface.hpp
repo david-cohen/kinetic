@@ -23,42 +23,36 @@
 /*
  * Include Files
  */
-#include <stdint.h>
 #include <string>
 #include "Kinetic.pb.hpp"
 #include "AccessControl.hpp"
-
-// Need to replace with non-leveldb specific object
-#include "leveldb/db.h"
-typedef leveldb::WriteBatch BatchDescriptor;
+#include "BatchInterface.hpp"
 
 /**
- * Defines the interface for Kinetic object store.
+ * Defines the interface to a Kinetic object store.
  */
 class ObjectStoreInterface {
 public:
-    virtual void putEntry(const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value) = 0;
-    virtual void deleteEntry(const com::seagate::kinetic::proto::Command_KeyValue& params) = 0;
-    virtual void getEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
-    virtual void getNextEntry(const std::string& key, std::string& returnValue,
-                              com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
-    virtual void getPreviousEntry(const std::string& key, std::string& returnValue,
-                                  com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
-    virtual void getEntryMetadata(const std::string& key, bool versionOnly, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
-    virtual void getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
-                             com::seagate::kinetic::proto::Command_Range* returnData) = 0;
-    virtual void getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
-                                     com::seagate::kinetic::proto::Command_Range* returnData) = 0;
     virtual bool open() = 0;
     virtual void close() = 0;
     virtual void erase() = 0;
     virtual void flush() = 0;
     virtual void optimizeMedia() = 0;
-
-    // these will be eliminated (and put into a batch object assoicated with the specified database
-    virtual void batchedPutEntry(BatchDescriptor& batch, const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value) = 0;
-    virtual void batchedDeleteEntry(BatchDescriptor& batch, const com::seagate::kinetic::proto::Command_KeyValue& params) = 0;
-    virtual void batchCommit(BatchDescriptor& batch) = 0;
+    virtual BatchInterface* createBatch() = 0;
+    virtual void putEntry(const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value) = 0;
+    virtual void deleteEntry(const com::seagate::kinetic::proto::Command_KeyValue& params) = 0;
+    virtual void getEntry(const std::string& key, std::string& returnValue, com::
+                          seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
+    virtual void getNextEntry(const std::string& key, std::string& returnValue,
+                              com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
+    virtual void getPreviousEntry(const std::string& key, std::string& returnValue,
+                                  com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
+    virtual void getEntryMetadata(const std::string& key, bool versionOnly,
+                                  com::seagate::kinetic::proto::Command_KeyValue* returnMetadata) = 0;
+    virtual void getKeyRange(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
+                             com::seagate::kinetic::proto::Command_Range* returnData) = 0;
+    virtual void getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
+                                     com::seagate::kinetic::proto::Command_Range* returnData) = 0;
 };
 
 #endif

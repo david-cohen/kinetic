@@ -57,7 +57,6 @@ PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
 
 # Compiler/Linker Parameters
-# Optional CXX_APP_FLAGS arguments: -DLOG_EVENT_LOCATION -DWORK_WITH_JAVA_SMOKE_TEST
 
 CC  			= $(COMPILER_PREFIX)gcc
 CXX 			= $(COMPILER_PREFIX)g++
@@ -278,9 +277,9 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/Hmac.o \
 	$(BUILD_APP_OBJ_DIR)/KineticLog.o \
 	$(BUILD_APP_OBJ_DIR)/Kinetic.pb.o \
+	$(BUILD_APP_OBJ_DIR)/LevelDbObjectStore.o \
 	$(BUILD_APP_OBJ_DIR)/MessageHandler.o \
 	$(BUILD_APP_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_APP_OBJ_DIR)/ObjectStore.o \
 	$(BUILD_APP_OBJ_DIR)/Server.o \
 	$(BUILD_APP_OBJ_DIR)/ServerSettings.o \
 	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \
@@ -351,34 +350,6 @@ $(BUILD_TEST_BIN_DIR)/accessControlUnitTest: \
 $(BUILD_TEST_BIN_DIR)/hmacUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/HmacUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/Hmac.o
-	@mkdir -p $(@D)
-	$(CXX) $^ $(TEST_LIBRARIES) -o $@
-
-$(BUILD_TEST_BIN_DIR)/perfTest: \
-	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
-	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
-	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
-	$(BUILD_TEST_OBJ_DIR)/PerformanceTest.o \
-	$(BUILD_APP_OBJ_DIR)/Translator.o
-	@mkdir -p $(@D)
-	$(CXX) $^ $(TEST_LIBRARIES) -o $@
-
-$(BUILD_TEST_BIN_DIR)/objectStoreTest: \
-	$(BUILD_TEST_OBJ_DIR)/AccessControl.o \
-	$(BUILD_TEST_OBJ_DIR)/Entry.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
-	$(BUILD_TEST_OBJ_DIR)/Hmac.o \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/MessageTrace.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStoreTest.o \
-	$(BUILD_TEST_OBJ_DIR)/ObjectStore.o \
-	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
-	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
-	$(BUILD_APP_OBJ_DIR)/Translator.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 

@@ -27,6 +27,27 @@
 #include "Translator.hpp"
 #include "MessageTrace.hpp"
 
+/*
+ * Used Namespace Members
+ */
+using com::seagate::kinetic::proto::Command_Header;
+using com::seagate::kinetic::proto::Command_KeyValue;
+using com::seagate::kinetic::proto::Command_Range;
+using com::seagate::kinetic::proto::Command_GetLog_Configuration;
+using com::seagate::kinetic::proto::Command_GetLog;
+using com::seagate::kinetic::proto::Command_GetLog_Statistics;
+using com::seagate::kinetic::proto::Command_GetLog_Capacity;
+using com::seagate::kinetic::proto::Command_GetLog_Limits;
+using com::seagate::kinetic::proto::Command_GetLog;
+using com::seagate::kinetic::proto::Command_Setup;
+using com::seagate::kinetic::proto::Command_Security;
+using com::seagate::kinetic::proto::Command_Security_ACL;
+using com::seagate::kinetic::proto::Command_Security_ACL_Scope;
+using com::seagate::kinetic::proto::Command_PinOperation;
+using com::seagate::kinetic::proto::Command_Batch;
+using com::seagate::kinetic::proto::Command_Body;
+using com::seagate::kinetic::proto::Command_Status;
+
 /**
  * Outputs the contents of a Kinetic message.
  *
@@ -97,7 +118,7 @@ void MessageTrace::outputContents(KineticMessageFraming& messageFraming, Kinetic
  *
  * @param   header  The protocol buffer header message
  */
-void MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Header& header) {
+void MessageTrace::outputHeader(const Command_Header& header) {
 
     if (header.has_messagetype())
         std::cout << "        Message Type: " << Translator::toString(header.messagetype()) << std::endl;
@@ -126,7 +147,7 @@ void MessageTrace::outputHeader(const com::seagate::kinetic::proto::Command_Head
  *
  * @param   keyvalue    The protocol buffer keyvalue message
  */
-void MessageTrace::outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValue& keyvalue) {
+void MessageTrace::outputKeyValue(const Command_KeyValue& keyvalue) {
 
     if (keyvalue.has_key()) {
         std::cout << "          Key: ";
@@ -155,7 +176,7 @@ void MessageTrace::outputKeyValue(const com::seagate::kinetic::proto::Command_Ke
  *
  * @param   range   The protocol buffer range message
  */
-void MessageTrace::outputRange(const com::seagate::kinetic::proto::Command_Range& range) {
+void MessageTrace::outputRange(const Command_Range& range) {
 
     if (range.has_startkey()) {
         std::cout << "          Start Key: ";
@@ -190,7 +211,7 @@ void MessageTrace::outputRange(const com::seagate::kinetic::proto::Command_Range
  *
  * @param   configuration   The protocol buffer configuration message
  */
-void MessageTrace::outputConfiguration(const com::seagate::kinetic::proto::Command_GetLog_Configuration& configuration) {
+void MessageTrace::outputConfiguration(const Command_GetLog_Configuration& configuration) {
 
     std::cout << "            Vendor: " << configuration.vendor() << std::endl;
     std::cout << "            Model: " << configuration.model() << std::endl;
@@ -207,10 +228,10 @@ void MessageTrace::outputConfiguration(const com::seagate::kinetic::proto::Comma
  *
  * @param   getLog  The protocol buffer getLog message (which contains the statistics)
  */
-void MessageTrace::outputStatistics(const com::seagate::kinetic::proto::Command_GetLog& getLog) {
+void MessageTrace::outputStatistics(const Command_GetLog& getLog) {
 
     for (int32_t index = 0; index < getLog.statistics_size(); index++) {
-        const com::seagate::kinetic::proto::Command_GetLog_Statistics& statistics(getLog.statistics(index));
+        const Command_GetLog_Statistics& statistics(getLog.statistics(index));
         std::cout << "            Statistic {" << std::endl;
         std::cout << "              Message Type: " << Translator::toString(statistics.messagetype()) << std::endl;
         std::cout << "              Byte Count: " << statistics.bytes() << std::endl;
@@ -224,7 +245,7 @@ void MessageTrace::outputStatistics(const com::seagate::kinetic::proto::Command_
  *
  * @param   capacity    The protocol buffer capacity message
  */
-void MessageTrace::outputCapacity(const com::seagate::kinetic::proto::Command_GetLog_Capacity& capacity) {
+void MessageTrace::outputCapacity(const Command_GetLog_Capacity& capacity) {
 
     std::cout << "            Nominal: " << capacity.nominalcapacityinbytes() << std::endl;
     std::cout << "            Full: " << (100 * capacity.portionfull()) << " %" << std::endl;
@@ -235,7 +256,7 @@ void MessageTrace::outputCapacity(const com::seagate::kinetic::proto::Command_Ge
  *
  * @param   limits  The protocol buffer limits message
  */
-void MessageTrace::outputLimits(const com::seagate::kinetic::proto::Command_GetLog_Limits& limits) {
+void MessageTrace::outputLimits(const Command_GetLog_Limits& limits) {
 
     const ::google::protobuf::uint32 UNSUPPORTED_LIMIT(0xffffffff);
     if (limits.maxkeysize() != UNSUPPORTED_LIMIT)
@@ -265,7 +286,7 @@ void MessageTrace::outputLimits(const com::seagate::kinetic::proto::Command_GetL
  *
  * @param   getLog  The protocol buffer getLog message
  */
-void MessageTrace::outputGetLog(const com::seagate::kinetic::proto::Command_GetLog& getLog) {
+void MessageTrace::outputGetLog(const Command_GetLog& getLog) {
 
     if (getLog.types_size() > 0) {
         std::cout << "          Types: ";
@@ -320,7 +341,7 @@ void MessageTrace::outputGetLog(const com::seagate::kinetic::proto::Command_GetL
  *
  * @param   setup   The protocol buffer setup message
  */
-void MessageTrace::outputSetup(const com::seagate::kinetic::proto::Command_Setup& setup) {
+void MessageTrace::outputSetup(const Command_Setup& setup) {
 
     if (setup.has_newclusterversion())
         std::cout << "            New Cluster Version: " << setup.newclusterversion() << std::endl;
@@ -334,7 +355,7 @@ void MessageTrace::outputSetup(const com::seagate::kinetic::proto::Command_Setup
  *
  * @param   security    The protocol buffer security message
  */
-void MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Security& security) {
+void MessageTrace::outputSecurity(const Command_Security& security) {
 
     std::cout << "          Old Lock PIN: ";
     outputString(security.oldlockpin());
@@ -347,14 +368,14 @@ void MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Se
 
     for (auto aclIndex = 0; aclIndex < security.acl_size(); aclIndex++) {
         std::cout << "          ACL {" << std::endl;
-        const com::seagate::kinetic::proto::Command_Security_ACL& acl(security.acl(aclIndex));
+        const Command_Security_ACL& acl(security.acl(aclIndex));
         std::cout << "            Identity: " << acl.identity() << std::endl;
         std::cout << "            Key: ";
         outputString(acl.key());
         std::cout << "            HMAC Algorithm: " << Translator::toString(acl.hmacalgorithm()) << std::endl;
         for (auto scopeIndex = 0; scopeIndex < acl.scope_size(); scopeIndex++) {
             std::cout << "            Scope {" << std::endl;
-            const com::seagate::kinetic::proto::Command_Security_ACL_Scope& scope(acl.scope(scopeIndex));
+            const Command_Security_ACL_Scope& scope(acl.scope(scopeIndex));
             std::cout << "              Offset: " << scope.offset() << std::endl;
             std::cout << "              Value: ";
             outputString(scope.value());
@@ -375,7 +396,7 @@ void MessageTrace::outputSecurity(const com::seagate::kinetic::proto::Command_Se
  *
  * @param   security    The protocol buffer PIN operation message
  */
-void MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOperation& pinop) {
+void MessageTrace::outputPinOp(const Command_PinOperation& pinop) {
 
     if (pinop.has_pinoptype())
         std::cout << "            PIN Operation: " << Translator::toString(pinop.pinoptype()) << std::endl;
@@ -386,7 +407,7 @@ void MessageTrace::outputPinOp(const com::seagate::kinetic::proto::Command_PinOp
  *
  * @param   security    The protocol buffer PIN operation message
  */
-void MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch& batch) {
+void MessageTrace::outputBatch(const Command_Batch& batch) {
 
     if (batch.has_count())
         std::cout << "            Count: " << batch.count() << std::endl;
@@ -407,7 +428,7 @@ void MessageTrace::outputBatch(const com::seagate::kinetic::proto::Command_Batch
  *
  * @param   body    The protocol buffer body message
  */
-void MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& body) {
+void MessageTrace::outputBody(const Command_Body& body) {
 
     if (body.has_keyvalue()) {
         std::cout << "        Key/Value {" << std::endl;
@@ -455,7 +476,7 @@ void MessageTrace::outputBody(const com::seagate::kinetic::proto::Command_Body& 
  *
  * @param   status  The protocol buffer status message
  */
-void MessageTrace::outputStatus(const com::seagate::kinetic::proto::Command_Status& status) {
+void MessageTrace::outputStatus(const Command_Status& status) {
 
     if (status.has_code())
         std::cout << "        Code: " << Translator::toString(status.code()) << std::endl;

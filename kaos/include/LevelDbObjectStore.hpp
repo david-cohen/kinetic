@@ -34,19 +34,23 @@
 #include "AccessControl.hpp"
 #include "ObjectStoreInterface.hpp"
 
-/**
- * Object database of the Kinetic server.  It provides a Kinetic friendly interface to the levelDB
- * database.
+/*
+ * Incomplete Class Definition
  */
-class ObjectStore : public ObjectStoreInterface {
+class LevelDbBatch;
+
+/**
+ * Level DB object store with a Kinetic API.
+ */
+class LevelDbObjectStore : public ObjectStoreInterface {
 
 public:
 
     /*
      * Constructor/Destructor
      */
-    ObjectStore();
-    ~ObjectStore();
+    LevelDbObjectStore();
+    ~LevelDbObjectStore();
 
     /*
      * Public Member Functions
@@ -56,11 +60,9 @@ public:
     void erase();
     void flush();
     void optimizeMedia();
+    BatchInterface* createBatch();
     void putEntry(const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
-    void batchedPutEntry(BatchDescriptor& batch, const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
     void deleteEntry(const com::seagate::kinetic::proto::Command_KeyValue& params);
-    void batchedDeleteEntry(BatchDescriptor& batch, const com::seagate::kinetic::proto::Command_KeyValue& params);
-    void batchCommit(BatchDescriptor& batch);
     void getEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
     void getNextEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
     void getPreviousEntry(const std::string& key, std::string& returnValue, com::seagate::kinetic::proto::Command_KeyValue* returnMetadata);
@@ -69,9 +71,15 @@ public:
                      com::seagate::kinetic::proto::Command_Range* returnData);
     void getKeyRangeReversed(const com::seagate::kinetic::proto::Command_Range& params, AccessControlPtr& accessControl,
                              com::seagate::kinetic::proto::Command_Range* returnData);
+    void batchedPutEntry(leveldb::WriteBatch& batch, const com::seagate::kinetic::proto::Command_KeyValue& params, const std::string& value);
+    void batchedDeleteEntry(leveldb::WriteBatch& batch, const com::seagate::kinetic::proto::Command_KeyValue& params);
+    void batchCommit(leveldb::WriteBatch& batch);
 
 private:
 
+    /*
+     * Private Member Functions
+     */
     leveldb::WriteOptions& getWriteOptions(com::seagate::kinetic::proto::Command_Synchronization option);
 
     /*

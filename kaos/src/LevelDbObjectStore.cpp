@@ -22,19 +22,16 @@
  */
 #include <stdint.h>
 #include <unistd.h>
-#include <list>
 #include <string>
 #include <memory>
 #include "leveldb/cache.h"
 #include "leveldb/slice.h"
-#include "leveldb/comparator.h"
-#include "leveldb/write_batch.h"
-#include "leveldb/filter_policy.h"
 #include "Logger.hpp"
 #include "Entry.pb.hpp"
-#include "ObjectStore.hpp"
 #include "GlobalConfig.hpp"
+#include "LevelDbBatch.hpp"
 #include "MessageException.hpp"
+#include "LevelDbObjectStore.hpp"
 
 /*
  * Used Namespace Members
@@ -61,7 +58,7 @@ static leveldb::Options databaseOptions;
 /**
  * Initializes the object store.
  */
-ObjectStore::ObjectStore() {
+LevelDbObjectStore::LevelDbObjectStore() {
     syncWriteOptions.sync = true;
     asyncWriteOptions.sync = false;
 }
@@ -69,7 +66,7 @@ ObjectStore::ObjectStore() {
 /*
  * Tears down the object store.
  */
-ObjectStore::~ObjectStore() {
+LevelDbObjectStore::~LevelDbObjectStore() {
     close();
 }
 
@@ -78,7 +75,7 @@ ObjectStore::~ObjectStore() {
  *
  * @return  true if the database was opened successfully
  */
-bool ObjectStore::open() {
+bool LevelDbObjectStore::open() {
 
     syncWriteOptions.sync = true;
     asyncWriteOptions.sync = false;
@@ -102,7 +99,7 @@ bool ObjectStore::open() {
 /*
  * Closes the database (if it was open).
  */
-void ObjectStore::close() {
+void LevelDbObjectStore::close() {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -116,7 +113,7 @@ void ObjectStore::close() {
  * Erases the contents of the database.  This causes the database to temporarily be inaccessible
  * (because it's closes and then opened).
  */
-void ObjectStore::erase() {
+void LevelDbObjectStore::erase() {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -128,7 +125,7 @@ void ObjectStore::erase() {
 /**
  * Flushes all the database data that's in memory to persistent media.
  */
-void ObjectStore::flush() {
+void LevelDbObjectStore::flush() {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
@@ -173,7 +170,7 @@ void ObjectStore::flush() {
  * versions to be discarded and the data is rearranged to reduce the cost of operations needed to
  * access the data.
  */
-void ObjectStore::optimizeMedia() {
+void LevelDbObjectStore::optimizeMedia() {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -199,7 +196,7 @@ void ObjectStore::optimizeMedia() {
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  * @throws  INTERNAL_ERROR if the put failed due to a database error (such as I/O failure)
  */
-void ObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
+void LevelDbObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
@@ -246,62 +243,6 @@ void ObjectStore::putEntry(const Command_KeyValue& params, const string& value) 
 }
 
 /**
- * Adds a put request to a "batch", where all the requests in the batch will be performed by the
- * database atomically. A database entry consists of a key, value, version, tag (a hash of the
- * value), and an algorithm (the algorithm used to create the hash). A regular put operation where
- * the database already has an entry with same key as the one about to be put requires the version
- * of the existing entry to be specified. If the versions don't match, the operation fails. However,
- * a "force" parameter can be specified which eliminates the version check and will always put the
- * new entry.  The persistence option is not specified for an individual operation in a batch.  The
- * entire batch operation has a single persistence option.
- *
- * @param   batch   The descriptor for a batched operation
- * @param   params  The entry's metadata and if the put is to be "forced"
- * @param   value   The value of the entry to be put in the database
- *
- * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
- */
-void ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue& params, const string& value) {
-
-    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
-    /*
-     * If the request is not "forced", then if the database already has an entry with the same key,
-     * then the specified version must match the version of the existing entry.  If there is not an
-     * existing entry, then the specified version must be empty.
-     */
-    if (!params.force()) {
-        string serializedEntryData;
-        leveldb::Status status = m_database->Get(defaultReadOptions, params.key(), &serializedEntryData);
-
-        if (status.ok()) {
-            unique_ptr<kaos::Entry> entry(new kaos::Entry());
-            entry->ParseFromString(serializedEntryData);
-            if (entry->version() != params.dbversion())
-                throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
-        }
-        else if (!params.dbversion().empty()) {
-            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
-        }
-    }
-
-    /*
-     * Save the specified value and metadata into a database entry structure, serialize the data,
-     * and save the entry to the batch descriptor (to be processed later when the batch is
-     * committed).
-     */
-    unique_ptr<kaos::Entry> entry(new kaos::Entry());
-    entry->set_key(params.key());
-    entry->set_value(value);
-    entry->set_version(params.newversion());
-    entry->set_tag(params.tag());
-    entry->set_algorithm(params.algorithm());
-
-    string serializedData;
-    entry->SerializeToString(&serializedData);
-    batch.Put(params.key(), serializedData);
-}
-
-/**
  * Attempts to delete the entry in the database with the specified.  A regular delete operation
  * requires the version of the entry to be deleted to be specified.  If the versions don't match,
  * the operation fails. However, a "force" parameter can be specified which eliminates the version
@@ -316,7 +257,7 @@ void ObjectStore::batchedPutEntry(BatchDescriptor& batch, const Command_KeyValue
  * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
-void ObjectStore::deleteEntry(const Command_KeyValue& params) {
+void LevelDbObjectStore::deleteEntry(const Command_KeyValue& params) {
 
     const string& key = params.key();
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
@@ -356,73 +297,6 @@ void ObjectStore::deleteEntry(const Command_KeyValue& params) {
 }
 
 /**
- * Adds a delete request to a "batch", where all the requests in the batch will be performed by the
- * database atomically.  A regular delete operation requires the version of the entry to be deleted
- * to be specified.  If the versions don't match, the operation fails. However, a "force" parameter
- * can be specified which eliminates the version check and will always delete the entry.  If the
- * entry for the specified key doesn't exist, a normal delete will fail, but a "forced" delete will
- * not.  The persistence option is not specified for an individual operation in a batch.  The entire
- * batch operation has a single persistence option.
- *
- * @param   params  The key of the entry, persistence option, and if the delete is to be "forced"
- *
- * @throws  NOT_FOUND if the entry to be deleted is not in the database (for a non-forced operation)
- * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
- * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
- */
-void ObjectStore::batchedDeleteEntry(BatchDescriptor& batch, const Command_KeyValue& params) {
-
-    const string& key = params.key();
-    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
-
-    /*
-     * If the request is not "forced", then the specified version must match the version of the
-     * entry to be deleted.  If they don't match or the entry is not in the database, fail the
-     * operation.
-     */
-    if (!params.force()) {
-        string serializedEntryData;
-        leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
-
-        if (!status.ok()) {
-            if (status.IsNotFound())
-                throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
-            else
-                throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
-        }
-
-        unique_ptr<kaos::Entry> entry(new kaos::Entry());
-        entry->ParseFromString(serializedEntryData);
-        if (entry->version() != params.dbversion())
-            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
-    }
-
-    /*
-     * Add the key of the entry to be deleted in the batch descriptor (to be processed later when
-     * the batch is committed).
-     */
-    batch.Delete(key);
-}
-
-/**
- * Executes all the operations that were "batched" together, committing them to the database, and
- * performing the operation atomically.  Currently, the persistence option is not specified, so we
- * will be cautious and use the sync option.
- *
- * @param   batch   Contains all the batched operations to perform
- *
- * @throws  INTERNAL_ERROR if the operation failed due to a database error (such as I/O failure)
- */
-void ObjectStore::batchCommit(BatchDescriptor& batch) {
-
-    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
-
-    leveldb::Status status = m_database->Write(syncWriteOptions, &batch);
-    if (!status.ok())
-        throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
-}
-
-/**
  * Attempts to retrieve the entry with the specified key from the database.  If there is no entry
  * with the specified key, the operation will fail.  However, if the entry is in the database, its
  * value and metadata will be returned.  The metadata consists of a version, tag (a hash of the
@@ -435,7 +309,7 @@ void ObjectStore::batchCommit(BatchDescriptor& batch) {
  * @throws  NOT_FOUND if the entry was not found in the database
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
-void ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+void LevelDbObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -477,7 +351,7 @@ void ObjectStore::getEntry(const string& key, string& returnValue, Command_KeyVa
  * @throws  NOT_FOUND if the entry was not found in the database
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
-void ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
+void LevelDbObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -520,7 +394,7 @@ void ObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_
  *
  * @throws  NOT_FOUND if the entry was not found in the database
  */
-void ObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+void LevelDbObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -570,7 +444,7 @@ void ObjectStore::getNextEntry(const string& key, string& returnValue, Command_K
  *
  * @throws  NOT_FOUND if the entry was not found in the database
  */
-void ObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
+void LevelDbObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -627,7 +501,7 @@ void ObjectStore::getPreviousEntry(const string& key, string& returnValue, Comma
  * @param  accessControl    Describe the keys the user has access to
  * @param  returnData       Where the list or keys to be returned are saved
  */
-void ObjectStore::getKeyRange(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
+void LevelDbObjectStore::getKeyRange(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -689,7 +563,7 @@ void ObjectStore::getKeyRange(const Command_Range& params, AccessControlPtr& acc
  * @param  accessControl    Describe the keys the user has access to
  * @param  returnData       Where the list or keys to be returned are saved
  */
-void ObjectStore::getKeyRangeReversed(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
+void LevelDbObjectStore::getKeyRangeReversed(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
 
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -750,10 +624,141 @@ void ObjectStore::getKeyRangeReversed(const Command_Range& params, AccessControl
 }
 
 /**
+ * Adds a put request to a "batch", where all the requests in the batch will be performed by the
+ * database atomically. A database entry consists of a key, value, version, tag (a hash of the
+ * value), and an algorithm (the algorithm used to create the hash). A regular put operation where
+ * the database already has an entry with same key as the one about to be put requires the version
+ * of the existing entry to be specified. If the versions don't match, the operation fails. However,
+ * a "force" parameter can be specified which eliminates the version check and will always put the
+ * new entry.  The persistence option is not specified for an individual operation in a batch.  The
+ * entire batch operation has a single persistence option.
+ *
+ * @param   batch   The descriptor for a batched operation
+ * @param   params  The entry's metadata and if the put is to be "forced"
+ * @param   value   The value of the entry to be put in the database
+ *
+ * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
+ */
+void LevelDbObjectStore::batchedPutEntry(leveldb::WriteBatch& batch, const Command_KeyValue& params, const string& value) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
+    /*
+     * If the request is not "forced", then if the database already has an entry with the same key,
+     * then the specified version must match the version of the existing entry.  If there is not an
+     * existing entry, then the specified version must be empty.
+     */
+    if (!params.force()) {
+        string serializedEntryData;
+        leveldb::Status status = m_database->Get(defaultReadOptions, params.key(), &serializedEntryData);
+
+        if (status.ok()) {
+            unique_ptr<kaos::Entry> entry(new kaos::Entry());
+            entry->ParseFromString(serializedEntryData);
+            if (entry->version() != params.dbversion())
+                throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+        }
+        else if (!params.dbversion().empty()) {
+            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "No existing entry");
+        }
+    }
+
+    /*
+     * Save the specified value and metadata into a database entry structure, serialize the data,
+     * and save the entry to the batch descriptor (to be processed later when the batch is
+     * committed).
+     */
+    unique_ptr<kaos::Entry> entry(new kaos::Entry());
+    entry->set_key(params.key());
+    entry->set_value(value);
+    entry->set_version(params.newversion());
+    entry->set_tag(params.tag());
+    entry->set_algorithm(params.algorithm());
+
+    string serializedData;
+    entry->SerializeToString(&serializedData);
+    batch.Put(params.key(), serializedData);
+}
+
+/**
+ * Adds a delete request to a "batch", where all the requests in the batch will be performed by the
+ * database atomically.  A regular delete operation requires the version of the entry to be deleted
+ * to be specified.  If the versions don't match, the operation fails. However, a "force" parameter
+ * can be specified which eliminates the version check and will always delete the entry.  If the
+ * entry for the specified key doesn't exist, a normal delete will fail, but a "forced" delete will
+ * not.  The persistence option is not specified for an individual operation in a batch.  The entire
+ * batch operation has a single persistence option.
+ *
+ * @param   params  The key of the entry, persistence option, and if the delete is to be "forced"
+ *
+ * @throws  NOT_FOUND if the entry to be deleted is not in the database (for a non-forced operation)
+ * @throws  INTERNAL_ERROR if the delete failed due to a database error (such as I/O failure)
+ * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
+ */
+void LevelDbObjectStore::batchedDeleteEntry(leveldb::WriteBatch& batch, const Command_KeyValue& params) {
+
+    const string& key = params.key();
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
+
+    /*
+     * If the request is not "forced", then the specified version must match the version of the
+     * entry to be deleted.  If they don't match or the entry is not in the database, fail the
+     * operation.
+     */
+    if (!params.force()) {
+        string serializedEntryData;
+        leveldb::Status status = m_database->Get(defaultReadOptions, key, &serializedEntryData);
+
+        if (!status.ok()) {
+            if (status.IsNotFound())
+                throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Entry not found");
+            else
+                throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+        }
+
+        unique_ptr<kaos::Entry> entry(new kaos::Entry());
+        entry->ParseFromString(serializedEntryData);
+        if (entry->version() != params.dbversion())
+            throw MessageException(Command_Status_StatusCode_VERSION_MISMATCH, "Incorrect version");
+    }
+
+    /*
+     * Add the key of the entry to be deleted in the batch descriptor (to be processed later when
+     * the batch is committed).
+     */
+    batch.Delete(key);
+}
+
+/**
+ * Executes all the operations that were "batched" together, committing them to the database, and
+ * performing the operation atomically.  Currently, the persistence option is not specified, so we
+ * will be cautious and use the sync option.
+ *
+ * @param   batch   Contains all the batched operations to perform
+ *
+ * @throws  INTERNAL_ERROR if the operation failed due to a database error (such as I/O failure)
+ */
+void LevelDbObjectStore::batchCommit(leveldb::WriteBatch& batch) {
+
+    std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
+
+    leveldb::Status status = m_database->Write(syncWriteOptions, &batch);
+    if (!status.ok())
+        throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Database error: " + status.ToString());
+}
+
+/**
  * Converts the Kinetic persistence option into a level DB write option.
  */
-inline leveldb::WriteOptions& ObjectStore::getWriteOptions(Command_Synchronization option) {
+inline leveldb::WriteOptions& LevelDbObjectStore::getWriteOptions(Command_Synchronization option) {
     return option == Command_Synchronization_WRITEBACK ? asyncWriteOptions : syncWriteOptions;
 }
 
+/**
+ * Creates the object used to perform batch operations
+ *
+ * @return a pointer to the batch descriptor
+ */
+BatchInterface* LevelDbObjectStore::createBatch() {
+    return new LevelDbBatch(this);
+}
 

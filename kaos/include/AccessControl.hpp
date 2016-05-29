@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -37,7 +38,6 @@
  */
 class AccessControl {
 public:
-
     /*
      * Constructor
      */
@@ -58,7 +58,6 @@ public:
     }
 
 private:
-
     /*
      * Private Member Functions
      */
@@ -79,7 +78,7 @@ private:
 };
 
 /*
- * Access Control Shared Pointer and Unordered Map
+ * Access Control Shared Pointer, List, and Unordered Map
  */
 typedef std::shared_ptr<AccessControl> AccessControlPtr;
 typedef std::list<AccessControlPtr> AccessControlList;

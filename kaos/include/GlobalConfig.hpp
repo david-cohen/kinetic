@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -47,7 +48,6 @@ typedef std::set<com::seagate::kinetic::proto::Command_GetLog_Type> GetLogTypeSe
  */
 class GlobalConfig {
 public:
-
     /*
      * Constructor
      */
@@ -112,7 +112,6 @@ public:
     inline NetworkInterfaceMap networkInterfaceMap() const {return m_networkInterfaceMap;}
 
 private:
-
     /*
      * Private Data Members
      */

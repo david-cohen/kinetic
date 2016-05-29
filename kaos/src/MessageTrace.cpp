@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -55,7 +56,6 @@ using com::seagate::kinetic::proto::Command_Status;
  * @param   message         The Kinetic message to display
  */
 void MessageTrace::outputContents(KineticMessageFraming& messageFraming, KineticMessage* message) {
-
     const uint32_t BYTE_MASK(0xff);
     std::cout << std::endl << "Kinetic PDU {" << std::endl;
     std::cout << "  Magic Number: " << ((uint32_t) messageFraming.magicNumber() & BYTE_MASK) << std::endl;
@@ -119,7 +119,6 @@ void MessageTrace::outputContents(KineticMessageFraming& messageFraming, Kinetic
  * @param   header  The protocol buffer header message
  */
 void MessageTrace::outputHeader(const Command_Header& header) {
-
     if (header.has_messagetype())
         std::cout << "        Message Type: " << Translator::toString(header.messagetype()) << std::endl;
     if (header.has_connectionid())
@@ -148,7 +147,6 @@ void MessageTrace::outputHeader(const Command_Header& header) {
  * @param   keyvalue    The protocol buffer keyvalue message
  */
 void MessageTrace::outputKeyValue(const Command_KeyValue& keyvalue) {
-
     if (keyvalue.has_key()) {
         std::cout << "          Key: ";
         outputString(keyvalue.key());
@@ -177,7 +175,6 @@ void MessageTrace::outputKeyValue(const Command_KeyValue& keyvalue) {
  * @param   range   The protocol buffer range message
  */
 void MessageTrace::outputRange(const Command_Range& range) {
-
     if (range.has_startkey()) {
         std::cout << "          Start Key: ";
         outputString(range.startkey());
@@ -212,7 +209,6 @@ void MessageTrace::outputRange(const Command_Range& range) {
  * @param   configuration   The protocol buffer configuration message
  */
 void MessageTrace::outputConfiguration(const Command_GetLog_Configuration& configuration) {
-
     std::cout << "            Vendor: " << configuration.vendor() << std::endl;
     std::cout << "            Model: " << configuration.model() << std::endl;
     std::cout << "            Version: " << configuration.version() << std::endl;
@@ -229,7 +225,6 @@ void MessageTrace::outputConfiguration(const Command_GetLog_Configuration& confi
  * @param   getLog  The protocol buffer getLog message (which contains the statistics)
  */
 void MessageTrace::outputStatistics(const Command_GetLog& getLog) {
-
     for (int32_t index = 0; index < getLog.statistics_size(); index++) {
         const Command_GetLog_Statistics& statistics(getLog.statistics(index));
         std::cout << "            Statistic {" << std::endl;
@@ -246,7 +241,6 @@ void MessageTrace::outputStatistics(const Command_GetLog& getLog) {
  * @param   capacity    The protocol buffer capacity message
  */
 void MessageTrace::outputCapacity(const Command_GetLog_Capacity& capacity) {
-
     std::cout << "            Nominal: " << capacity.nominalcapacityinbytes() << std::endl;
     std::cout << "            Full: " << (100 * capacity.portionfull()) << " %" << std::endl;
 }
@@ -257,7 +251,6 @@ void MessageTrace::outputCapacity(const Command_GetLog_Capacity& capacity) {
  * @param   limits  The protocol buffer limits message
  */
 void MessageTrace::outputLimits(const Command_GetLog_Limits& limits) {
-
     const ::google::protobuf::uint32 UNSUPPORTED_LIMIT(0xffffffff);
     if (limits.maxkeysize() != UNSUPPORTED_LIMIT)
         std::cout << "            Max Key Size: " << limits.maxkeysize() << std::endl;
@@ -287,7 +280,6 @@ void MessageTrace::outputLimits(const Command_GetLog_Limits& limits) {
  * @param   getLog  The protocol buffer getLog message
  */
 void MessageTrace::outputGetLog(const Command_GetLog& getLog) {
-
     if (getLog.types_size() > 0) {
         std::cout << "          Types: ";
         for (auto index = 0; index < getLog.types_size(); index++) {
@@ -342,7 +334,6 @@ void MessageTrace::outputGetLog(const Command_GetLog& getLog) {
  * @param   setup   The protocol buffer setup message
  */
 void MessageTrace::outputSetup(const Command_Setup& setup) {
-
     if (setup.has_newclusterversion())
         std::cout << "            New Cluster Version: " << setup.newclusterversion() << std::endl;
 
@@ -356,7 +347,6 @@ void MessageTrace::outputSetup(const Command_Setup& setup) {
  * @param   security    The protocol buffer security message
  */
 void MessageTrace::outputSecurity(const Command_Security& security) {
-
     std::cout << "          Old Lock PIN: ";
     outputString(security.oldlockpin());
     std::cout << "          New Lock PIN: ";
@@ -397,7 +387,6 @@ void MessageTrace::outputSecurity(const Command_Security& security) {
  * @param   security    The protocol buffer PIN operation message
  */
 void MessageTrace::outputPinOp(const Command_PinOperation& pinop) {
-
     if (pinop.has_pinoptype())
         std::cout << "            PIN Operation: " << Translator::toString(pinop.pinoptype()) << std::endl;
 }
@@ -408,7 +397,6 @@ void MessageTrace::outputPinOp(const Command_PinOperation& pinop) {
  * @param   security    The protocol buffer PIN operation message
  */
 void MessageTrace::outputBatch(const Command_Batch& batch) {
-
     if (batch.has_count())
         std::cout << "            Count: " << batch.count() << std::endl;
     if (batch.has_failedsequence())
@@ -429,7 +417,6 @@ void MessageTrace::outputBatch(const Command_Batch& batch) {
  * @param   body    The protocol buffer body message
  */
 void MessageTrace::outputBody(const Command_Body& body) {
-
     if (body.has_keyvalue()) {
         std::cout << "        Key/Value {" << std::endl;
         outputKeyValue(body.keyvalue());
@@ -477,7 +464,6 @@ void MessageTrace::outputBody(const Command_Body& body) {
  * @param   status  The protocol buffer status message
  */
 void MessageTrace::outputStatus(const Command_Status& status) {
-
     if (status.has_code())
         std::cout << "        Code: " << Translator::toString(status.code()) << std::endl;
     if (status.has_statusmessage())
@@ -493,7 +479,6 @@ void MessageTrace::outputStatus(const Command_Status& status) {
  * @param   newLine     True if a newline is to be output at the end
  */
 void MessageTrace::outputHexBytes(const std::string& data, bool newLine) {
-
     const uint32_t BYTE_MASK(0xff);
     if (data.size() > 0)
         std::cout << "0x";
@@ -515,7 +500,6 @@ void MessageTrace::outputHexBytes(const std::string& data, bool newLine) {
  * @param   newLine     True if a newline is to be output after the string
  */
 void MessageTrace::outputString(const std::string& data, bool newLine) {
-
     bool ascii = true;
     for (uint32_t index = 0; index < data.size(); index++) {
         if (!isalnum(data[index]) && (data[index] != '_') && (data[index] != '-')) {

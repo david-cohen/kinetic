@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -35,7 +36,6 @@
  * request.
  */
 class MessageStatistics {
-
     /**
      * Private Stats Record
      *
@@ -45,7 +45,6 @@ class MessageStatistics {
      */
     class Stats {
     public:
-
         /**
          * Constructor
          */
@@ -78,7 +77,6 @@ class MessageStatistics {
     typedef std::map<com::seagate::kinetic::proto::Command_MessageType, Stats*> StatsMap;
 
 public:
-
     /**
      * Message Statistics Constructor
      *
@@ -119,7 +117,6 @@ public:
      * have a message size of zero.
      */
     void update(const KineticMessagePtr& requestMessage, const KineticMessagePtr& responseMessage) {
-
         std::unique_lock<std::mutex> scopedLock(m_mutex);
         StatsMap::iterator iter = m_statsTable.find(requestMessage->command()->header().messagetype());
         if (iter != m_statsTable.end()) {
@@ -136,7 +133,6 @@ public:
      * Sets the statistic values for all the message types.
      */
     void get(com::seagate::kinetic::proto::Command_GetLog* const response) {
-
         std::unique_lock<std::mutex> scopedLock(m_mutex);
         for (auto& messageStats : m_statsTable) {
             com::seagate::kinetic::proto::Command_GetLog_Statistics* statistics(response->add_statistics());
@@ -147,7 +143,6 @@ public:
     }
 
 private:
-
     /*
      * Private Data Members
      */

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -54,7 +55,6 @@ HeartbeatProvider::HeartbeatProvider()
  * @return  True if the thread was successfully created
  */
 bool HeartbeatProvider::start() {
-
     try {
         m_active = true;
         m_thread = new std::thread(&HeartbeatProvider::run, this);
@@ -73,7 +73,6 @@ bool HeartbeatProvider::start() {
  * @throws  A runtime error if a socket could not be opened or configured successfully
  */
 void HeartbeatProvider::openSocket() {
-
     const uint8_t MULTICAST_TTL(1);
     m_socketFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -95,7 +94,6 @@ void HeartbeatProvider::openSocket() {
  * @throws  A runtime error if the message wasn't sent successfully
  */
 void HeartbeatProvider::sendHeartbeatMessage() {
-
     std::stringstream stream;
     stream << "{"
            << "\"manufacturer\":\"" << globalConfig.vendor() << "\","
@@ -132,7 +130,6 @@ void HeartbeatProvider::sendHeartbeatMessage() {
  * and sends heartbeat messages at the specified interval.
  */
 void HeartbeatProvider::run() {
-
     while (m_active) {
         try {
             openSocket();
@@ -154,7 +151,6 @@ void HeartbeatProvider::run() {
  * Causes the heartbeat provider thread to terminate.
  */
 void HeartbeatProvider::stop() {
-
     m_active = false;
 }
 
@@ -164,7 +160,6 @@ void HeartbeatProvider::stop() {
  * Causes the caller to be blocked until the thread ends.
  */
 void HeartbeatProvider::wait() {
-
     if (m_thread != nullptr)
         m_thread->join();
 }

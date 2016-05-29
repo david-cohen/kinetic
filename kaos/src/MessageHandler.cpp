@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -54,6 +55,7 @@ using std::string;
 using std::unordered_set;
 using std::unordered_map;
 using com::seagate::kinetic::proto::Message_AuthType;
+using com::seagate::kinetic::proto::Command;
 using com::seagate::kinetic::proto::Command_Batch;
 using com::seagate::kinetic::proto::Command_Header;
 using com::seagate::kinetic::proto::Command_GetLog;
@@ -99,6 +101,7 @@ using com::seagate::kinetic::proto::Command_MessageType_PEER2PEERPUSH_RESPONSE;
 using com::seagate::kinetic::proto::Command_MessageType_NOOP_RESPONSE;
 using com::seagate::kinetic::proto::Command_MessageType_PINOP_RESPONSE;
 using com::seagate::kinetic::proto::Command_MessageType_FLUSHALLDATA_RESPONSE;
+using com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS;
 using com::seagate::kinetic::proto::Command_MessageType_INVALID_MESSAGE_TYPE;
 using com::seagate::kinetic::proto::Command_Status_StatusCode;
 using com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS;
@@ -166,9 +169,7 @@ MessageHandler::MessageHandler(Connection* const connection)
  *
  * @param transaction.request   the request message to be processed
  */
-void
-MessageHandler::processRequest(Transaction* const transaction) {
-
+void MessageHandler::processRequest(Transaction* const transaction) {
     try {
         /*
          * Verify that the request contains all the required header fields (if not, the verify
@@ -241,7 +242,6 @@ MessageHandler::processRequest(Transaction* const transaction) {
         // PIN operations don't require specified access control, they just need to specify the PIN.
 
         if (transaction->request->authtype() == Message_AuthType::Message_AuthType_HMACAUTH) {
-
             if (transaction->accessControl == nullptr) {
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Identity does not have access");
             }
@@ -264,10 +264,10 @@ MessageHandler::processRequest(Transaction* const transaction) {
             }
         }
 
-        if (m_serverSettings.locked() && !((requestHeader.messagetype() == Command_MessageType_PINOP)
-                                           && ((transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_UNLOCK_PINOP)
-                                               || (transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_LOCK_PINOP)))) {
-
+        if (m_serverSettings.locked()
+                && !((requestHeader.messagetype() == Command_MessageType_PINOP)
+                     && ((transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_UNLOCK_PINOP)
+                         || (transaction->request->command()->body().pinop().pinoptype() == Command_PinOperation_PinOpType_LOCK_PINOP)))) {
             throw MessageException(Command_Status_StatusCode_DEVICE_LOCKED);
         }
 
@@ -308,59 +308,6 @@ MessageHandler::processRequest(Transaction* const transaction) {
 }
 
 /**
- * Completes the processing of a request that failed due to an error.
- *
- * @param   transaction     Contains the request and response message
- */
-void
-MessageHandler::processError(Transaction* const transaction, Command_Status_StatusCode errorCode, const std::string& errorMessage) {
-
-
-    try {
-        Command_Status* status = transaction->response->mutable_command()->mutable_status();
-        Command_Header* responseHeader = transaction->response->mutable_command()->mutable_header();
-
-        if (transaction->request->command()->has_header()) {
-            const Command_Header& requestHeader = transaction->request->command()->header();
-
-            if (requestHeader.has_sequence())
-                responseHeader->set_acksequence(requestHeader.sequence());
-
-            if (requestHeader.has_messagetype()) {
-                uint32_t dispatchTableIndex = messageTypeToIndex(requestHeader.messagetype());
-
-                if (dispatchTableIndex < DISPATCH_TABLE_SIZE) {
-                    OperationInfo& operationInfo = dispatchTable[dispatchTableIndex];
-                    responseHeader->set_messagetype(operationInfo.responseType());
-                }
-            }
-        }
-
-        if ((transaction->request->authtype() == Message_AuthType::Message_AuthType_HMACAUTH) && transaction->request->hmacauth().has_identity())
-            transaction->accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
-
-        status->set_code(errorCode);
-        status->set_statusmessage(errorMessage);
-    }
-    catch (MessageException& messageException) {
-        Command_Status* status = transaction->response->mutable_command()->mutable_status();
-        status->set_code(messageException.statusCode());
-        status->set_statusmessage(messageException.statusMessage());
-    }
-    if (transaction->accessControl != nullptr) {
-        transaction->request->set_authtype(Message_AuthType::Message_AuthType_HMACAUTH);
-        transaction->response->mutable_hmacauth()->set_identity(transaction->accessControl->identity());
-    }
-    transaction->response->build_commandbytes();
-
-    if (transaction->accessControl != nullptr) {
-        transaction->response->generateHmac(transaction->accessControl->hmacKey(), transaction->accessControl->hmacAlgorithm());
-    }
-
-    m_messageStatistics.update(transaction->request, transaction->response);
-}
-
-/**
  * Processes a setup request.  A setup request is used perform a secure erase, download a new
  * firmware image, or update setup parameters (cluster version and/or personal ID number). Although
  * syntactically more than one of these operations can be requested at once, only one is permitted
@@ -370,9 +317,7 @@ MessageHandler::processError(Transaction* const transaction, Command_Status_Stat
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processSetupRequest(Transaction* const transaction) {
-
+void MessageHandler::processSetupRequest(Transaction* const transaction) {
     /*
      * Ensure that the message contains the setup parameters, the correctly PIN was specified, and
      * that only one operation is being request.  If any of those conditions are not true, fail the
@@ -451,11 +396,8 @@ MessageHandler::processSetupRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processSecurityRequest(Transaction* const transaction) {
-
+void MessageHandler::processSecurityRequest(Transaction* const transaction) {
     try {
-
         /*
          * Verify that the message contains security parameters and does not contain new values for
          * more that one setting (the erase PIN, the lock PIN, or the ACLs), which is not
@@ -483,7 +425,6 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
          * If the erase PIN is specified, set the erase PIN to its new value.
          */
         if (security.has_newerasepin() || security.has_olderasepin()) {
-
             if (!m_serverSettings.erasePin().empty() && (m_serverSettings.erasePin().compare(security.olderasepin()) != 0))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old lock pin");
 
@@ -497,7 +438,6 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
          * If the lock PIN is specified, set the lock PIN to its new value/
          */
         else if (security.has_newlockpin() || security.has_oldlockpin()) {
-
             if (!m_serverSettings.lockPin().empty() && ((m_serverSettings.lockPin().compare(security.oldlockpin()) != 0)))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Invalid old erase pin");
 
@@ -508,7 +448,6 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
         }
 
         else if (security.acl_size() > 0) {
-
             /*
              * Verify that the maximum number of identities has not been exceeded.  If it has,
              * fail the message.
@@ -616,9 +555,7 @@ MessageHandler::processSecurityRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processGetLogRequest(Transaction* const transaction) {
-
+void MessageHandler::processGetLogRequest(Transaction* const transaction) {
     const Command_GetLog& getLogRequest = transaction->request->command()->body().getlog();
     Command_GetLog* getLogResponse = transaction->response->mutable_command()->mutable_body()->mutable_getlog();
 
@@ -681,15 +618,12 @@ MessageHandler::processGetLogRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processPutRequest(Transaction* const transaction) {
-
+void MessageHandler::processPutRequest(Transaction* const transaction) {
     /*
      * If the request is a part of batch, defer processing it until the end batch command has been
      * received.
      */
     if (transaction->request->command()->header().has_batchid()) {
-
         KineticMessageListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
 
         if (batchList == nullptr)
@@ -719,7 +653,7 @@ MessageHandler::processPutRequest(Transaction* const transaction) {
      * Perform the put operation.  If an error is encountered, the function will throw and will be
      * caught by the calling function.
      */
-    m_objectStore.putEntry(params, transaction->request->value());
+    m_objectStore->putEntry(params, transaction->request->value());
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -729,16 +663,14 @@ MessageHandler::processPutRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processGetRequest(Transaction* const transaction) {
-
+void MessageHandler::processGetRequest(Transaction* const transaction) {
     const Command_KeyValue& request = transaction->request->command()->body().keyvalue();
 
     if (!request.metadataonly())
-        m_objectStore.getEntry(request.key(), transaction->response->value(),
-                               transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        m_objectStore->getEntry(request.key(), transaction->response->value(),
+                                transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
     else
-        m_objectStore.getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+        m_objectStore->getEntryMetadata(request.key(), false, transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -747,11 +679,9 @@ MessageHandler::processGetRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processGetVersionRequest(Transaction* const transaction) {
-
-    m_objectStore.getEntryMetadata(transaction->request->command()->body().keyvalue().key(), true,
-                                   transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
+void MessageHandler::processGetVersionRequest(Transaction* const transaction) {
+    m_objectStore->getEntryMetadata(transaction->request->command()->body().keyvalue().key(), true,
+                                    transaction->response->mutable_command()->mutable_body()->mutable_keyvalue());
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -761,21 +691,17 @@ MessageHandler::processGetVersionRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processGetNextRequest(Transaction* const transaction) {
-
+void MessageHandler::processGetNextRequest(Transaction* const transaction) {
     Command_KeyValue* returnMetadata = transaction->response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    m_objectStore.getNextEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
+    m_objectStore->getNextEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
 
     // why is this check here?
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
-
     // Note: the conformance test expects the "permission denied text.
-    if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
+    if ((transaction->accessControl != nullptr) && !transaction->accessControl->permissionToRead(returnMetadata->key())) {
         throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
     }
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
@@ -786,21 +712,17 @@ MessageHandler::processGetNextRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
-
+void MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
     Command_KeyValue* returnMetadata = transaction->response->mutable_command()->mutable_body()->mutable_keyvalue();
 
-    m_objectStore.getPreviousEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
+    m_objectStore->getPreviousEntry(transaction->request->command()->body().keyvalue().key(), transaction->response->value(), returnMetadata);
 
     // why is this check here?
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
 
-    AccessControlPtr accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
-
     // Note: the conformance test expects the "permission denied text.
-    if ((accessControl != nullptr) && !accessControl->permissionToRead(returnMetadata->key())) {
+    if ((transaction->accessControl != nullptr) && !transaction->accessControl->permissionToRead(returnMetadata->key())) {
         throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
     }
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
@@ -813,7 +735,6 @@ MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
  */
 void
 MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
-
     const Command_Range& params(transaction->request->command()->body().range());
 
 #if 0
@@ -823,8 +744,6 @@ MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
     // TODO(gballance) - maybe have this checked in initialMessageProcessing
     if (transaction->request->authtype() != Message_AuthType::Message_AuthType_HMACAUTH)
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Requires HMAC authentication");
-
-    AccessControlPtr accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
 
 #if 0  // THIS IS NOT HOW THE OPERATION WORKS
     if (accessControl != nullptr) {
@@ -840,9 +759,9 @@ MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
     Command_Range* response(transaction->response->mutable_command()->mutable_body()->mutable_range());
 
     if (!params.reverse())
-        m_objectStore.getKeyRange(params, accessControl, response);
+        m_objectStore->getKeyRange(params, transaction->accessControl, response);
     else
-        m_objectStore.getKeyRangeReversed(params, accessControl, response);
+        m_objectStore->getKeyRangeReversed(params, transaction->accessControl, response);
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
@@ -855,11 +774,8 @@ MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processDeleteRequest(Transaction* const transaction) {
-
+void MessageHandler::processDeleteRequest(Transaction* const transaction) {
     if (transaction->request->command()->header().has_batchid()) {
-
         KineticMessageListPtr batchList = m_connection->getBatchList(transaction->request->command()->header().batchid());
 
         if (batchList == nullptr)
@@ -870,7 +786,7 @@ MessageHandler::processDeleteRequest(Transaction* const transaction) {
         return;
     }
 
-    m_objectStore.deleteEntry(transaction->request->command()->body().keyvalue());
+    m_objectStore->deleteEntry(transaction->request->command()->body().keyvalue());
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -879,10 +795,8 @@ MessageHandler::processDeleteRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processFlushRequest(Transaction* const transaction) {
-
-    m_objectStore.flush();
+void MessageHandler::processFlushRequest(Transaction* const transaction) {
+    m_objectStore->flush();
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -891,9 +805,7 @@ MessageHandler::processFlushRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processNoopRequest(Transaction* const transaction) {
-
+void MessageHandler::processNoopRequest(Transaction* const transaction) {
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -902,11 +814,8 @@ MessageHandler::processNoopRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processPinOpRequest(Transaction* const transaction) {
-
+void MessageHandler::processPinOpRequest(Transaction* const transaction) {
     try {
-
         if (!transaction->request->command()->body().has_pinop())
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing PIN operation parameters");
 
@@ -931,7 +840,7 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
                 if ((!m_serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN");
 
-                m_objectStore.erase();
+                m_objectStore->erase();
                 m_serverSettings.setDefaults();
                 break;
 
@@ -940,7 +849,7 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
                 if ((!m_serverSettings.erasePin().empty()) && (transaction->request->pinauth().pin().compare(m_serverSettings.erasePin()) != 0))
                     throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Incorrect PIN 4");
 
-                m_objectStore.erase();
+                m_objectStore->erase();
                 m_serverSettings.setDefaults();
                 break;
 
@@ -966,10 +875,8 @@ MessageHandler::processPinOpRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processOptimizeMediaRequest(Transaction* const transaction) {
-
-    m_objectStore.optimizeMedia();
+void MessageHandler::processOptimizeMediaRequest(Transaction* const transaction) {
+    m_objectStore->optimizeMedia();
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
 }
 
@@ -978,9 +885,7 @@ MessageHandler::processOptimizeMediaRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processP2pPushRequest(Transaction* const transaction) {
-
+void MessageHandler::processP2pPushRequest(Transaction* const transaction) {
     static_cast<void>(transaction);
     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Request not yet supported");
 }
@@ -990,10 +895,7 @@ MessageHandler::processP2pPushRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processInvalidRequest(Transaction* const transaction) {
-
-
+void MessageHandler::processInvalidRequest(Transaction* const transaction) {
     /*
      *  Eliminate the unused args warning.
      */
@@ -1015,9 +917,7 @@ MessageHandler::processInvalidRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processStartBatchRequest(Transaction* const transaction) {
-
+void MessageHandler::processStartBatchRequest(Transaction* const transaction) {
     if (m_connection->server()->activeBatchCommands() >= globalConfig.maxBatchCountPerDevice())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Exceeded maximum outstanding batches");
 
@@ -1039,9 +939,7 @@ MessageHandler::processStartBatchRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processEndBatchRequest(Transaction* const transaction) {
-
+void MessageHandler::processEndBatchRequest(Transaction* const transaction) {
     if (!transaction->request->command()->header().has_batchid())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "End Batch command missing Batch ID");
 
@@ -1060,9 +958,8 @@ MessageHandler::processEndBatchRequest(Transaction* const transaction) {
     for (auto batchRequest : *batchList)
         returnBatchInfo->add_sequence(batchRequest->command()->header().sequence());
 
-    BatchInterfacePtr batch(m_objectStore.createBatch());
+    BatchInterfacePtr batch(m_objectStore->createBatch());
     for (auto batchRequest : *batchList) {
-
         try {
             if (batchRequest->command()->header().messagetype() == Command_MessageType_PUT)
                 batch->putEntry(batchRequest->command()->body().keyvalue(), batchRequest->value());
@@ -1090,9 +987,7 @@ MessageHandler::processEndBatchRequest(Transaction* const transaction) {
  *
  * @param   transaction     Contains the request and response message
  */
-void
-MessageHandler::processAbortBatchRequest(Transaction* const transaction) {
-
+void MessageHandler::processAbortBatchRequest(Transaction* const transaction) {
     if (!transaction->request->command()->header().has_batchid())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Abort Batch command missing Batch ID");
 
@@ -1100,5 +995,47 @@ MessageHandler::processAbortBatchRequest(Transaction* const transaction) {
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 
     transaction->response->mutable_command()->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
+}
+
+void MessageHandler::buildUnsolicitedStatusMessage(Connection* const connection, KineticMessagePtr& response) {
+    response->set_authtype(Message_AuthType_UNSOLICITEDSTATUS);
+    Command* const command = response->mutable_command();
+    Command_Header* const header = command->mutable_header();
+    header->set_connectionid(connection->connectionId());
+    header->set_clusterversion(connection->server()->settings().clusterVersion());
+    Command_GetLog* getLogResponse = command->mutable_body()->mutable_getlog();
+    getLogResponse->add_types(Command_GetLog_Type_CONFIGURATION);
+    KineticLog::getConfiguration(getLogResponse);
+    getLogResponse->add_types(Command_GetLog_Type_LIMITS);
+    KineticLog::getLimits(getLogResponse);
+    command->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
+    response->build_commandbytes();
+}
+
+/**
+ * Completes the processing of a request that failed due to an error.
+ *
+ * @param   transaction     Contains the request and response message
+ */
+void MessageHandler::buildResponseWithError(Transaction* const transaction, Command_Status_StatusCode errorCode, const std::string& errorMessage) {
+    com::seagate::kinetic::proto::Command_Status* status = transaction->response->mutable_command()->mutable_status();
+    status->set_code(errorCode);
+    status->set_statusmessage(errorMessage);
+
+    com::seagate::kinetic::proto::Command_Header* header = transaction->response->mutable_command()->mutable_header();
+    header->set_acksequence(transaction->request->command()->header().sequence());
+    header->set_messagetype(requestToResponseType(transaction->request->command()->header().messagetype()));
+
+    if ((transaction->request->authtype() == Message_AuthType::Message_AuthType_HMACAUTH) && transaction->request->hmacauth().has_identity()) {
+        transaction->accessControl = m_serverSettings.accessControl(transaction->request->hmacauth().identity());
+        if (transaction->accessControl != nullptr) {
+            transaction->request->set_authtype(Message_AuthType::Message_AuthType_HMACAUTH);
+            transaction->response->mutable_hmacauth()->set_identity(transaction->accessControl->identity());
+        }
+    }
+    transaction->response->build_commandbytes();
+    if (transaction->accessControl != nullptr)
+        transaction->response->generateHmac(transaction->accessControl->hmacKey(), transaction->accessControl->hmacAlgorithm());
+    m_messageStatistics.update(transaction->request, transaction->response);
 }
 

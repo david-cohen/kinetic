@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -32,9 +33,7 @@
  * Contains the user specified settings for the server.
  */
 class ServerSettings {
-
 public:
-
     /*
      * Constructor
      */
@@ -63,7 +62,6 @@ public:
     inline void setErasePin(std::string erasePin) {m_erasePin.assign(erasePin);}
 
 private:
-
     /*
      * Private Member Functions
      */

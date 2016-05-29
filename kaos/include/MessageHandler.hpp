@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -38,18 +39,15 @@
  */
 class MessageHandler {
 public:
-
     /*
      * Constructor
      */
     explicit MessageHandler(Connection* const connection);
 
     /*
-     * Public Class Member Functions
+     * Public Member Functions
      */
     void processRequest(Transaction* const transaction);
-    void processError(Transaction* const transaction, com::seagate::kinetic::proto::Command_Status_StatusCode errorCode,
-                      const std::string& errorMessage);
     void processPutRequest(Transaction* const transaction);
     void processSetupRequest(Transaction* const transaction);
     void processSecurityRequest(Transaction* const transaction);
@@ -69,9 +67,15 @@ public:
     void processEndBatchRequest(Transaction* const transaction);
     void processAbortBatchRequest(Transaction* const transaction);
     void processInvalidRequest(Transaction* const transaction);
+    void buildResponseWithError(Transaction* const transaction, com::seagate::kinetic::proto::Command_Status_StatusCode errorCode,
+                                const std::string& errorMessage);
+
+    /*
+     * Public Class Member Functions
+     */
+    static void buildUnsolicitedStatusMessage(Connection* const connection, KineticMessagePtr& response);
 
 private:
-
     /*
      * Private Inline Member Functions
      */
@@ -79,14 +83,18 @@ private:
         return static_cast<uint32_t>(messageType) >> 1;
     }
 
+    inline com::seagate::kinetic::proto::Command_MessageType requestToResponseType(com::seagate::kinetic::proto::Command_MessageType messageType) {
+        return static_cast<::com::seagate::kinetic::proto::Command_MessageType>(static_cast<uint32_t>(messageType) - 1);
+    }
+
     /*
      * Private Data Members
      */
 
-    Connection* const       m_connection;           //!< Connection messages are tranferred through
-    ObjectStoreInterface&   m_objectStore;          //!< Server's object store
-    ServerSettings&         m_serverSettings;       //!< Server's user settings
-    MessageStatistics&      m_messageStatistics;    //!< Statistics on processed messages
+    Connection* const           m_connection;           //!< Connection messages are tranferred through
+    ObjectStoreInterface* const m_objectStore;          //!< Server's object store
+    ServerSettings&             m_serverSettings;       //!< Server's user settings
+    MessageStatistics&          m_messageStatistics;    //!< Statistics on processed messages
 };
 
 #endif

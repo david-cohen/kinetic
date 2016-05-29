@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -63,7 +64,6 @@ typedef std::array<bool, NUMBER_OF_OPERATIONS> OperationSizedBoolArray;
  */
 class AccessScope {
 public:
-
     /*
      * Constructor
      */
@@ -84,7 +84,6 @@ public:
     }
 
 private:
-
     /*
      * Private Data Objects
      */

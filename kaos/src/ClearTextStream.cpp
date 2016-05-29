@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -53,7 +54,6 @@ ClearTextStream::ClearTextStream(int32_t streamFd)
  * @throws  A runtime error if a fatal error was encountered
 */
 void ClearTextStream::read(char* const buffer, size_t byteCount) {
-
     /*
      * Loop reading from the socket until the requested amount of data has been received.
      */
@@ -92,7 +92,6 @@ void ClearTextStream::read(char* const buffer, size_t byteCount) {
  * @throws  A runtime error if a fatal error was encountered
  */
 void ClearTextStream::blackHoleRead(size_t byteCount) {
-
     /*
      * Loop reading from the socket until the requested amount of data has been received (without
      * keeping any of the received data).
@@ -134,7 +133,6 @@ void ClearTextStream::blackHoleRead(size_t byteCount) {
  * @throws  A runtime error if a fatal error was encountered
  */
 void ClearTextStream::write(const char* const buffer, size_t byteCount) {
-
     /*
      * Loop writing to the socket until the requested amount of data has been sent.
      */
@@ -170,7 +168,6 @@ void ClearTextStream::write(const char* const buffer, size_t byteCount) {
  * Closes the stream.
  */
 void ClearTextStream::close() {
-
     if (::close(m_streamFd) == STATUS_FAILURE) {
         LOG(ERROR) << "Clear text stream close failure: error code=" << errno << ", description=" << strerror(errno);
     }

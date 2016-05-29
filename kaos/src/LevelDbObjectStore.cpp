@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -76,7 +77,6 @@ LevelDbObjectStore::~LevelDbObjectStore() {
  * @return  true if the database was opened successfully
  */
 bool LevelDbObjectStore::open() {
-
     syncWriteOptions.sync = true;
     asyncWriteOptions.sync = false;
 
@@ -100,7 +100,6 @@ bool LevelDbObjectStore::open() {
  * Closes the database (if it was open).
  */
 void LevelDbObjectStore::close() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     if (m_database != nullptr) {
@@ -114,7 +113,6 @@ void LevelDbObjectStore::close() {
  * (because it's closes and then opened).
  */
 void LevelDbObjectStore::erase() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     close();
@@ -126,7 +124,6 @@ void LevelDbObjectStore::erase() {
  * Flushes all the database data that's in memory to persistent media.
  */
 void LevelDbObjectStore::flush() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * Level DB doesn't have a flush command, so we have to perform a write to force a sync.  Since
@@ -171,7 +168,6 @@ void LevelDbObjectStore::flush() {
  * access the data.
  */
 void LevelDbObjectStore::optimizeMedia() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -197,7 +193,6 @@ void LevelDbObjectStore::optimizeMedia() {
  * @throws  INTERNAL_ERROR if the put failed due to a database error (such as I/O failure)
  */
 void LevelDbObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then if the database already has an entry with the same key,
@@ -258,7 +253,6 @@ void LevelDbObjectStore::putEntry(const Command_KeyValue& params, const string& 
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
 void LevelDbObjectStore::deleteEntry(const Command_KeyValue& params) {
-
     const string& key = params.key();
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
@@ -310,7 +304,6 @@ void LevelDbObjectStore::deleteEntry(const Command_KeyValue& params) {
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
 void LevelDbObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -352,7 +345,6 @@ void LevelDbObjectStore::getEntry(const string& key, string& returnValue, Comman
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
 void LevelDbObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -395,7 +387,6 @@ void LevelDbObjectStore::getEntryMetadata(const string& key, bool versionOnly, C
  * @throws  NOT_FOUND if the entry was not found in the database
  */
 void LevelDbObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -445,7 +436,6 @@ void LevelDbObjectStore::getNextEntry(const string& key, string& returnValue, Co
  * @throws  NOT_FOUND if the entry was not found in the database
  */
 void LevelDbObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -502,7 +492,6 @@ void LevelDbObjectStore::getPreviousEntry(const string& key, string& returnValue
  * @param  returnData       Where the list or keys to be returned are saved
  */
 void LevelDbObjectStore::getKeyRange(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -564,7 +553,6 @@ void LevelDbObjectStore::getKeyRange(const Command_Range& params, AccessControlP
  * @param  returnData       Where the list or keys to be returned are saved
  */
 void LevelDbObjectStore::getKeyRangeReversed(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -640,7 +628,6 @@ void LevelDbObjectStore::getKeyRangeReversed(const Command_Range& params, Access
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
 void LevelDbObjectStore::batchedPutEntry(leveldb::WriteBatch& batch, const Command_KeyValue& params, const string& value) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then if the database already has an entry with the same key,
@@ -695,7 +682,6 @@ void LevelDbObjectStore::batchedPutEntry(leveldb::WriteBatch& batch, const Comma
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
 void LevelDbObjectStore::batchedDeleteEntry(leveldb::WriteBatch& batch, const Command_KeyValue& params) {
-
     const string& key = params.key();
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -738,7 +724,6 @@ void LevelDbObjectStore::batchedDeleteEntry(leveldb::WriteBatch& batch, const Co
  * @throws  INTERNAL_ERROR if the operation failed due to a database error (such as I/O failure)
  */
 void LevelDbObjectStore::batchCommit(leveldb::WriteBatch& batch) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     leveldb::Status status = m_database->Write(syncWriteOptions, &batch);

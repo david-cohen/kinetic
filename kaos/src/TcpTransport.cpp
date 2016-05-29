@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -42,7 +43,6 @@
  * @throws  A runtime error if the setup fails
  */
 int32_t TcpTransport::serverSetup(uint32_t port) {
-
     /*
      * Create a connection-oriented communication path and allow the same source address and port to
      * be reused.
@@ -90,7 +90,6 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
  * @throws  A runtime error if a connection fails
  */
 ClientServerConnectionInfo TcpTransport::serverConnect(uint32_t serverPort, int32_t listeningSocketDescriptor) {
-
     /*
      * Wait for an incoming connection.  When one is received, create a connection handle to process
      * all requests through that connection.
@@ -111,7 +110,6 @@ ClientServerConnectionInfo TcpTransport::serverConnect(uint32_t serverPort, int3
     char serverIpAddressBuffer[INET_ADDRSTRLEN];
     if ((getsockname(newConnectionSocket, (struct sockaddr*) &socketInfo, &byteCount) == STATUS_SUCCESS)
             && (inet_ntop(AF_INET, &socketInfo.sin_addr, serverIpAddressBuffer, INET_ADDRSTRLEN) != nullptr)) {
-
         serverIpAddress.assign(serverIpAddressBuffer);
     }
 
@@ -144,7 +142,6 @@ void TcpTransport::serverShutdown(int32_t socketDescriptor) {
  * @throws  A runtime error if socket or connection creation fails
  */
 int32_t TcpTransport::clientConnect(const std::string& ipAddress, uint32_t port) {
-
     const int USE_DEFAULT_PROTOCOL(0);
     int32_t socketDescriptor = socket(AF_INET, SOCK_STREAM, USE_DEFAULT_PROTOCOL);
 

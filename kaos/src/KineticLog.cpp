@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -49,9 +50,7 @@ using com::seagate::kinetic::proto::Command_GetLog_Utilization;
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getConfiguration(Command_GetLog* const response) {
-
+void KineticLog::getConfiguration(Command_GetLog* const response) {
     Command_GetLog_Configuration* configuration(response->mutable_configuration());
     configuration->set_vendor(globalConfig.vendor());
     configuration->set_model(globalConfig.model());
@@ -78,9 +77,7 @@ KineticLog::getConfiguration(Command_GetLog* const response) {
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getLimits(Command_GetLog* const response) {
-
+void KineticLog::getLimits(Command_GetLog* const response) {
     Command_GetLog_Limits* limits(response->mutable_limits());
     limits->set_maxkeysize(globalConfig.maxKeySize());
     limits->set_maxvaluesize(globalConfig.maxValueSize());
@@ -103,8 +100,7 @@ KineticLog::getLimits(Command_GetLog* const response) {
  * @param   response            Pointer to the get log response to be populated
  * @param   messageStatistics   Object containing the message statistics
  */
-void
-KineticLog::getStatistics(Command_GetLog* const response, MessageStatistics& messageStatistics) {
+void KineticLog::getStatistics(Command_GetLog* const response, MessageStatistics& messageStatistics) {
     messageStatistics.get(response);
 }
 
@@ -114,9 +110,7 @@ KineticLog::getStatistics(Command_GetLog* const response, MessageStatistics& mes
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getCapacities(Command_GetLog* const response) {
-
+void KineticLog::getCapacities(Command_GetLog* const response) {
     struct statvfs fiData;
     memset(&fiData, 0, sizeof(fiData));
     std::string mountPoint = globalConfig.databaseDirectory();
@@ -143,9 +137,7 @@ KineticLog::getCapacities(Command_GetLog* const response) {
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getMessage(Command_GetLog* const response) {
-
+void KineticLog::getMessage(Command_GetLog* const response) {
     std::string* message = response->mutable_messages();
     message->assign("System started");
 }
@@ -155,9 +147,7 @@ KineticLog::getMessage(Command_GetLog* const response) {
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getDevice(const Command_GetLog& request, std::string& responseValue) {
-
+void KineticLog::getDevice(const Command_GetLog& request, std::string& responseValue) {
     if (!request.has_device() || !request.device().has_name())
         throw MessageException(Command_Status_StatusCode_NOT_FOUND, "Missing device log name.");
 
@@ -173,9 +163,7 @@ KineticLog::getDevice(const Command_GetLog& request, std::string& responseValue)
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getTemperatures(Command_GetLog* const response) {
-
+void KineticLog::getTemperatures(Command_GetLog* const response) {
     Command_GetLog_Temperature* temperature(response->add_temperatures());
     temperature->set_name("HDA");
     temperature->set_current(75);
@@ -189,9 +177,7 @@ KineticLog::getTemperatures(Command_GetLog* const response) {
  *
  * @param   response    Pointer to the get log response to be populated
  */
-void
-KineticLog::getUtilizations(Command_GetLog* const response) {
-
+void KineticLog::getUtilizations(Command_GetLog* const response) {
     Command_GetLog_Utilization* utilization(response->add_utilizations());
     utilization->set_name("HDA");
     utilization->set_value(.1);

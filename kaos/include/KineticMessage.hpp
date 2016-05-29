@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -23,7 +24,6 @@
 /*
  * Include Files
  */
-#include <time.h>
 #include <stdint.h>
 #include <map>
 #include <list>
@@ -43,7 +43,6 @@
  */
 class KineticMessage {
 public:
-
     /*
      * Constructor
      */
@@ -108,15 +107,6 @@ public:
     inline uint32_t totalSize() {return sizeof(KineticMessageFraming) + m_protoMessage->ByteSize() + m_value.size();}
 
 private:
-
-    /*
-     * Private Member Functions
-     */
-    uint64_t getTimestamp(void) const {
-        struct timespec time;
-        return (clock_gettime(CLOCK_REALTIME, &time) != 0) ? 0 : time.tv_sec * 1000000 + time.tv_nsec / 1000;
-    }
-
     /*
      * Private Data Members
      */

@@ -77,7 +77,6 @@ RocksDbObjectStore::~RocksDbObjectStore() {
  * @return  true if the database was opened successfully
  */
 bool RocksDbObjectStore::open() {
-
     syncWriteOptions.sync = true;
     asyncWriteOptions.sync = false;
 
@@ -86,7 +85,9 @@ bool RocksDbObjectStore::open() {
     defaultReadOptions.verify_checksums = false;
     defaultReadOptions.fill_cache = true;
     databaseOptions.create_if_missing = true;
+
     databaseOptions.max_open_files = 256;
+    databaseOptions.IncreaseParallelism(2);
     databaseOptions.compression = globalConfig.objectStoreCompressionEnabled() ? rocksdb::kSnappyCompression : rocksdb::kNoCompression;
 
     rocksdb::Status status = rocksdb::DB::Open(databaseOptions, globalConfig.databaseDirectory(), &m_database);
@@ -100,7 +101,6 @@ bool RocksDbObjectStore::open() {
  * Closes the database (if it was open).
  */
 void RocksDbObjectStore::close() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     if (m_database != nullptr) {
@@ -114,7 +114,6 @@ void RocksDbObjectStore::close() {
  * (because it's closes and then opened).
  */
 void RocksDbObjectStore::erase() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     close();
@@ -126,7 +125,6 @@ void RocksDbObjectStore::erase() {
  * Flushes all the database data that's in memory to persistent media.
  */
 void RocksDbObjectStore::flush() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * Level DB doesn't have a flush command, so we have to perform a write to force a sync.  Since
@@ -172,7 +170,6 @@ void RocksDbObjectStore::flush() {
  * access the data.
  */
 void RocksDbObjectStore::optimizeMedia() {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -199,7 +196,6 @@ void RocksDbObjectStore::optimizeMedia() {
  * @throws  INTERNAL_ERROR if the put failed due to a database error (such as I/O failure)
  */
 void RocksDbObjectStore::putEntry(const Command_KeyValue& params, const string& value) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then if the database already has an entry with the same key,
@@ -260,7 +256,6 @@ void RocksDbObjectStore::putEntry(const Command_KeyValue& params, const string& 
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
 void RocksDbObjectStore::deleteEntry(const Command_KeyValue& params) {
-
     const string& key = params.key();
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
@@ -312,7 +307,6 @@ void RocksDbObjectStore::deleteEntry(const Command_KeyValue& params) {
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
 void RocksDbObjectStore::getEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     rocksdb::Slice slice(key);
 
@@ -355,7 +349,6 @@ void RocksDbObjectStore::getEntry(const string& key, string& returnValue, Comman
  * @throws  INTERNAL_ERROR if the get failed due to a database error (such as I/O failure)
  */
 void RocksDbObjectStore::getEntryMetadata(const string& key, bool versionOnly, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -398,7 +391,6 @@ void RocksDbObjectStore::getEntryMetadata(const string& key, bool versionOnly, C
  * @throws  NOT_FOUND if the entry was not found in the database
  */
 void RocksDbObjectStore::getNextEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -448,7 +440,6 @@ void RocksDbObjectStore::getNextEntry(const string& key, string& returnValue, Co
  * @throws  NOT_FOUND if the entry was not found in the database
  */
 void RocksDbObjectStore::getPreviousEntry(const string& key, string& returnValue, Command_KeyValue* returnMetadata) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -505,7 +496,6 @@ void RocksDbObjectStore::getPreviousEntry(const string& key, string& returnValue
  * @param  returnData       Where the list or keys to be returned are saved
  */
 void RocksDbObjectStore::getKeyRange(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -567,7 +557,6 @@ void RocksDbObjectStore::getKeyRange(const Command_Range& params, AccessControlP
  * @param  returnData       Where the list or keys to be returned are saved
  */
 void RocksDbObjectStore::getKeyRangeReversed(const Command_Range& params, AccessControlPtr& accessControl, Command_Range* returnData) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     /*
@@ -643,7 +632,6 @@ void RocksDbObjectStore::getKeyRangeReversed(const Command_Range& params, Access
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
 void RocksDbObjectStore::batchedPutEntry(rocksdb::WriteBatch& batch, const Command_KeyValue& params, const string& value) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
     /*
      * If the request is not "forced", then if the database already has an entry with the same key,
@@ -698,7 +686,6 @@ void RocksDbObjectStore::batchedPutEntry(rocksdb::WriteBatch& batch, const Comma
  * @throws  VERSION_MISMATCH if the existing entry's version does not match the one specified
  */
 void RocksDbObjectStore::batchedDeleteEntry(rocksdb::WriteBatch& batch, const Command_KeyValue& params) {
-
     const string& key = params.key();
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
@@ -741,7 +728,6 @@ void RocksDbObjectStore::batchedDeleteEntry(rocksdb::WriteBatch& batch, const Co
  * @throws  INTERNAL_ERROR if the operation failed due to a database error (such as I/O failure)
  */
 void RocksDbObjectStore::batchCommit(rocksdb::WriteBatch& batch) {
-
     std::unique_lock<std::recursive_mutex> scopedLock(m_mutex);
 
     rocksdb::Status status = m_database->Write(syncWriteOptions, &batch);

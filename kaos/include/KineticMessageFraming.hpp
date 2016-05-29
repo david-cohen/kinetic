@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -32,7 +33,6 @@
  */
 class KineticMessageFraming {
 public:
-
     /*
      * Constructors
      */
@@ -57,7 +57,6 @@ public:
     void setValueSize(uint32_t size) {m_valueSize = htonl(size);}
 
 private:
-
     /*
      * Private Data Members
      */

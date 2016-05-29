@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -52,8 +53,8 @@ AccessControl::AccessControl(int64_t identity, string hmacKey, HmacAlgorithm hma
 
 /**
  * Determines if the specified operation is permitted to be performed according to the access
- * control settings. Kinetic's access control settings indicate what operations are permitted and
- * optional restrictions on key values (for key-based commands).
+ * control settings. Kinetic's access control settings indicate what operations are permitted for
+ * for a given user can also specify restrictions on possible key values (for key-based commands).
  *
  * @param   operation               The operation to be performed
  * @param   operationInvolvesKey    True if the operation uses a key
@@ -62,7 +63,6 @@ AccessControl::AccessControl(int64_t identity, string hmacKey, HmacAlgorithm hma
  * @return  True if the operation has be performed, false otherwise
  */
 bool AccessControl::operationPermitted(Operation operation, bool operationInvolvesKey, const Command_Body& commandBody) const {
-
     if (operation == Operation::INVALID)
         return true;
 
@@ -72,9 +72,11 @@ bool AccessControl::operationPermitted(Operation operation, bool operationInvolv
             if (requiredKeySubstring.empty() || !operationInvolvesKey)
                 return true;
             if (commandBody.keyvalue().has_key()) {
+                if (requiredKeySubstring.empty())
+                    return true;
                 const string& key = commandBody.keyvalue().key();
-                if ((requiredKeySubstring.empty()) || ((scope.minimumKeySize() <= key.size())
-                                                       && (key.substr(scope.keySubstringOffset(), requiredKeySubstring.size()) == requiredKeySubstring))) {
+                if ((scope.minimumKeySize() <= key.size())
+                        && key.substr(scope.keySubstringOffset(), requiredKeySubstring.size()) == requiredKeySubstring) {
                     return true;
                 }
             }
@@ -135,11 +137,10 @@ OperationSizedBoolArray AccessControl::getTlsRequiredArray() const {
  */
 bool AccessControl::permissionToPerformOperation(const string& key, const AccessScopeList& scopeList) const {
     for (AccessScope scope : scopeList) {
-        string requiredKeySubstring = scope.keySubstring();
-        if ((requiredKeySubstring.empty()) || ((key.size() >= scope.minimumKeySize())
-                                               && (key.substr(scope.keySubstringOffset(), requiredKeySubstring.size()) == requiredKeySubstring))) {
+        if (scope.keySubstring().empty())
             return true;
-        }
+        if ((key.size() >= scope.minimumKeySize()) && (key.substr(scope.keySubstringOffset(), scope.keySubstring().size()) == scope.keySubstring()))
+            return true;
     }
     return false;
 }

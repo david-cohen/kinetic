@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -42,9 +43,7 @@ class Connection;
  * Kinetic Object Store Server.
  */
 class Server {
-
 public:
-
     /*
      * Constructor
      */
@@ -54,7 +53,7 @@ public:
      * Public Accessors
      */
     ServerSettings& settings() {return m_settings;}
-    RocksDbObjectStore& objectStore() {return m_objectStore;}
+    ObjectStoreInterface* objectStore() const {return m_objectStore;}
     MessageStatistics& messageStatistics() {return m_messageStatistics;}
 
     /*
@@ -66,9 +65,8 @@ public:
     void removeConnection(Connection* connection);
 
 private:
-
     ServerSettings                  m_settings;             //!< User configurable server settings
-    RocksDbObjectStore              m_objectStore;          //!< Server's object store database
+    ObjectStoreInterface* const     m_objectStore;          //!< Server's object store database
     MessageStatistics               m_messageStatistics;    //!< Statistics on messages processed
     std::list<Connection*>          m_connectionList;       //!< List of active connections
     std::list<ListenerInterfacePtr> m_listenerList;         //!< List of active listeners

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -285,7 +286,6 @@ std::string Translator::toString(bool boolValue) {
  * @return the algorithm in string form
  */
 std::string Translator::toString(Command_Algorithm algorithm) {
-
     switch (algorithm) {
         case Command_Algorithm_INVALID_ALGORITHM:
             return "Invalid";
@@ -300,7 +300,7 @@ std::string Translator::toString(Command_Algorithm algorithm) {
         case Command_Algorithm_CRC64:
             return "CRC64";
         default:
-            return "Unsupported Algorithm (" + std::to_string(algorithm) + ")";
+            return "Unknown (" + std::to_string(algorithm) + ")";
     }
 }
 
@@ -312,7 +312,6 @@ std::string Translator::toString(Command_Algorithm algorithm) {
  * @return the PIN operation type in string form
  */
 std::string Translator::toString(Command_PinOperation_PinOpType pinop) {
-
     switch (pinop) {
         case Command_PinOperation_PinOpType_UNLOCK_PINOP:
             return "Unlock";
@@ -323,9 +322,9 @@ std::string Translator::toString(Command_PinOperation_PinOpType pinop) {
         case Command_PinOperation_PinOpType_SECURE_ERASE_PINOP:
             return "Secure Erase";
         case Command_PinOperation_PinOpType_INVALID_PINOP:
-            return "Invalid PIN Operation";
+            return "Invalid";
         default:
-            return "Unsupported PIN Operation (" + std::to_string(pinop) + ")";
+            return "Unknown (" + std::to_string(pinop) + ")";
     }
 }
 
@@ -337,14 +336,13 @@ std::string Translator::toString(Command_PinOperation_PinOpType pinop) {
  * @return the HMAC algorithm in string form
  */
 std::string Translator::toString(Command_Security_ACL_HMACAlgorithm algorithm) {
-
     switch (algorithm) {
         case Command_Security_ACL_HMACAlgorithm_INVALID_HMAC_ALGORITHM:
             return "Invalid";
         case Command_Security_ACL_HMACAlgorithm_HmacSHA1:
             return "HMAC-SHA1";
         default:
-            return "Unsupported HMAC Algorithm (" + std::to_string(algorithm) + ")";
+            return "Unknown (" + std::to_string(algorithm) + ")";
     }
 }
 
@@ -356,7 +354,6 @@ std::string Translator::toString(Command_Security_ACL_HMACAlgorithm algorithm) {
  * @return the authentication type in string form
  */
 std::string Translator::toString(Message_AuthType authType) {
-
     switch (authType) {
         case Message_AuthType_INVALID_AUTH_TYPE:
             return "Invalid";
@@ -367,7 +364,7 @@ std::string Translator::toString(Message_AuthType authType) {
         case Message_AuthType_UNSOLICITEDSTATUS:
             return "Unsolicited Status";
         default:
-            return "Unsupported Authentication Type (" + std::to_string(authType) + ")";
+            return "Unknown (" + std::to_string(authType) + ")";
     }
 }
 
@@ -379,7 +376,6 @@ std::string Translator::toString(Message_AuthType authType) {
  * @return the message type in string form
  */
 std::string Translator::toString(Command_MessageType messageType) {
-
     switch (messageType) {
         case Command_MessageType_GET:
             return "Get";
@@ -458,7 +454,7 @@ std::string Translator::toString(Command_MessageType messageType) {
         case Command_MessageType_ABORT_BATCH_RESPONSE:
             return "Abort Batch Response";
         default:
-            return "Unsupported Message Type (" + std::to_string(messageType) + ")";
+            return "Unknown (" + std::to_string(messageType) + ")";
     }
 }
 
@@ -470,7 +466,6 @@ std::string Translator::toString(Command_MessageType messageType) {
  * @return the type in string form
  */
 std::string Translator::toString(Command_GetLog_Type type) {
-
     switch (type) {
         case Command_GetLog_Type_UTILIZATIONS:
             return "Utilizations";
@@ -489,7 +484,7 @@ std::string Translator::toString(Command_GetLog_Type type) {
         case Command_GetLog_Type_DEVICE:
             return "Device";
         default:
-            return "Unknown Type (" + std::to_string(type) + ")";
+            return "Unknown (" + std::to_string(type) + ")";
     }
 }
 
@@ -501,7 +496,6 @@ std::string Translator::toString(Command_GetLog_Type type) {
  * @return the permission in string form
  */
 std::string Translator::toString(Command_Security_ACL_Permission permission) {
-
     switch (permission) {
         case Command_Security_ACL_Permission_READ:
             return "Read";
@@ -522,7 +516,7 @@ std::string Translator::toString(Command_Security_ACL_Permission permission) {
         case Command_Security_ACL_Permission_INVALID_PERMISSION:
             return "Invalid";
         default:
-            return "Unknown Permission (" + std::to_string(permission) + ")";
+            return "Unknown (" + std::to_string(permission) + ")";
     }
 }
 
@@ -534,15 +528,14 @@ std::string Translator::toString(Command_Security_ACL_Permission permission) {
  * @return the synchronization in string form
  */
 std::string Translator::toString(Command_Synchronization synchronization) {
-
-    if (synchronization == Command_Synchronization::Command_Synchronization_WRITETHROUGH)
+    if (synchronization == Command_Synchronization_WRITETHROUGH)
         return "Write-Through";
-    else if (synchronization == Command_Synchronization::Command_Synchronization_WRITEBACK)
+    else if (synchronization == Command_Synchronization_WRITEBACK)
         return "Write-Back";
-    else if (synchronization == Command_Synchronization::Command_Synchronization_FLUSH)
+    else if (synchronization == Command_Synchronization_FLUSH)
         return "Flush";
 
-    return "Unsupported Synchronization Value (" + std::to_string(synchronization) + ")";
+    return "Unknown (" + std::to_string(synchronization) + ")";
 }
 
 /**
@@ -553,7 +546,6 @@ std::string Translator::toString(Command_Synchronization synchronization) {
  * @return the statusCode in string form
  */
 std::string Translator::toString(Command_Status_StatusCode statusCode) {
-
     switch (statusCode) {
         case Command_Status_StatusCode_NOT_ATTEMPTED:
             return "Not Attempted";
@@ -600,7 +592,7 @@ std::string Translator::toString(Command_Status_StatusCode statusCode) {
         case Command_Status_StatusCode_INVALID_BATCH:
             return "Invalid Batch";
         default:
-            return "Unknown Status Code (" + std::to_string(statusCode) + ")";
+            return "Unknown (" + std::to_string(statusCode) + ")";
     }
 }
 

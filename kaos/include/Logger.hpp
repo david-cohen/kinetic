@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -72,7 +73,6 @@ public:
      * @param   logLevel    Indicates which events will be logged based on severity level
      */
     void open(LogFacility facility, LogLevel logLevel) {
-
         m_logLevel = logLevel;
         ::openlog(nullptr, 0, facility);
     }
@@ -126,7 +126,6 @@ namespace _InternalUseOnly_ {
  */
 class LogEntry {
 public:
-
     /**
      * Creates an event log entry and sets the message with its severity level.  If debug logging is
      * enabled, it also logs where the event was logged from (filename, function name and line number).
@@ -138,7 +137,6 @@ public:
      */
     LogEntry(LogLevel level, std::string filename, int32_t lineNumber, const std::string& function)
         : m_level(level), m_message(), m_location() {
-
         captureLevel(level);
         if (logControl.logLevel() == DEBUG)
             captureLocation(filename, lineNumber, function);
@@ -167,7 +165,6 @@ public:
     }
 
 private:
-
     /**
      * Records the filename, line number, and function of where the event was logged.
      *

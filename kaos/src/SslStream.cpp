@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -47,7 +48,6 @@ SslStream::SslStream(int32_t socketDescriptor)
  * Tear down the SSL connection object.
  */
 SslStream::~SslStream() {
-
     sslControl.tearDownConnection(m_ssl);
 }
 
@@ -60,7 +60,6 @@ SslStream::~SslStream() {
  * @throws  A runtime error if a fatal error was encountered
  */
 void SslStream::read(char* const buffer, size_t byteCount) {
-
     /*
      * Loop reading from the socket until the requested amount of data has been received.
      */
@@ -93,7 +92,6 @@ void SslStream::read(char* const buffer, size_t byteCount) {
  * @throws  A runtime error if a fatal error was encountered
  */
 void SslStream::blackHoleRead(size_t byteCount) {
-
     /*
      * Loop reading from the socket until the requested amount of data has been received (without
      * keeping any of the received data).
@@ -157,7 +155,6 @@ void SslStream::write(const char* const buffer, size_t byteCount) {
  * Closes the stream.
  */
 void SslStream::close() {
-
     if (::close(m_streamFd) == STATUS_FAILURE) {
         LOG(ERROR) << "SSL stream close failure: error code=" << errno << ", description=" << strerror(errno);
     }

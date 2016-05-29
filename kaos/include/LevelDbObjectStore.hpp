@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -43,9 +44,7 @@ class LevelDbBatch;
  * Level DB object store with a Kinetic API.
  */
 class LevelDbObjectStore : public ObjectStoreInterface {
-
 public:
-
     /*
      * Constructor/Destructor
      */
@@ -76,7 +75,6 @@ public:
     void batchCommit(leveldb::WriteBatch& batch);
 
 private:
-
     /*
      * Private Member Functions
      */

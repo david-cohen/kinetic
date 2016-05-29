@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -155,7 +156,6 @@ static std::string createFlushDataKey() {
  * @return  Enum value of LogLevel
  */
 static LogLevel toLogLevel(std::string logLevel) {
-
     std::transform(logLevel.begin(), logLevel.end(), logLevel.begin(), ::toupper);
     if (logLevel == "ERROR")
         return ERROR;
@@ -234,7 +234,6 @@ GlobalConfig::GlobalConfig()
     com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS,
     com::seagate::kinetic::proto::Command_GetLog_Type_MESSAGES
 }) {
-
     /*
      * Read configuration data from the default configuration file.
      */
@@ -291,34 +290,34 @@ GlobalConfig::GlobalConfig()
         interfaceNames.insert(string(interface->ifa_name));
 
     for (string name : interfaceNames) {
-
         string ipv4, ipv6, macAddress;
         for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next) {
             if ((interface->ifa_addr == nullptr) || (name != string(interface->ifa_name)) || (name == "lo"))
                 continue;
 
             int family = interface->ifa_addr->sa_family;
-
             if (family == AF_PACKET) {
                 std::stringstream macAddressStream;
-                unsigned char* address = &((struct sockaddr_ll*)interface->ifa_addr)->sll_addr[0];
-                macAddressStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[0]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[1]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[2]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[3]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[4]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(address[5]);
+                struct sockaddr_ll* sockaddr = static_cast<struct sockaddr_ll*>(static_cast<void*>(interface->ifa_addr));
+                macAddressStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[0]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[1]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[2]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[3]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[4]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[5]);
                 macAddress = macAddressStream.str();
             }
 
             else if (family == AF_INET) {
                 char addressBuffer[INET6_ADDRSTRLEN];
-                ipv4 = inet_ntop(family, &((struct sockaddr_in*)interface->ifa_addr)->sin_addr, addressBuffer, sizeof(addressBuffer));
+                struct sockaddr_in* sockaddr = static_cast<struct sockaddr_in*>(static_cast<void*>(interface->ifa_addr));
+                ipv4 = inet_ntop(family, &sockaddr->sin_addr, addressBuffer, sizeof(addressBuffer));
             }
 
             else if (family == AF_INET6) {
                 char addressBuffer[INET6_ADDRSTRLEN];
-                ipv6 = inet_ntop(family, &((struct sockaddr_in6*)interface->ifa_addr)->sin6_addr, addressBuffer, sizeof(addressBuffer));
+                struct sockaddr_in6* sockaddr = static_cast<struct sockaddr_in6*>(static_cast<void*>(interface->ifa_addr));
+                ipv6 = inet_ntop(family, &sockaddr->sin6_addr, addressBuffer, sizeof(addressBuffer));
             }
         }
         if (!ipv4.empty() && !ipv6.empty() && !macAddress.empty()) {

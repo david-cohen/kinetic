@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -40,7 +41,6 @@
  */
 ServerSettings::ServerSettings()
     : m_filename(globalConfig.serverSettingsFile()) {
-
     /*
      * If possible, load the setting from persistent store.  Otherwise, set them to their default
      * values.
@@ -56,7 +56,6 @@ ServerSettings::ServerSettings()
  */
 ServerSettings::ServerSettings(const std::string& filename)
     : m_filename(filename) {
-
     /*
      * If possible, load the setting from persistent store.  Otherwise, set them to their default
      * values.
@@ -128,7 +127,6 @@ void ServerSettings::save() {
  * storage.
  */
 void ServerSettings::setDefaults() {
-
     setClusterVersion(globalConfig.defaultClusterVersion());
     m_locked = globalConfig.defaultLocked();
     m_lockPin = globalConfig.defaultLockPin();
@@ -155,7 +153,6 @@ void ServerSettings::setDefaults() {
  * Load the settings into memory from their persistent storage.
  */
 bool ServerSettings::load() {
-
     struct stat info;
     if (stat(m_filename.c_str(), &info) != STATUS_SUCCESS)
         return false;
@@ -175,7 +172,6 @@ bool ServerSettings::load() {
     AccessControlList accessControlList;
 
     for (auto aclIndex = 0; aclIndex < settings->acl_size(); aclIndex++) {
-
         const ::kaos::Settings_ACL& acl = settings->acl(aclIndex);
 
         int64_t identity(acl.identity());

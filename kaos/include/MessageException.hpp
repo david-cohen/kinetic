@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -33,9 +34,7 @@
  * status fields of a Kinetic response message.
  */
 class MessageException: public std::exception {
-
 public:
-
     /*
      * Constructors/Destructor
      */
@@ -55,7 +54,6 @@ public:
     inline virtual const char* what() const throw() {return m_message.c_str();}
 
 private:
-
     /*
      * Private Data Members
      */

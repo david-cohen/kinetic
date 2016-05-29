@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -37,9 +38,7 @@
  * discovered through the listening port, a connection is created with the proper data stream.
  */
 template <class StreamType> class ConnectionListener : public ListenerInterface {
-
 public:
-
     /**
      * ConnectionListener Constructor
      *
@@ -67,7 +66,6 @@ public:
      * Starts the listener.
      */
     bool start() {
-
         try {
             if (!started() && !m_terminated) {
                 m_listeningSocket = TcpTransport::serverSetup(m_port);
@@ -95,7 +93,6 @@ public:
     }
 
 private:
-
     /**
      * Listener Thread
      *
@@ -104,7 +101,6 @@ private:
      * critical error is encountered, wait a period of time before retrying the connection.
      */
     void listenerThread() {
-
         const uint32_t BACKOFF_PERIOD(60);
         while (!m_terminated) {
             try {

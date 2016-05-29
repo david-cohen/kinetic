@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -34,24 +35,23 @@
  */
 template <typename MessageType> class MessageQueue {
 public:
-
     /**
-     * Sends a message by placing it at the end of a queue.
+     * Adds a message at the tail of the queue.
      *
      * @param   message     The message to be sent
      */
-    void send(MessageType& const message) {
+    void add(MessageType& message) {
         std::lock_guard<std::mutex> scopedLock(m_mutex);
         m_queue.push_back(std::move(message));
         m_accessControl.notify_one();
     }
 
     /**
-     * Receives a message from the head of a queue (blocking until a message is available).
+     * Removes a message from the head of the queue (blocking until a message is available).
      *
      * @return  the message
      */
-    MessageType receive() {
+    MessageType remove() {
         std::unique_lock<std::mutex> scopedLock(m_mutex);
         m_accessControl.wait(scopedLock, [this] {return !m_queue.empty();});
         MessageType message = std::move(m_queue.front());
@@ -69,7 +69,6 @@ public:
     }
 
 private:
-
     std::mutex                  m_mutex;            //!< Ensures exclusive access to the queue
     std::condition_variable     m_accessControl;    //!< Object that coordinates access to the queue
     std::deque<MessageType>     m_queue;            //!< Message queue

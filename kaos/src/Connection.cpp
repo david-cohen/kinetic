@@ -115,7 +115,7 @@ void Connection::run() {
                 if (messageException.statusCode() == Command_Status_StatusCode_CONNECTION_TERMINATED)
                     break;
 
-                messageHandler->processError(transaction, messageException.statusCode(), messageException.statusMessage());
+                messageHandler->buildResponseWithError(transaction, messageException.statusCode(), messageException.statusMessage());
             }
 
             if (transaction->response != nullptr)

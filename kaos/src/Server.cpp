@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -58,7 +59,6 @@ static std::condition_variable serverTerminated;
  * @param   signum  Signal number sent to process
  */
 static void terminateProgram(int signum) {
-
     /*
      * Signal the server to terminate (and eliminate the unused args warning for signum).
      */
@@ -71,8 +71,8 @@ static void terminateProgram(int signum) {
  * connection listeners, and its heartbeat provider
  */
 Server::Server()
-    : m_settings(), m_objectStore(), m_messageStatistics(), m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
-
+    : m_settings(), m_objectStore(new RocksDbObjectStore()), m_messageStatistics(),
+      m_connectionList(), m_listenerList(), m_heartbeatProvider(), m_mutex() {
     ListenerInterfacePtr sslListener(new ConnectionListener<SslStream>(this, globalConfig.sslPort()));
     ListenerInterfacePtr clearTextListener(new ConnectionListener<ClearTextStream>(this, globalConfig.tcpPort()));
     m_listenerList.push_back(sslListener);
@@ -86,7 +86,6 @@ Server::Server()
  * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
  */
 int32_t Server::run() {
-
     /*
      * If the application is running in the foreground, output logs to stdout.
      */
@@ -111,7 +110,7 @@ int32_t Server::run() {
      * Open the object store, create the process ID file (used to get status and shutdown the
      * application), and load the sigterm handler.
      */
-    if (!m_objectStore.open()) {
+    if (!m_objectStore->open()) {
         LOG(ERROR) << "Failed to open object store";
         return EXIT_FAILURE;
     }
@@ -175,7 +174,6 @@ int32_t Server::run() {
  * @throws  A runtime error if the maximum number of connections are already open
  */
 void Server::addConnection(Connection* connection) {
-
     std::unique_lock<std::mutex> scopedLock(m_mutex);
     if (m_connectionList.size() >= globalConfig.maxConnections())
         throw std::runtime_error("No connections available");
@@ -189,7 +187,6 @@ void Server::addConnection(Connection* connection) {
  * @param   connection  The connection being removed
  */
 void Server::removeConnection(Connection* connection) {
-
     std::unique_lock<std::mutex> scopedLock(m_mutex);
     m_connectionList.remove(connection);
     delete connection;
@@ -201,7 +198,6 @@ void Server::removeConnection(Connection* connection) {
  * @return  The number of active batch commands
  */
 uint32_t Server::activeBatchCommands() {
-
     std::unique_lock<std::mutex> scopedLock(m_mutex);
     uint32_t batchCount = 0;
     for (auto connection : m_connectionList)

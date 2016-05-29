@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -77,7 +78,6 @@ SslControl::SslControl()
  * Frees the allocated resources from the control object.
  */
 SslControl::~SslControl() {
-
     if (m_operational) {
         if (m_context != nullptr)
             SSL_CTX_free(m_context);
@@ -98,7 +98,6 @@ SslControl::~SslControl() {
  * @throws  A runtime error if a connection could not be created
  */
 SSL* SslControl::createConnection(int socketFd) {
-
     if (!m_operational) {
         LOG(ERROR) << "Failed to create SSL connection due to non-operational SSL control";
         throw std::runtime_error("Failed to create SSL connection due to non-operational SSL control");

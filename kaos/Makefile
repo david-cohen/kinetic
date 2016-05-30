@@ -98,6 +98,7 @@ run-tests:
 # Build source from the protocol buffer files (rename the .cc files to .cpp)
 
 proto:
+	cd $(PROTOBUF_DIR) && export CC=gcc && ./configure && sudo make install
 	[ -d $(BUILD_PROTO_DIR) ] || mkdir -p $(BUILD_PROTO_DIR)
 	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Kinetic.proto
 	$(PROTOBUF_DIR)/src/protoc -I=$(PROTO_DIR) --cpp_out=$(BUILD_PROTO_DIR) $(PROTO_DIR)/Entry.proto
@@ -111,9 +112,7 @@ proto:
 # Check for suspicious coding
 
 check:
-	- $(LINT_DIR)/cpplint.py --extensions=hpp --linelength=150 --filter=-build/c++11,-runtime/references,-runtime/string,-whitespace/newline $(INCLUDE_DIR)/*.hpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=200 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(APP_SRC_DIR)/*.cpp
-	- $(LINT_DIR)/cpplint.py --extensions=cpp --linelength=250 --filter=-build/c++11,-runtime/references,-runtime/string-whitespace/newline $(TEST_SRC_DIR)/*.cpp
+	- $(BASE_DIR)/tools/filtered-lint.sh $(BASE_DIR)
 
 cpp-check:
 	- cppcheck $(APP_SRC_DIR) --enable=all --force --includes-file=$(APP_INCLUDES)
@@ -212,11 +211,6 @@ protobuf:
 	sed -i "394i\ \ \ \ static_cast<void>(message);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
 	sed -i "395i\ \ \ \ static_cast<void>(oneof_descriptor);" $(PROTOBUF_DIR)/src/google/protobuf/message.h
 	cd $(PROTOBUF_DIR) && export CC=gcc && ./configure && make
-	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); sudo make install; fi
-	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then sudo cp $(PROTOBUF_DIR)/src/.libs/protoc /usr/bin; fi
-	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); make distclean; fi
-	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); ./configure --host=arm-linux CC=$(CC) CXX=$(CXX) --with-protoc=/usr/bin/protoc; fi
-	if [ "$(ARM_CROSS_COMPILER)" = "true" ]; then cd $(PROTOBUF_DIR); export LD_LIBRARY_PATH=/usr/local/lib; make; fi
 
 # Build the Google Test library
 
@@ -232,16 +226,6 @@ googletest:
 lint:
 	cd $(DEPENDENCIES_DIR) && git clone https://github.com/google/styleguide.git
 	sed -i 's|filename.rfind|filename.find|g' $(LINT_DIR)/cpplint.py
-	sed -i '2494,2498d' $(LINT_DIR)/cpplint.py
-	sed -i '3928,3933d' $(LINT_DIR)/cpplint.py
-	sed -i '3911,3917d' $(LINT_DIR)/cpplint.py
-	sed -i '3093,3097d' $(LINT_DIR)/cpplint.py
-	sed -i '3072,3075d' $(LINT_DIR)/cpplint.py
-	sed -i '3848,3850d' $(LINT_DIR)/cpplint.py
-	sed -i '4143,4145d' $(LINT_DIR)/cpplint.py
-	sed -i '6151,6152d' $(LINT_DIR)/cpplint.py
-	sed -i '6151i \ \ \ \ pass' $(LINT_DIR)/cpplint.py
-	sed -i '5297,5302d' $(LINT_DIR)/cpplint.py
 
 # Install the coding style app
 

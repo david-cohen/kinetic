@@ -1,5 +1,21 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
+ *
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -45,7 +61,6 @@ settingsFileExist(string filename) {
 
 void
 deleteSavedSettings() {
-
     if (settingsFileExist(UNIT_TEST_SETTINGS_FILE)) {
         string deleteCommand("rm " + string(UNIT_TEST_SETTINGS_FILE));
         system(deleteCommand.c_str());
@@ -68,7 +83,6 @@ protected:
  * @return a string with the maximum key size
  */
 string createTextString(uint32_t stringSize) {
-
     string pattern = "0123456789abcdef";
     string sizedString;
     for (uint32_t index = 0; index < (stringSize / pattern.size()); index++)
@@ -86,7 +100,6 @@ string createTextString(uint32_t stringSize) {
  * @return a string contains binary values from 0 to 0xff
  */
 string createBinaryString(uint32_t stringSize) {
-
     string binaryString;
     for (uint32_t index = 0; index < stringSize; index++)
         binaryString += (index & 0xff);
@@ -103,7 +116,6 @@ string createBinaryString(uint32_t stringSize) {
  * @return the operation array initialized based on the specified bitmap
  */
 OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
-
     OperationSizedBoolArray operationArray;
     for (uint32_t operation = 0; operation < operationArray.size(); operation++)
         operationArray[operation] = (bitmap & (1 << operation)) ? true : false;
@@ -112,7 +124,6 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 }
 
 TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
-
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
      */
@@ -160,7 +171,8 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
     ASSERT_EQ(accessScope.tlsRequired(), globalConfig.accessControlDefaultTlsRequired());
     ASSERT_STREQ(accessScope.keySubstring().c_str(), globalConfig.accessScopeDefaultKeySubstring().c_str());
     ASSERT_EQ(accessScope.keySubstringOffset(), globalConfig.accessScopeDefaultKeySubstringOffset());
-    ASSERT_EQ(accessScope.minimumKeySize(), globalConfig.accessScopeDefaultKeySubstring().size() + globalConfig.accessScopeDefaultKeySubstringOffset());
+    ASSERT_EQ(accessScope.minimumKeySize(), globalConfig.accessScopeDefaultKeySubstring().size()
+              + globalConfig.accessScopeDefaultKeySubstringOffset());
 
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; ++operation)
         ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), true);
@@ -168,7 +180,6 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
 
 
 TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creation) {
-
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
      */
@@ -199,7 +210,8 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
         bool operationInvolvesKey = ((UINT32_TO_OPERATION(operation) == Operation::WRITE)
                                      | (UINT32_TO_OPERATION(operation) == Operation::READ)
                                      | (UINT32_TO_OPERATION(operation) == Operation::DELETE));
-        ASSERT_EQ(accessControl->operationPermitted(UINT32_TO_OPERATION(operation), operationInvolvesKey, message->command()->body()), true);
+        ASSERT_EQ(accessControl->operationPermitted(UINT32_TO_OPERATION(operation),
+                  operationInvolvesKey, message->command()->body()), true);
         ASSERT_FALSE(accessControl->tlsRequired(UINT32_TO_OPERATION(operation)));
     }
 
@@ -216,14 +228,14 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
     ASSERT_EQ(accessScope.tlsRequired(), globalConfig.accessControlDefaultTlsRequired());
     ASSERT_STREQ(accessScope.keySubstring().c_str(), globalConfig.accessScopeDefaultKeySubstring().c_str());
     ASSERT_EQ(accessScope.keySubstringOffset(), globalConfig.accessScopeDefaultKeySubstringOffset());
-    ASSERT_EQ(accessScope.minimumKeySize(), globalConfig.accessScopeDefaultKeySubstring().size() + globalConfig.accessScopeDefaultKeySubstringOffset());
+    ASSERT_EQ(accessScope.minimumKeySize(), globalConfig.accessScopeDefaultKeySubstring().size()
+              + globalConfig.accessScopeDefaultKeySubstringOffset());
 
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; ++operation)
         ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), true);
 }
 
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Locked_Test) {
-
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
      */
@@ -283,7 +295,6 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Locked_Test) {
 }
 
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
-
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
      */
@@ -316,7 +327,6 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Pin_Test) {
 }
 
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Cluster_Version_Test) {
-
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
      */
@@ -346,9 +356,7 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Cluster_Version_Test) {
     }
 }
 
-
 TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
-
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
      */
@@ -366,19 +374,12 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
     /*
      * Create an AccessControl object for all the different combination of parameters.
      */
-    for (uint32_t identityIndex = 0; identityIndex < identityArray.size(); ++identityIndex) {
-        int64_t identity = identityArray[identityIndex];
-        for (uint32_t hmacKeyIndex = 0; hmacKeyIndex < hmacKeyArray.size(); ++hmacKeyIndex) {
-            string hmacKey = hmacKeyArray[hmacKeyIndex];
-            for (uint32_t hmacAlgorithmIndex = 0; hmacAlgorithmIndex < hmacAlgorithmArray.size(); ++hmacAlgorithmIndex) {
-                HmacAlgorithm hmacAlgorithm = hmacAlgorithmArray[hmacAlgorithmIndex];
-
-                for (uint32_t tlsRequiredIndex = 0; tlsRequiredIndex < tlsRequiredArray.size(); ++tlsRequiredIndex) {
-                    bool tlsRequired = tlsRequiredArray[tlsRequiredIndex];
-                    for (uint32_t keySubstringIndex = 0; keySubstringIndex < keySubstringArray.size(); ++keySubstringIndex) {
-                        string keySubstring = keySubstringArray[keySubstringIndex];
-                        for (uint32_t keySubstringOffsetIndex = 0; keySubstringOffsetIndex < keySubstringOffsetArray.size(); ++keySubstringOffsetIndex) {
-                            uint32_t keySubstringOffset = keySubstringOffsetArray[keySubstringOffsetIndex];
+    for (int64_t identity : identityArray) {
+        for (string hmacKey : hmacKeyArray) {
+            for (HmacAlgorithm hmacAlgorithm : hmacAlgorithmArray) {
+                for (bool tlsRequired : tlsRequiredArray) {
+                    for (string keySubstring : keySubstringArray) {
+                        for (uint32_t keySubstringOffset : keySubstringOffsetArray) {
                             for (uint32_t patternCount = 0; patternCount < ((1 << NUMBER_OF_OPERATIONS) - 1); ++patternCount) {
                                 OperationSizedBoolArray operationArray = createOperationArray(patternCount);
                                 {
@@ -424,15 +425,18 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
                                                                  | (UINT32_TO_OPERATION(operation) == Operation::READ)
                                                                  | (UINT32_TO_OPERATION(operation) == Operation::DELETE));
                                     ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), operationArray[operation]);
-                                    ASSERT_EQ(accessControl->tlsRequired(UINT32_TO_OPERATION(operation)), (operationArray[operation] && accessScope.tlsRequired()));
+                                    ASSERT_EQ(accessControl->tlsRequired(UINT32_TO_OPERATION(operation)),
+                                              (operationArray[operation] && accessScope.tlsRequired()));
                                     if (keySubstring.size() == 0)
                                         ASSERT_EQ(accessControl->operationPermitted(UINT32_TO_OPERATION(operation),
                                                   operationInvolvesKey, message->command()->body()), operationArray[operation]);
                                 }
 
                                 if (keySubstring.size() == 0) {
-                                    ASSERT_EQ(accessControl->permissionToRead("DummyKey"), operationArray[OPERATION_TO_UINT32(Operation::READ)]);
-                                    ASSERT_EQ(accessControl->permissionToGetRange("DummyKey"), operationArray[OPERATION_TO_UINT32(Operation::RANGE)]);
+                                    ASSERT_EQ(accessControl->permissionToRead("DummyKey"),
+                                              operationArray[OPERATION_TO_UINT32(Operation::READ)]);
+                                    ASSERT_EQ(accessControl->permissionToGetRange("DummyKey"),
+                                              operationArray[OPERATION_TO_UINT32(Operation::RANGE)]);
                                 }
                             }
                         }
@@ -442,7 +446,6 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
         }
     }
 }
-
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

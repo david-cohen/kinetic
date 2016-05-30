@@ -1,5 +1,21 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
+ *
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -28,7 +44,6 @@ LogControl logControl;
  * @return a string with the maximum key size
  */
 std::string createLargeString() {
-
     uint32_t stringSize = globalConfig.maxHmacKeySize();
     std::string pattern = "0123456789abcdef";
     std::string sizedString;
@@ -47,7 +62,6 @@ std::string createLargeString() {
  * @return a string contains binary values from 0 to 0xff
  */
 std::string createBinaryString(uint32_t count = 0x100, uint32_t offset = 0) {
-
     std::string binaryString;
     for (uint32_t index = 0; index < count; index++)
         binaryString += (offset + index);
@@ -64,7 +78,6 @@ std::string createBinaryString(uint32_t count = 0x100, uint32_t offset = 0) {
  * @return the operation array initialized based on the specified bitmap
  */
 OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
-
     OperationSizedBoolArray operationArray;
     for (uint32_t operation = 0; operation < operationArray.size(); operation++)
         operationArray[operation] = (bitmap & (1 << operation)) ? true : false;
@@ -81,7 +94,6 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
  * @return the access control initialized with specified values
  */
 AccessControl createAccessControl(std::string keySubstring, uint32_t keySubstringOffset) {
-
     int64_t identity = globalConfig.accessControlDefaultIdentity();
     std::string hmacKey = globalConfig.accessControlDefaultHmacKey();
     HmacAlgorithm hmacAlgorithm = globalConfig.accessControlDefaultHmacAlgorithm();
@@ -103,7 +115,6 @@ AccessControl createAccessControl(std::string keySubstring, uint32_t keySubstrin
  * parameters and that the getter functions work correctly.
  */
 TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
-
     std::vector<int64_t> identityArray = {0, 1, LLONG_MAX};
     std::vector<std::string> hmacKeyArray = {"0", createBinaryString(), createLargeString()};
     std::vector<HmacAlgorithm> hmacAlgorithmArray = {HmacAlgorithm::SHA1, HmacAlgorithm::UNKNOWN};
@@ -127,7 +138,8 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
                     bool tlsRequired = tlsRequiredArray[tlsRequiredIndex];
                     for (uint32_t keySubstringIndex = 0; keySubstringIndex < keySubstringArray.size(); ++keySubstringIndex) {
                         std::string keySubstring = keySubstringArray[keySubstringIndex];
-                        for (uint32_t keySubstringOffsetIndex = 0; keySubstringOffsetIndex < keySubstringOffsetArray.size(); ++keySubstringOffsetIndex) {
+                        for (uint32_t keySubstringOffsetIndex = 0;
+                                keySubstringOffsetIndex < keySubstringOffsetArray.size(); ++keySubstringOffsetIndex) {
                             uint32_t keySubstringOffset = keySubstringOffsetArray[keySubstringOffsetIndex];
                             for (uint32_t patternCount = 0; patternCount < ((1 << NUMBER_OF_OPERATIONS) - 1); ++patternCount) {
                                 OperationSizedBoolArray operationArray = createOperationArray(patternCount);
@@ -164,7 +176,8 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
                                                                  | (UINT32_TO_OPERATION(operation) == Operation::READ)
                                                                  | (UINT32_TO_OPERATION(operation) == Operation::DELETE));
                                     ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), operationArray[operation]);
-                                    ASSERT_EQ(accessControl.tlsRequired(UINT32_TO_OPERATION(operation)), (operationArray[operation] && accessScope.tlsRequired()));
+                                    ASSERT_EQ(accessControl.tlsRequired(UINT32_TO_OPERATION(operation)),
+                                              (operationArray[operation] && accessScope.tlsRequired()));
                                     if (keySubstring.size() == 0)
                                         ASSERT_EQ(accessControl.operationPermitted(UINT32_TO_OPERATION(operation), operationInvolvesKey,
                                                   message->command()->body()), operationArray[operation]);
@@ -184,7 +197,6 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_Wrong_Text_Test) {
-
     std::string requestKey("SampleKey");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -195,7 +207,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_W
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_Wrong_Case_Test) {
-
     std::string requestKey("SampleKey");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -206,7 +217,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_W
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Simple_Match_Test) {
-
     std::string requestKey("SampleKey");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -217,7 +227,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Simple_Mat
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_Minimum_Sized_Text_Key_Test) {
-
     std::string requestKey("abcdefghijklmnopqrstuvwxyz");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -228,7 +237,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_M
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Match_Of_Minimum_Sized_Text_Key_Test) {
-
     std::string requestKey("a");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -239,7 +247,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Matc
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_Maximum_Sized_Text_Key_Test) {
-
     std::string requestKey(createLargeString());
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -250,7 +257,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_M
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Match_Of_Maximum_Sized_Text_Key_Test) {
-
     std::string requestKey(createLargeString());
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -261,7 +267,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Matc
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Match_Of_Binary_Key_Test) {
-
     std::string requestKey(createBinaryString());
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -272,7 +277,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Matc
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_No_Match_Of_Key_Test) {
-
     std::string requestKey("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -288,7 +292,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_No_Match_Of_K
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Key_Smaller_Than_Offset_No_Match_Of_Key_Test) {
-
     std::string requestKey("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -299,7 +302,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Key_Smaller_T
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Text_Key_Test) {
-
     std::string requestKey("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -310,7 +312,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Text
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Binary_Key_Test) {
-
     std::string requestKey(createBinaryString());
     KineticMessagePtr message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
@@ -321,7 +322,6 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Bina
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Operation_Has_No_Key_Test) {
-
     KineticMessagePtr message(new KineticMessage());
     AccessControl accessControl = createAccessControl("KLMNOPQRST", 10);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::SETUP, false, message->command()->body()));

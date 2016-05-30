@@ -1,5 +1,21 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
+ *
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -22,7 +38,6 @@ using std::string;
  */
 
 TEST(HMAC_Unit_Test, Empty_Test) {
-
     string data("");
     string key("");
     string expectedResult("\xfb\xdb\x1d\x1b\x18\xaa\x6c\x08\x32\x4b\x7d\x64\xb7\x1f\xb7\x63\x70\x69\x0e\x1d");
@@ -35,7 +50,6 @@ TEST(HMAC_Unit_Test, Empty_Test) {
 }
 
 TEST(HMAC_Unit_Test, Wikipedia_Test) {
-
     string data("The quick brown fox jumps over the lazy dog");
     string key("key");
     string expectedResult("\xde\x7c\x9b\x85\xb8\xb7\x8a\xa6\xbc\x8a\x7a\x36\xf7\x0a\x90\x70\x1c\x9d\xb4\xd9");
@@ -75,7 +89,9 @@ TEST(HMAC_Unit_Test, RFC_2202_Test_Case_2) {
 }
 
 TEST(HMAC_Unit_Test, RFC_2202_Test_Case_3) {
-    string data("\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd");
+    //string data = "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd";
+    string data = "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd"
+                  "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd";
     string key("\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa");
     string expectedResult("\x12\x5d\x73\x42\xb9\xac\x11\xcd\x91\xa3\x9a\xf4\x8a\xa1\x7b\x4f\x63\xf1\x75\xd3");
     string expectedResultWithSize("\x2f\xc4\xf5\xf5\x9e\xc8\x12\x42\xd1\xbd\x10\xe7\x91\x64\xaf\xd0\x1e\x3b\x9e\x49");
@@ -88,6 +104,12 @@ TEST(HMAC_Unit_Test, RFC_2202_Test_Case_3) {
 }
 
 int main(int argc, char** argv) {
+
+    string data = "ABCD"
+                  "1234";
+
+    std::cout << data << std::endl;
+
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

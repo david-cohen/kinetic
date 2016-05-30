@@ -1,5 +1,21 @@
 /*
- * Copyright (c) [2014 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
+ *
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -25,7 +41,6 @@ LogControl logControl;
  * @return a string with the maximum key size
  */
 std::string createLargeString() {
-
     uint32_t stringSize = globalConfig.maxKeySize();
     std::string pattern = "0123456789abcdef";
     std::string sizedString;
@@ -44,7 +59,6 @@ std::string createLargeString() {
  * @return a string contains binary values from 0 to 0xff
  */
 std::string createBinaryString() {
-
     std::string binaryString;
     for (uint32_t index = 0; index < 0x100; index++)
         binaryString += index;
@@ -61,7 +75,6 @@ std::string createBinaryString() {
  * @return the operation array initialized based on the specified bitmap
  */
 OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
-
     OperationSizedBoolArray operationArray;
     for (uint32_t operation = 0; operation < operationArray.size(); operation++)
         operationArray[operation] = (bitmap & (1 << operation)) ? true : false;
@@ -76,7 +89,6 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
  * parameters and that the getter functions work correctly.
  */
 TEST(Access_Scope_Unit_Test, Core_Functionality_Test) {
-
     std::vector<bool> tlsRequiredArray = {false, true};
     std::vector<std::string> keySubstringArray = {"", "0", createBinaryString(), createLargeString()};
     std::vector<size_t> keySubstringOffsetArray = {0, 1, globalConfig.maxKeySize() / 4, globalConfig.maxKeySize() - 1};

@@ -31,7 +31,9 @@
 #include <string>
 #include <climits>
 #include "gtest/gtest.h"
+#include "Hmac.hpp"
 #include "Logger.hpp"
+#include "Settings.pb.hpp"
 #include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
 #include "ServerSettings.hpp"
@@ -123,6 +125,44 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
     return move(operationArray);
 }
 
+TEST_F(Server_Settings_Unit_Test, Hmac_Algorithm_From_Settings_Format_Test) {
+    ASSERT_EQ(kaos::Settings_ACL_HmacAlgorithm_HmacAlgorithm_ARRAYSIZE, 2);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm_HMAC_SHA1), HmacAlgorithm::SHA1);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm_HMAC_INVALID), HmacAlgorithm::UNKNOWN);
+    kaos::Settings_ACL_HmacAlgorithm unknownAlgorithm = static_cast<kaos::Settings_ACL_HmacAlgorithm>(100);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(unknownAlgorithm), HmacAlgorithm::UNKNOWN);
+}
+
+TEST_F(Server_Settings_Unit_Test, Hmac_Algorithm_To_Settings_Format_Test) {
+    ASSERT_EQ(ServerSettings::toSettingsFormat(HmacAlgorithm::SHA1), kaos::Settings_ACL_HmacAlgorithm_HMAC_SHA1);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(HmacAlgorithm::UNKNOWN), kaos::Settings_ACL_HmacAlgorithm_HMAC_INVALID);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(static_cast<HmacAlgorithm>(101)), kaos::Settings_ACL_HmacAlgorithm_HMAC_INVALID);
+}
+
+TEST_F(Server_Settings_Unit_Test, Operation_From_Setting_Format_Test) {
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_READ), Operation::READ);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_WRITE), Operation::WRITE);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_DELETE), Operation::DELETE);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_RANGE), Operation::RANGE);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_SETUP), Operation::SETUP);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_P2POP), Operation::P2POP);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG), Operation::GETLOG);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY), Operation::SECURITY);
+    ASSERT_EQ(ServerSettings::fromSettingsFormat(static_cast<kaos::Settings_ACL_Operation>(103)), Operation::INVALID);
+}
+
+TEST_F(Server_Settings_Unit_Test, Operation_To_Setting_Format_Test) {
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::READ), kaos::Settings_ACL_Operation::Settings_ACL_Operation_READ);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::WRITE), kaos::Settings_ACL_Operation::Settings_ACL_Operation_WRITE);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::DELETE), kaos::Settings_ACL_Operation::Settings_ACL_Operation_DELETE);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::RANGE), kaos::Settings_ACL_Operation::Settings_ACL_Operation_RANGE);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::SETUP), kaos::Settings_ACL_Operation::Settings_ACL_Operation_SETUP);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::P2POP), kaos::Settings_ACL_Operation::Settings_ACL_Operation_P2POP);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::GETLOG), kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(Operation::SECURITY), kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY);
+    ASSERT_EQ(ServerSettings::toSettingsFormat(static_cast<Operation>(104)), kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG);
+}
+
 TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
     /*
      * Make sure that the test settings file does not exist (it should have been deleted in setup).
@@ -177,7 +217,6 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; ++operation)
         ASSERT_EQ(accessScope.operationPermitted(UINT32_TO_OPERATION(operation)), true);
 }
-
 
 TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creation) {
     /*

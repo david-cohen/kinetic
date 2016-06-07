@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <list>
 #include <string>
+#include "Settings.pb.hpp"
 #include "AccessControl.hpp"
 
 /**
@@ -60,6 +61,14 @@ public:
     inline void setLocked(bool locked) {m_locked = locked;}
     inline void setLockPin(std::string lockPin) {m_lockPin.assign(lockPin);}
     inline void setErasePin(std::string erasePin) {m_erasePin.assign(erasePin);}
+
+    /*
+     * Public Class Members
+     */
+    static HmacAlgorithm fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSetting);
+    static kaos::Settings_ACL_HmacAlgorithm toSettingsFormat(HmacAlgorithm hmacAlgorithm);
+    static Operation fromSettingsFormat(kaos::Settings_ACL_Operation aclOperationSetting);
+    static kaos::Settings_ACL_Operation toSettingsFormat(Operation operation);
 
 private:
     /*

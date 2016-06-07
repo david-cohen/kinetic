@@ -26,8 +26,24 @@
 #include <vector>
 #include "gtest/gtest.h"
 #include "Logger.hpp"
+#include "Kinetic.pb.hpp"
 #include "AccessScope.hpp"
 #include "GlobalConfig.hpp"
+
+/*
+ * Used Namespace Members
+ */
+using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm;
+using com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm_HmacSHA1;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_READ;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_WRITE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_DELETE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_RANGE;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_SETUP;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_P2POP;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_GETLOG;
+using com::seagate::kinetic::proto::Command_Security_ACL_Permission_SECURITY;
 
 /*
  * Global Variables
@@ -83,8 +99,28 @@ OperationSizedBoolArray createOperationArray(uint32_t bitmap) {
 }
 
 /**
- * Core Functionality Test
- *
+ * Tests the HMAC format conversion.
+ */
+TEST(Access_Scope_Unit_Test, Hmac_Algorithm_From_Message_Format_Test) {
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_HMACAlgorithm_HmacSHA1), HmacAlgorithm::SHA1);
+    ASSERT_EQ(AccessScope::fromMessageFormat(static_cast<Command_Security_ACL_HMACAlgorithm>(102)), HmacAlgorithm::UNKNOWN);
+}
+
+/**
+ * Tests the Operation format conversion.
+ */
+TEST(Access_Scope_Unit_Test, Operation_From_Message_Format_Test) {
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_READ), Operation::READ);
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_WRITE), Operation::WRITE);
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_DELETE), Operation::DELETE);
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_RANGE), Operation::RANGE);
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_SETUP), Operation::SETUP);
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_GETLOG), Operation::GETLOG);
+    ASSERT_EQ(AccessScope::fromMessageFormat(Command_Security_ACL_Permission_SECURITY), Operation::SECURITY);
+    ASSERT_EQ(AccessScope::fromMessageFormat(static_cast<Command_Security_ACL_Permission>(105)), Operation::INVALID);
+}
+
+/**
  * Tests that the AccessScope object is correctly initialized when created with a varity of
  * parameters and that the getter functions work correctly.
  */

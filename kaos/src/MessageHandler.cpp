@@ -34,7 +34,6 @@
 #include "Server.hpp"
 #include "Logger.hpp"
 #include "Connection.hpp"
-#include "Translator.hpp"
 #include "Transaction.hpp"
 #include "KineticLog.hpp"
 #include "GlobalConfig.hpp"
@@ -492,7 +491,7 @@ void MessageHandler::processSecurityRequest(Transaction* const transaction) {
 
                 int64_t identity(acl.identity());
                 std::string hmacKey(acl.key());
-                HmacAlgorithm hmacAlgorithm(Translator::fromMessageFormat(acl.hmacalgorithm()));
+                HmacAlgorithm hmacAlgorithm(AccessScope::fromMessageFormat(acl.hmacalgorithm()));
                 AccessScopeList scopeList;
 
                 for (auto scopeIndex = 0; scopeIndex < acl.scope_size(); scopeIndex++) {
@@ -521,7 +520,7 @@ void MessageHandler::processSecurityRequest(Transaction* const transaction) {
                     OperationSizedBoolArray operationArray;
                     operationArray.fill(false);
                     for (auto permissionIndex = 0; permissionIndex < aclScope.permission_size(); permissionIndex++) {
-                        Operation operation = Translator::fromMessageFormat(aclScope.permission(permissionIndex));
+                        Operation operation = AccessScope::fromMessageFormat(aclScope.permission(permissionIndex));
                         if (OPERATION_TO_UINT32(operation) < operationArray.size())
                             operationArray[OPERATION_TO_UINT32(operation)] = true;
                     }
@@ -859,7 +858,7 @@ void MessageHandler::processPinOpRequest(Transaction* const transaction) {
         }
     }
     catch (MessageException& messageException) {
-        throw messageException;
+        throw;
     }
     catch (std::exception& e) {
         throw MessageException(Command_Status_StatusCode_INTERNAL_ERROR, "Exception thrown");

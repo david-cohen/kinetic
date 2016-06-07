@@ -25,6 +25,7 @@
  * Include Files
  */
 #include <string>
+#include "Kinetic.pb.hpp"
 #include "KineticMessage.hpp"
 #include "KineticMessageFraming.hpp"
 
@@ -51,6 +52,16 @@ private:
     static void outputStatus(const com::seagate::kinetic::proto::Command_Status& status);
     static void outputHexBytes(const std::string& data, bool newLine = true);
     static void outputString(const std::string& data, bool newLine = true);
+    static std::string toString(bool boolValue);
+    static std::string toString(com::seagate::kinetic::proto::Command_Algorithm algorithm);
+    static std::string toString(com::seagate::kinetic::proto::Command_PinOperation_PinOpType pinop);
+    static std::string toString(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm algorithm);
+    static std::string toString(com::seagate::kinetic::proto::Message_AuthType authType);
+    static std::string toString(com::seagate::kinetic::proto::Command_MessageType messageType);
+    static std::string toString(com::seagate::kinetic::proto::Command_GetLog_Type type);
+    static std::string toString(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission);
+    static std::string toString(com::seagate::kinetic::proto::Command_Synchronization synchronization);
+    static std::string toString(com::seagate::kinetic::proto::Command_Status_StatusCode statusCode);
 };
 
 #endif

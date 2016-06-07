@@ -30,7 +30,6 @@
 #include <iostream>
 #include "Hmac.hpp"
 #include "Logger.hpp"
-#include "Translator.hpp"
 #include "Settings.pb.hpp"
 #include "GlobalConfig.hpp"
 #include "AccessControl.hpp"
@@ -105,7 +104,7 @@ void ServerSettings::save() {
         kaos::Settings_ACL* accessControlSetting = settings->add_acl();
         accessControlSetting->set_identity(accessControl->identity());
         accessControlSetting->set_hmackey(accessControl->hmacKey());
-        accessControlSetting->set_hmacalgorithm(Translator::toSettingsFormat(accessControl->hmacAlgorithm()));
+        accessControlSetting->set_hmacalgorithm(toSettingsFormat(accessControl->hmacAlgorithm()));
         for (auto scope : accessControl->scopeList()) {
             kaos::Settings_ACL_Scope* scopeSetting = accessControlSetting->add_scope();
             scopeSetting->set_tlsrequired(scope.tlsRequired());
@@ -113,7 +112,7 @@ void ServerSettings::save() {
             scopeSetting->set_keysubstringoffset(scope.keySubstringOffset());
             for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; operation++) {
                 if (scope.operationPermitted(UINT32_TO_OPERATION(operation)))
-                    scopeSetting->add_operation(Translator::toSettingsFormat(UINT32_TO_OPERATION(operation)));
+                    scopeSetting->add_operation(toSettingsFormat(UINT32_TO_OPERATION(operation)));
             }
         }
     }
@@ -176,7 +175,7 @@ bool ServerSettings::load() {
 
         int64_t identity(acl.identity());
         std::string hmacKey(acl.hmackey());
-        HmacAlgorithm hmacAlgorithm(Translator::fromSettingsFormat(acl.hmacalgorithm()));
+        HmacAlgorithm hmacAlgorithm(fromSettingsFormat(acl.hmacalgorithm()));
 
         AccessScopeList scopeList;
         for (auto scopeIndex = 0; scopeIndex < acl.scope_size(); scopeIndex++) {
@@ -196,7 +195,7 @@ bool ServerSettings::load() {
             OperationSizedBoolArray operationArray;
             operationArray.fill(false);
             for (auto operationIndex = 0; operationIndex < aclScope.operation_size(); operationIndex++) {
-                Operation operation = Translator::fromSettingsFormat(aclScope.operation(operationIndex));
+                Operation operation = fromSettingsFormat(aclScope.operation(operationIndex));
                 if (OPERATION_TO_UINT32(operation) < operationArray.size())
                     operationArray[OPERATION_TO_UINT32(operation)] = true;
             }
@@ -209,4 +208,87 @@ bool ServerSettings::load() {
     }
     updateAccessControl(accessControlList);
     return true;
+}
+
+/**
+ * Translates HMAC algorithm from settings format.
+ *
+ * @param   hmacAlgorithm   The algorithm in the persisted settings format
+ *
+ * @return  The algorithm in the internal format
+ */
+HmacAlgorithm ServerSettings::fromSettingsFormat(kaos::Settings_ACL_HmacAlgorithm hmacAlgorithmSetting) {
+    return hmacAlgorithmSetting == kaos::Settings_ACL_HmacAlgorithm::Settings_ACL_HmacAlgorithm_HMAC_SHA1
+           ? HmacAlgorithm::SHA1 : HmacAlgorithm::UNKNOWN;
+}
+
+/**
+ * Translates HMAC algorithm to settings format.
+ *
+ * @param   hmacAlgorithm   The algorithm in the internal format
+ *
+ * @return  The algorithm in the persisted settings format
+ */
+kaos::Settings_ACL_HmacAlgorithm ServerSettings::toSettingsFormat(HmacAlgorithm hmacAlgorithm) {
+    return hmacAlgorithm == HmacAlgorithm::SHA1 ? kaos::Settings_ACL_HmacAlgorithm::Settings_ACL_HmacAlgorithm_HMAC_SHA1
+           : kaos::Settings_ACL_HmacAlgorithm::Settings_ACL_HmacAlgorithm_HMAC_INVALID;
+}
+/**
+ * Translates operation from settings format.
+ *
+ * @param   operation   The operation in the persisted settings format
+ *
+ * @return  The operation in the internal format
+ */
+Operation ServerSettings::fromSettingsFormat(kaos::Settings_ACL_Operation operation) {
+    switch (operation) {
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_READ:
+            return Operation::READ;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_WRITE:
+            return Operation::WRITE;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_DELETE:
+            return Operation::DELETE;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_RANGE:
+            return Operation::RANGE;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_SETUP:
+            return Operation::SETUP;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_P2POP:
+            return Operation::P2POP;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG:
+            return Operation::GETLOG;
+        case kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY:
+            return Operation::SECURITY;
+        default:
+            return Operation::INVALID;
+    }
+}
+
+/**
+ * Translates operation to settings format.
+ *
+ * @param  operation    The operation in the internal format
+ *
+ * @return  The operation in the persisted settings format
+ */
+kaos::Settings_ACL_Operation ServerSettings::toSettingsFormat(Operation operation) {
+    switch (operation) {
+        case Operation::READ:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_READ;
+        case Operation::WRITE:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_WRITE;
+        case Operation::DELETE:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_DELETE;
+        case Operation::RANGE:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_RANGE;
+        case Operation::SETUP:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_SETUP;
+        case Operation::P2POP:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_P2POP;
+        case Operation::GETLOG:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG;
+        case Operation::SECURITY:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_SECURITY;
+        default:
+            return kaos::Settings_ACL_Operation::Settings_ACL_Operation_GETLOG;
+    }
 }

@@ -40,7 +40,7 @@ public:
      *
      * @param   message     The message to be sent
      */
-    void add(MessageType& message) {
+    void add(MessageType message) {
         std::lock_guard<std::mutex> scopedLock(m_mutex);
         m_queue.push_back(std::move(message));
         m_accessControl.notify_one();

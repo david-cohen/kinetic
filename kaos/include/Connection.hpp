@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -27,11 +28,13 @@
 #include <map>
 #include <list>
 #include <mutex>
-#include <thread>
-#include <string>
-#include <memory>
 #include <atomic>
+#include <bitset>
+#include <memory>
+#include <string>
+#include <thread>
 #include "Server.hpp"
+#include "MessageQueue.hpp"
 #include "KineticMessage.hpp"
 #include "StreamInterface.hpp"
 #include "ClientServerConnectionInfo.hpp"
@@ -41,13 +44,13 @@
  */
 class Server;
 class Transaction;
+class MessageHandler;
 
 /**
  * Describes a single Kinetic network connection between the server and a client.
  */
 class Connection {
 public:
-
     /*
      * Constructor/Destructor
      */
@@ -55,17 +58,12 @@ public:
     ~Connection();
 
     /*
-     * Public Member Functions
-     */
-    bool sendResponse(KineticMessagePtr response);
-
-    /*
      * Public Accessors
      */
-    inline Server* server() {return m_server;}
-    inline int64_t connectionId() {return m_connectionId;}
-    inline int64_t previousSequence() {return m_previousSequence;}
-    inline bool processedFirstRequest() {return m_processedFirstRequest;}
+    inline Server* server() const {return m_server;}
+    inline int64_t connectionId() const {return m_connectionId;}
+    inline int64_t previousSequence() const {return m_previousSequence;}
+    inline bool processedFirstRequest() const {return m_processedFirstRequest;}
     inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
     inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
     inline uint32_t activeBatchCommands() {return m_batchListMap.size();}
@@ -98,30 +96,36 @@ public:
     }
 
 private:
-
     /*
      * Private Member Functions
      */
-    void receiveRequest(KineticMessagePtr& request);
-    void sendUnsolicitedStatusMessage();
-    void run();
+    void receiver();
+    void scheduler();
+    void transmitter();
+    void tearDownThread(uint32_t threadIdBitMask);
 
     /*
      * Private Data Member
      */
-    Server*                 m_server;                   //!< Manager of the connection
-    Security                m_security;                 //!< Connection's security (SSL or None)
-    StreamInterface* const  m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
-    const uint32_t          m_serverPort;               //!< Server's TCP port number
-    const std::string       m_serverIpAddress;          //!< Server's IP address
-    const uint32_t          m_clientPort;               //!< Client's TCP port number
-    const std::string       m_clientIpAddress;          //!< Client's IP address
-    std::thread* const      m_thread;                   //!< Thread that receives messages
-    const int64_t           m_connectionId;             //!< Identification number for connection
-    std::atomic<int64_t>    m_previousSequence;         //!< Last request message sequence number
-    std::atomic_bool        m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
-    KineticMessageListMap   m_batchListMap;             //!< Lists of batch commands indexed by batch ID
-    std::mutex              m_mutex;                    //!< Mutex used to make class thread safe
+    Server*                         m_server;                   //!< Manager of the connection
+    MessageHandler* const           m_messageHandler;           //!< Message handler for the connection
+    StreamInterface* const          m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
+    MessageQueue<Transaction*>      m_schedulerQueue;           //!< Queue containing requests to be scheduled
+    MessageQueue<Transaction*>      m_transmitterQueue;         //!< Queue containing responses to be transmitted
+    const uint32_t                  m_serverPort;               //!< Server's TCP port number
+    const std::string               m_serverIpAddress;          //!< Server's IP address
+    const uint32_t                  m_clientPort;               //!< Client's TCP port number
+    const std::string               m_clientIpAddress;          //!< Client's IP address
+    const int64_t                   m_connectionId;             //!< Identification number for connection
+    std::atomic<int64_t>            m_previousSequence;         //!< Last request message sequence number
+    std::atomic_bool                m_processedFirstRequest;    //!< Indicates if the first request has been processed yet
+    std::atomic_bool                m_terminated;               //!< True if the connection is to be closed
+    KineticMessageListMap           m_batchListMap;             //!< Lists of batch commands indexed by batch ID
+    std::mutex                      m_mutex;                    //!< Mutex used to make class thread safe
+    std::bitset<3>                  m_activeThreads;            //!< Indicates which threads are running
+    std::thread* const              m_receiverThread;           //!< Thread that receives messages
+    std::thread* const              m_transmitterThread;        //!< Thread that receives messages
+    std::thread* const              m_schedulerThread;          //!< Thread that schedules when messages are to be processed
 };
 
 #endif

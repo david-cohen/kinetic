@@ -1,5 +1,21 @@
 /*
- * Copyright (c) [2015 - 2016] Western Digital Technologies, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0+
+ * This file is part of Kinetic Advanced Object Store (KAOS).
+ *
+ * This program is free software: you may copy, redistribute and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if
+ * not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA. <http://www.gnu.org/licenses/>
  */
 
 /*
@@ -68,24 +84,26 @@ GlobalConfig  globalConfig;
  * messages broadcast to the multicast IP address and port specified.
  */
 void createConnection(MulticastConnection& connection) {
-
     connection.socketfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     ASSERT_NE(connection.socketfd, STATUS_FAILURE) << "Failed to create socket: Error Code=" << errno << ", Description=" << strerror(errno);
 
     const int OPTION_SET(1);
-    ASSERT_NE(setsockopt(connection.socketfd, SOL_SOCKET, SO_REUSEADDR, &OPTION_SET, sizeof(OPTION_SET)), STATUS_FAILURE) << "Failed to set socket options SO_REUSEADDR: Error Code=" << errno << ", Description=" << strerror(errno);
+    ASSERT_NE(setsockopt(connection.socketfd, SOL_SOCKET, SO_REUSEADDR, &OPTION_SET, sizeof(OPTION_SET)), STATUS_FAILURE)
+            << "Failed to set socket options SO_REUSEADDR: Error Code=" << errno << ", Description=" << strerror(errno);
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(globalConfig.multicastPort());
-    ASSERT_NE(bind(connection.socketfd, (struct sockaddr*) &server, sizeof(struct sockaddr)), STATUS_FAILURE) << "Failed to bind socket: Error Code=" << errno << ", Description=" << strerror(errno);
+    ASSERT_NE(bind(connection.socketfd, (struct sockaddr*) &server, sizeof(struct sockaddr)), STATUS_FAILURE)
+            << "Failed to bind socket: Error Code=" << errno << ", Description=" << strerror(errno);
 
     struct ip_mreq group;
     memset(&group, 0, sizeof(group));
     group.imr_multiaddr.s_addr = inet_addr(globalConfig.multicastIpAddress());
-    ASSERT_NE(setsockopt(connection.socketfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group)), STATUS_FAILURE) << "Failed to set socket options IP_ADD_MEMBERSHIP: Error Code=" << errno << ", Description=" << strerror(errno);
+    ASSERT_NE(setsockopt(connection.socketfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group)), STATUS_FAILURE)
+            << "Failed to set socket options IP_ADD_MEMBERSHIP: Error Code=" << errno << ", Description=" << strerror(errno);
 }
 
 /**
@@ -96,7 +114,6 @@ void createConnection(MulticastConnection& connection) {
  * Reads the next multicast message (blocking until it is received).
  */
 void getMessage(MulticastConnection& connection) {
-
     int32_t byteCount = read(connection.socketfd, connection.messageBuffer, MESSAGE_BUFFER_SIZE);
     ASSERT_GT(byteCount, 0);
     std::istringstream stream(connection.messageBuffer);
@@ -113,7 +130,6 @@ void getMessage(MulticastConnection& connection) {
  *         -1 if an error was encountered checking if I/O was ready
  */
 bool ioReadyStatus(MulticastConnection& connection) {
-
     fd_set readfds;
     FD_ZERO(&readfds);
     FD_SET(connection.socketfd, &readfds);
@@ -133,7 +149,6 @@ bool ioReadyStatus(MulticastConnection& connection) {
  * Check that the contents of the heartbeat message are correct.
  */
 void validateMessage(MulticastConnection& connection) {
-
     string manufacturer = connection.messageNode.get<string>("manufacturer", NOT_FOUND_STRING);
     ASSERT_STREQ(globalConfig.vendor(), manufacturer.c_str());
 
@@ -184,7 +199,6 @@ void validateMessage(MulticastConnection& connection) {
  * Verify that message is broadcast to the correct multicast IP address and port.
  */
 TEST(Heartbeat_Provider_Unit_Test, Broadcast_Test) {
-
     MulticastConnection connection;
     ASSERT_NO_FATAL_FAILURE(createConnection(connection));
 
@@ -203,7 +217,6 @@ TEST(Heartbeat_Provider_Unit_Test, Broadcast_Test) {
  * Verify that the contents the heartbeat message are correct.
  */
 TEST(Heartbeat_Provider_Unit_Test, Message_Content_Test) {
-
     MulticastConnection connection;
     ASSERT_NO_FATAL_FAILURE(createConnection(connection));
 
@@ -224,7 +237,6 @@ TEST(Heartbeat_Provider_Unit_Test, Message_Content_Test) {
  * Verify that the heartbeat messages are broadcast are the correct interval.
  */
 TEST(Heartbeat_Provider_Unit_Test, Broadcast_Interval_Test) {
-
     MulticastConnection connection;
     ASSERT_NO_FATAL_FAILURE(createConnection(connection));
 
@@ -246,7 +258,8 @@ TEST(Heartbeat_Provider_Unit_Test, Broadcast_Interval_Test) {
     int64_t elapsedTimeInTicks = endTime - startTime;
     int64_t expectedElapsedTimeInTicks = globalConfig.heartbeatSendInterval() * ticksPerSecond;
 
-    std::cout << "Time between messages: " << static_cast<float>(elapsedTimeInTicks) / static_cast<float>(ticksPerSecond) << " seconds" << std::endl;
+    std::cout << "Time between messages: " << static_cast<float>(elapsedTimeInTicks) / static_cast<float>(ticksPerSecond)
+              << " seconds" << std::endl;
     ASSERT_GE(elapsedTimeInTicks, expectedElapsedTimeInTicks - ONE_TICK);
     ASSERT_LE(elapsedTimeInTicks, expectedElapsedTimeInTicks + ONE_TICK);
 
@@ -260,7 +273,6 @@ TEST(Heartbeat_Provider_Unit_Test, Broadcast_Interval_Test) {
  * Verify that the heartbeat provder does not send heartbeat messages after it has been stopped.
  */
 TEST(Heartbeat_Provider_Unit_Test, Halt_Broadcast_Test) {
-
     MulticastConnection connection;
     ASSERT_NO_FATAL_FAILURE(createConnection(connection));
 

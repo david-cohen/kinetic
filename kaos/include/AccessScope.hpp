@@ -28,6 +28,8 @@
 #include <list>
 #include <array>
 #include <string>
+#include "Hmac.hpp"
+#include "Kinetic.pb.hpp"
 
 /*
  * Kinetic operations that a user can be given permission to perform.
@@ -81,6 +83,42 @@ public:
     inline bool operationPermitted(Operation operation) const {
         return OPERATION_TO_UINT32(operation) < m_permittedOperationArray.size()
                ? m_permittedOperationArray[OPERATION_TO_UINT32(operation)] : false;
+    }
+
+    /**
+     * Converters HMAC algorithm from Kinetic Message format.
+     */
+    static HmacAlgorithm fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm hmacAlgorithm) {
+        if (hmacAlgorithm == com::seagate::kinetic::proto::Command_Security_ACL_HMACAlgorithm_HmacSHA1)
+            return HmacAlgorithm::SHA1;
+        else
+            return HmacAlgorithm::UNKNOWN;
+    }
+
+    /**
+     * Converts operation from Kinetic Message format.
+     */
+    static Operation fromMessageFormat(com::seagate::kinetic::proto::Command_Security_ACL_Permission permission) {
+        switch (permission) {
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_READ:
+                return Operation::READ;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_WRITE:
+                return Operation::WRITE;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_DELETE:
+                return Operation::DELETE;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_RANGE:
+                return Operation::RANGE;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_SETUP:
+                return Operation::SETUP;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_P2POP:
+                return Operation::P2POP;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_GETLOG:
+                return Operation::GETLOG;
+            case com::seagate::kinetic::proto::Command_Security_ACL_Permission_SECURITY:
+                return Operation::SECURITY;
+            default:
+                return Operation::INVALID;
+        }
     }
 
 private:

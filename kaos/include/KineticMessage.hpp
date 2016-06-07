@@ -92,12 +92,12 @@ public:
     /*
      * Serialize/Deserialize Functions
      */
-    inline bool serializeData(char* buffer, uint32_t size) {return m_protoMessage->SerializeToArray(buffer, size);}
+    inline bool serializeData(char* buffer, uint32_t size) {
+        return m_protoMessage->SerializeToArray(buffer, size);
+    }
 
     inline bool deserializeData(char* buffer, uint32_t size) {
-        if (!m_protoMessage->ParseFromArray(buffer, size))
-            return false;
-        return m_command->ParseFromString(m_protoMessage->commandbytes());
+        return (!m_protoMessage->ParseFromArray(buffer, size)) ? false : m_command->ParseFromString(m_protoMessage->commandbytes());
     }
 
     /*

@@ -81,8 +81,7 @@ test: \
 	$(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest \
 	$(BUILD_TEST_BIN_DIR)/hmacUnitTest \
 	$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest \
-	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest \
-	$(BUILD_TEST_BIN_DIR)/translatorUnitTest
+	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest
 
 # Run the unit tests
 
@@ -93,7 +92,6 @@ run-tests:
 	$(BUILD_TEST_BIN_DIR)/hmacUnitTest
 	$(BUILD_TEST_BIN_DIR)/kineticMessageFramingUnitTest
 	$(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest
-	$(BUILD_TEST_BIN_DIR)/translatorUnitTest
 
 # Build source from the protocol buffer files (rename the .cc files to .cpp)
 
@@ -284,8 +282,7 @@ $(BUILD_APP_BIN_DIR)/kaos: \
 	$(BUILD_APP_OBJ_DIR)/Settings.pb.o \
 	$(BUILD_APP_OBJ_DIR)/SslControl.o \
 	$(BUILD_APP_OBJ_DIR)/SslStream.o \
-	$(BUILD_APP_OBJ_DIR)/TcpTransport.o \
-	$(BUILD_APP_OBJ_DIR)/Translator.o
+	$(BUILD_APP_OBJ_DIR)/TcpTransport.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(APP_LIBRARIES) -o $@
 
@@ -318,15 +315,7 @@ $(BUILD_TEST_BIN_DIR)/serverSettingsUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/GlobalConfig.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettingsUnitTest.o \
 	$(BUILD_TEST_OBJ_DIR)/ServerSettings.o \
-	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o \
-	$(BUILD_APP_OBJ_DIR)/Translator.o
-	@mkdir -p $(@D)
-	$(CXX) $^ $(TEST_LIBRARIES) -o $@
-
-$(BUILD_TEST_BIN_DIR)/translatorUnitTest: \
-	$(BUILD_TEST_OBJ_DIR)/Kinetic.pb.o \
-	$(BUILD_TEST_OBJ_DIR)/Translator.o \
-	$(BUILD_TEST_OBJ_DIR)/TranslatorUnitTest.o
+	$(BUILD_TEST_OBJ_DIR)/Settings.pb.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Western Digital Technologies, Inc. <copyrightagent@wdc.com>
+ * @author Gary Ballance <gary.ballance@wdc.com>
  *
  * SPDX-License-Identifier: GPL-2.0+
  * This file is part of Kinetic Advanced Object Store (KAOS).
@@ -23,12 +24,10 @@
 #include <stdint.h>
 #include <atomic>
 #include <string>
-#include <sstream>
-#include <iostream>
 #include <exception>
+#include <sstream>
 #include "Logger.hpp"
 #include "Server.hpp"
-#include "KineticLog.hpp"
 #include "Connection.hpp"
 #include "Transaction.hpp"
 #include "MessageTrace.hpp"
@@ -37,17 +36,11 @@
 #include "MessageHandler.hpp"
 
 /*
- * Used Namespace Members
+ * Private Constants
  */
-using com::seagate::kinetic::proto::Command;
-using com::seagate::kinetic::proto::Command_Header;
-using com::seagate::kinetic::proto::Command_GetLog;
-using com::seagate::kinetic::proto::Command_GetLog_Type_LIMITS;
-using com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION;
-using com::seagate::kinetic::proto::Command_Status_StatusCode_SUCCESS;
-using com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST;
-using com::seagate::kinetic::proto::Command_Status_StatusCode_CONNECTION_TERMINATED;
-using com::seagate::kinetic::proto::Message_AuthType_UNSOLICITEDSTATUS;
+static const uint32_t RECEIVER_THREAD_ID(0);
+static const uint32_t SCHEDULER_THREAD_ID(1);
+static const uint32_t TRANSMITTER_THREAD_ID(2);
 
 /*
  * Private Data Objects
@@ -59,224 +52,249 @@ static std::atomic<int64_t> nextConnectionId(1);
  *
  * @param   server                      Manager of the connection
  * @param   stream                      Data stream to be used for this connection
- * @param   lientServerConnectionInfo   Information about the client and server in the connection
+ * @param   clientServerConnectionInfo  Information about the client and server in the connection
  */
 Connection::Connection(Server* server, StreamInterface* stream, ClientServerConnectionInfo clientServerConnectionInfo)
-    : m_server(server), m_stream(stream), m_serverPort(clientServerConnectionInfo.serverPort()),
-      m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()), m_clientPort(clientServerConnectionInfo.clientPort()),
-      m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()), m_thread(new std::thread(&Connection::run, this)),
-      m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false) {
+    : m_server(server), m_messageHandler(new MessageHandler(this)), m_stream(stream), m_schedulerQueue(), m_transmitterQueue(),
+      m_serverPort(clientServerConnectionInfo.serverPort()), m_serverIpAddress(clientServerConnectionInfo.serverIpAddress()),
+      m_clientPort(clientServerConnectionInfo.clientPort()), m_clientIpAddress(clientServerConnectionInfo.clientIpAddress()),
+      m_connectionId(nextConnectionId++), m_previousSequence(0), m_processedFirstRequest(false), m_terminated(false),
+      m_activeThreads((1 << RECEIVER_THREAD_ID) | (1 << SCHEDULER_THREAD_ID) | (1 << TRANSMITTER_THREAD_ID)),
+      m_receiverThread(new std::thread(&Connection::receiver, this)),
+      m_transmitterThread(new std::thread(&Connection::scheduler, this)),
+      m_schedulerThread(new std::thread(&Connection::transmitter, this)) {
 
-    m_thread->detach();
+    m_receiverThread->detach();
+    m_transmitterThread->detach();
+    m_schedulerThread->detach();
+
+    LOG(INFO) << "Connection opened, server=" << m_serverIpAddress << ":" << m_serverPort
+              << ", client=" << m_clientIpAddress << ":" << m_clientPort;
+
+    /*
+     * When a new connection is established, the Kinetic device sends an unsolicited status
+     * message that describes some of the device's capabilities.
+     */
+    Transaction* transaction = new Transaction();
+    m_messageHandler->buildUnsolicitedStatusMessage(this, transaction->response);
+    m_transmitterQueue.add(transaction);
 }
 
 /*
  * Frees the allocated resources from the Connection object.
  */
 Connection::~Connection() {
+    LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
+              << ", client=" << m_clientIpAddress << ":" << m_clientPort;
+
     delete m_stream;
-    delete m_thread;
+    delete m_receiverThread;
+    delete m_transmitterThread;
+    delete m_schedulerThread;
 }
 
 /**
  * Performs the work of the Connection handler (with a dedicated thread).  It blocks waiting to
  * receive a message, and when it does, it calls a message handler to process it.
+ *
+ * Receives and deserializes a Kinetic Request.  It performs a blocking read from the stream and
+ * returns when a complete message has been received (or an error is encountered).  It's
+ * understanding of the Kinetic protocol is limited to the framing of the message.  The following
+ * framing errors will result in the connection being terminated:
+ *     Incorrect PDU magic number
+ *     Total message size is too small
+ *     Total message size is too large
+ *     Invalid message format (failed protocol buffer deserialization)
+ * The following framing errors will result in a response with an "invalid request" status code:
+ *     The value size is too large
  */
-void Connection::run() {
-
+void Connection::receiver() {
+    Transaction* transaction(nullptr);
     try {
-        LOG(INFO) << "Connection opened, server=" << m_serverIpAddress << ":" << m_serverPort
-                  << ", client=" << m_clientIpAddress << ":" << m_clientPort;
+        while (!m_terminated) {
+            transaction = new Transaction();
+            /*
+             * First, read in the framing data, which consists of a magic number, the size of the
+             * protocol buffer message and the size of the (optional) value.  Then, validate the framing
+             * data.  If the magic number is not correct or the sizes specified are invalid, throw an
+             * exception, which will cause the connection to be fail.
+             */
+            KineticMessageFraming messageFraming;
+            m_stream->read(reinterpret_cast<char*>(&messageFraming), sizeof(messageFraming));
 
-        /*
-         * When a new connection is established, the Kinetic device sends an unsolicited status
-         * message that describes some of the device's capabilities.
-         */
-        sendUnsolicitedStatusMessage();
+            if (messageFraming.magicNumber() != KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER)
+                throw std::runtime_error("Invalid PDU magic number");
 
-        MessageHandler* messageHandler = new MessageHandler(this);
-        for (;;) {
+            uint32_t messageSize = messageFraming.messageSize();
+            uint32_t valueSize = messageFraming.valueSize();
+
+            if (messageSize == 0)
+                throw std::runtime_error("Message size too small");
+
+            KineticMessagePtr& request = transaction->request;
+            /*
+             * If the size of the message exceeds the support maximum value, read and save as much as
+             * possible so that the response will contain the correct header information.  Read and
+             * dispose of the remaining data (which should be the value, not the command).
+             */
+            if (messageSize > globalConfig.maxMessageSize()) {
+                std::unique_ptr<char> messageBuffer(new char[globalConfig.maxMessageSize()]);
+                m_stream->read(messageBuffer.get(), messageSize);
+                try {
+                    m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
+                    request->deserializeData(messageBuffer.get(), messageSize);
+                }
+                catch (std::exception& ex) {
+                    LOG(ERROR) << "Exception while receiving request: " << ex.what();
+                }
+
+                if (globalConfig.debugEnabled())
+                    MessageTrace::outputContents(messageFraming, request.get());
+
+                throw std::runtime_error("Message size too large");
+            }
 
             /*
-             * Block waiting for a request.  When received, have the message handler process it.
-             * Since not all requests get a response (such as a batched put), check if there is a
-             * response before attempting to send one.
+             * Read in the protocol buffer message.  If a value is included, also attempt to read in the
+             * value. If the value is too large, read and discard the value then fail the request.
+             * Otherwise, create a Kinetic Message to hold both the deserialized protocol buffer
+             * message and its value.
              */
-            Transaction* transaction = new Transaction();
+            std::unique_ptr<char> messageBuffer(new char[messageSize]);
+            m_stream->read(messageBuffer.get(), messageSize);
 
-            try {
-                receiveRequest(transaction->request);
+            if (valueSize > globalConfig.maxValueSize()) {
+                m_stream->blackHoleRead(valueSize);
+                if (!request->deserializeData(messageBuffer.get(), messageSize))
+                    throw std::runtime_error("Invalid message format");
 
-                // send to message handler thread
-                messageHandler->processRequest(transaction);
+                if (globalConfig.debugEnabled())
+                    MessageTrace::outputContents(messageFraming, request.get());
+
+                std::stringstream errorStream;
+                errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
+                m_messageHandler->buildResponseWithError(transaction, com::seagate::kinetic::proto::Command_Status_StatusCode_INVALID_REQUEST,
+                        errorStream.str());
+                m_transmitterQueue.add(transaction);
+                continue;
             }
-            catch (MessageException& messageException) {
 
-                if (messageException.statusCode() == Command_Status_StatusCode_CONNECTION_TERMINATED)
-                    break;
-
-                messageHandler->buildResponseWithError(transaction, messageException.statusCode(), messageException.statusMessage());
+            if (valueSize > 0) {
+                std::unique_ptr<char> valueBuffer(new char[valueSize]);
+                m_stream->read(valueBuffer.get(), valueSize);
+                request->setValue(valueBuffer.get(), valueSize);
             }
 
-            if (transaction->response != nullptr)
-                sendResponse(transaction->response);
+            if (!request->deserializeData(messageBuffer.get(), messageSize))
+                throw std::runtime_error("Invalid message format");
 
-            delete transaction;
+            if (globalConfig.debugEnabled())
+                MessageTrace::outputContents(messageFraming, request.get());
+            m_schedulerQueue.add(transaction);
+        }
+    }
+    catch (std::exception& ex) {
+        if (std::string(ex.what()) != "Socket closed")
+            LOG(ERROR) << "Exception encounter: " << ex.what();
+
+        delete transaction;
+    }
+
+    tearDownThread(RECEIVER_THREAD_ID);
+}
+
+/**
+ * Sends Kinetic responses (serializing and framing the message before sending).
+ */
+void Connection::transmitter() {
+    try {
+        for (;;) {
+            std::unique_ptr<Transaction> transaction(m_transmitterQueue.remove());
+
+            if (m_terminated)
+                break;
+
+            KineticMessagePtr& response = transaction->response;
+            if (response != nullptr) {
+                /*
+                 * Convert the message into its serialized proto-buffer format.
+                 */
+                uint32_t messageSize = response->serializedSize();
+                std::unique_ptr<char> messageBuffer(new char[messageSize]);
+                response->serializeData(messageBuffer.get(), messageSize);
+
+                /*
+                 * Create the framing for the message and sent it (it preceeds the message).
+                 */
+                KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, response->value().size());
+                m_stream->write((const char*) &messageFraming, sizeof(messageFraming));
+
+                /*
+                 * Send the message and its optional value (which is not serialized).
+                 */
+                m_stream->write(messageBuffer.get(), messageSize);
+                if (!response->value().empty())
+                    m_stream->write(response->value().c_str(), response->value().size());
+
+                if (globalConfig.debugEnabled())
+                    MessageTrace::outputContents(messageFraming, response.get());
+            }
         }
     }
     catch (std::exception& ex) {
         if (std::string(ex.what()) != "Socket closed")
             LOG(ERROR) << "Exception encounter: " << ex.what();
     }
-    catch (...) {
-        LOG(ERROR) << "Unexpected exception encounter";
+
+    tearDownThread(TRANSMITTER_THREAD_ID);
+}
+
+void Connection::scheduler() {
+    while (!m_terminated) {
+        Transaction* transaction(m_schedulerQueue.remove());
+        m_messageHandler->processRequest(transaction);
+        m_transmitterQueue.add(transaction);
     }
-
-    LOG(INFO) << "Connection closed, server=" << m_serverIpAddress << ":" << m_serverPort
-              << ", client=" << m_clientIpAddress << ":" << m_clientPort;
-
-    m_server->removeConnection(this);
+    tearDownThread(SCHEDULER_THREAD_ID);
 }
 
 /**
- * Sends an Unsolicited Status Message when a connection is first established (following the Kinetic
- * protocol).
- */
-void Connection::sendUnsolicitedStatusMessage() {
-
-    KineticMessagePtr response(new KineticMessage());
-    response->set_authtype(Message_AuthType_UNSOLICITEDSTATUS);
-    Command* const command = response->mutable_command();
-    Command_Header* const header = command->mutable_header();
-    header->set_connectionid(m_connectionId);
-    header->set_clusterversion(m_server->settings().clusterVersion());
-    Command_GetLog* getLogResponse = command->mutable_body()->mutable_getlog();
-    getLogResponse->add_types(Command_GetLog_Type_CONFIGURATION);
-    KineticLog::getConfiguration(getLogResponse);
-    getLogResponse->add_types(Command_GetLog_Type_LIMITS);
-    KineticLog::getLimits(getLogResponse);
-    command->mutable_status()->set_code(Command_Status_StatusCode_SUCCESS);
-    response->build_commandbytes();
-    sendResponse(response);
-}
-
-/**
- * Receives and deserializes a Kinetic Request.  It performs a blocking read from the stream and
- * returns when a complete message has been received (or an error is encountered).  It's
- * understanding of the Kinetic protocol is limited to the framing of the message.
+ * Terminates the specified thread and free the resources used by the threads when the last thread
+ * has been torn down.
  *
- * @param   transaction     Object where the received message will be put
- *
- * @throws  A runtime error if an error is encountered
+ * @param threadId  Identifies the thread being torn down.
  */
-void Connection::receiveRequest(KineticMessagePtr& request) {
+void Connection::tearDownThread(uint32_t threadId) {
+    /*
+     * Mark the connection as terminated and update the active threads indicator to show this thread
+     * no longer as active.
+     */
+    m_terminated = true;
+    std::unique_lock<std::mutex> m_scopedLock(m_mutex);
+    m_activeThreads.reset(threadId);
 
     /*
-     * First, read in the framing data, which consists of a magic number, the size of the
-     * protocol buffer message and the size of the (optional) value.  Then, validate the framing
-     * data.  If the magic number is not correct or the sizes specified are invalid, throw an
-     * exception, which will cause the connection to be fail.
+     * If the other threads are still active, send them a message to wake them up and see that they
+     * have been terminated.
      */
-    KineticMessageFraming messageFraming;
-    m_stream->read(reinterpret_cast<char*>(&messageFraming), sizeof(messageFraming));
+    if (m_activeThreads.test(SCHEDULER_THREAD_ID))
+        m_schedulerQueue.add(new Transaction());
 
-    if (messageFraming.magicNumber() != KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER)
-        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "Invalid PDU magic number");
-
-    uint32_t messageSize = messageFraming.messageSize();
-    uint32_t valueSize = messageFraming.valueSize();
-
-    if (messageSize == 0)
-        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "message size too small");
+    if (m_activeThreads.test(TRANSMITTER_THREAD_ID))
+        m_transmitterQueue.add(new Transaction());
 
     /*
-     * If the size of the message exceeds the support maximum value, read and save as much as
-     * possible so that the response will contain the correct header information.  Read and
-     * dispose of the remaining data (which should be the value, not the command).
+     * When the last thread is torn down, free any resources still in the scheduler and transmitter
+     * queue and remove the connection from the server's connection list.
      */
-    if (messageSize > globalConfig.maxMessageSize()) {
-        std::unique_ptr<char> messageBuffer(new char[globalConfig.maxMessageSize()]);
-        m_stream->read(messageBuffer.get(), messageSize);
-        try {
-            m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
-            request->deserializeData(messageBuffer.get(), messageSize);
-        }
-        catch (std::exception& ex) {
-            LOG(ERROR) << "Connection::receiveRequest exception: " << ex.what();
-        }
+    if (m_activeThreads.none()) {
+        while (!m_schedulerQueue.empty())
+            delete m_schedulerQueue.remove();
 
-        if (globalConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, request.get());
+        while (!m_transmitterQueue.empty())
+            delete m_transmitterQueue.remove();
 
-        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "message size too large");
+        m_server->removeConnection(this);
     }
-
-    /*
-     * Read in the protocol buffer message.  If a value is included, also attempt to read in the
-     * value. If the value is too large, read and discard the value then fail the request.
-     * Otherwise, create a Kinetic Message to hold both the deserialized protocol buffer
-     * message and its value.
-     */
-    std::unique_ptr<char> messageBuffer(new char[messageSize]);
-    m_stream->read(messageBuffer.get(), messageSize);
-
-    if (valueSize > globalConfig.maxValueSize()) {
-        m_stream->blackHoleRead(valueSize);
-        if (!request->deserializeData(messageBuffer.get(), messageSize))
-            throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "invalid message format");
-
-        if (globalConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, request.get());
-
-        std::stringstream errorStream;
-        errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
-        throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, errorStream.str());
-    }
-
-    if (valueSize > 0) {
-        std::unique_ptr<char> valueBuffer(new char[valueSize]);
-        m_stream->read(valueBuffer.get(), valueSize);
-        request->setValue(valueBuffer.get(), valueSize);
-    }
-
-    if (!request->deserializeData(messageBuffer.get(), messageSize))
-        throw MessageException(Command_Status_StatusCode_CONNECTION_TERMINATED, "invalid message format");
-
-    if (globalConfig.debugEnabled())
-        MessageTrace::outputContents(messageFraming, request.get());
-}
-
-/**
- * Sends a Kinetic response (serializing and framing the message before sending).
- *
- * @param   response    Response message to be sents
- *
- * @return  True if the operation was successful, false otherwise
- *
- * @throws  A runtime error if an error is encountered
- */
-bool Connection::sendResponse(KineticMessagePtr response) {
-
-    try {
-        uint32_t messageSize = response->serializedSize();
-        std::unique_ptr<char> messageBuffer(new char[messageSize]);
-        response->serializeData(messageBuffer.get(), messageSize);
-
-        KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, response->value().size());
-        m_stream->write((const char*) &messageFraming, sizeof(messageFraming));
-
-        m_stream->write(messageBuffer.get(), messageSize);
-        if (!response->value().empty())
-            m_stream->write(response->value().c_str(), response->value().size());
-
-        if (globalConfig.debugEnabled())
-            MessageTrace::outputContents(messageFraming, response.get());
-    }
-    catch (std::exception& ex) {
-        if (std::string(ex.what()) != "Socket closed")
-            LOG(ERROR) << "Connection::sendResponse exception: " << ex.what();
-        return false;
-    }
-    return true;
 }
 

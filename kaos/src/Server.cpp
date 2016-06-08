@@ -92,7 +92,8 @@ int32_t Server::run() {
     if (!globalConfig.runAsDaemon())
         logControl.setStandardOutEnabled(true);
 
-    LOG(INFO) << "Starting application (running in " << (globalConfig.runAsDaemon() ? "background)" : "foreground)");
+    LOG(INFO) << "Starting Kaos application, version " << globalConfig.version()
+              << " (running in " << (globalConfig.runAsDaemon() ? "background)" : "foreground)");
 
     /*
      * If the daemon is to run in the background, daemonize the process. That causes the process to
@@ -175,7 +176,7 @@ int32_t Server::run() {
  */
 void Server::addConnection(Connection* connection) {
     std::unique_lock<std::mutex> scopedLock(m_mutex);
-    if (m_connectionList.size() >= globalConfig.maxConnections())
+    if (m_connectionList.size() >= globalConfig.maxActiveConnections())
         throw std::runtime_error("No connections available");
 
     m_connectionList.push_back(connection);

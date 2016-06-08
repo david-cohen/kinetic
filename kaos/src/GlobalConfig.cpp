@@ -21,23 +21,25 @@
 /*
  * Include Files
  */
+#include <fcntl.h>
 #include <errno.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <ifaddrs.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <linux/hdreg.h>
 #include <netpacket/packet.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <set>
 #include <string>
+#include <memory>
 #include <sstream>
 #include <iomanip>
-#include <iostream>
-#include <typeinfo>
 #include <algorithm>
 #include "Hmac.hpp"
 #include "Logger.hpp"
@@ -54,11 +56,12 @@ using std::string;
  */
 static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
-static const char* VERSION("1.0.2-FOR-EVAL-ONLY");
+static const char* VERSION("1.0.4-FOR-EVAL-ONLY");
 
 /*
  * Daemon Related Settings
  */
+static const char* DRIVE_DEV_NODE("/dev/sda");
 static const char* PID_FILE_NAME("/var/run/kaos.pid");
 static const char* CONFIG_FILE_NAME("/etc/default/kaos");
 static const char* DEFAULT_STORAGE_DIRECTORY("/export/dfs");
@@ -78,8 +81,8 @@ static const char* FLUSH_DATA_KEY_PATTERN("04231970_WesternDigital_07913240");
 /*
  * Communication Settings
  */
-static const int32_t  MAX_PENDING_ADMIN_CONNECTIONS(8);
-static const uint32_t MAX_ACTIVE_ADMIN_CONNECTIONS(128);
+static const size_t   MAX_PENDING_CONNECTIONS(8);
+static const uint32_t MAX_ACTIVE_CONNECTIONS(128);
 static const uint32_t TCP_PORT(8123);
 static const uint32_t SSL_PORT(8443);
 static const uint32_t MULTICAST_PORT(8123);
@@ -96,7 +99,6 @@ static const size_t MAX_KEY_SIZE(4096);
 static const size_t MAX_VALUE_SIZE(1048576);
 static const size_t MAX_VERSION_SIZE(2048);
 static const size_t MAX_TAG_SIZE(4096);
-static const size_t MAX_CONNECTIONS(MAX_ACTIVE_ADMIN_CONNECTIONS);
 static const size_t MAX_OUTSTANDING_READ_REQUESTS(8);
 static const size_t MAX_OUTSTANDING_WRITE_REQUESTS(8);
 static const size_t MAX_MESSAGE_SIZE(2097152);
@@ -178,6 +180,8 @@ GlobalConfig::GlobalConfig()
       m_pidFileName(PID_FILE_NAME),
       m_databaseDirectory(),
       m_serverSettingsFile(),
+      m_sslPrivateKeyFile(SSL_PRIVATE_KEY_FILE),
+      m_sslCertificateFile(SSL_CERTIFICATE_FILE),
       m_vendor(VENDOR),
       m_model(MODEL),
       m_version(VERSION),
@@ -188,20 +192,21 @@ GlobalConfig::GlobalConfig()
       m_sourceHash(SOURCE_HASH),
       m_objectStoreCompressionEnabled(OBJECT_STORE_COMPRESSION_ENABLED),
       m_objectStoreCacheSize(OBJECT_STORE_CACHE_SIZE),
-      m_maxPendingAdminConnections(MAX_PENDING_ADMIN_CONNECTIONS),
-      m_maxActiveAdminConnections(MAX_ACTIVE_ADMIN_CONNECTIONS),
+      m_flushDataKey(createFlushDataKey()),
       m_tcpPort(TCP_PORT),
       m_sslPort(SSL_PORT),
       m_multicastPort(MULTICAST_PORT),
       m_multicastIpAddress(MULTICAST_IP_ADDRESS),
       m_heartbeatSendInterval(HEARTBEAT_SEND_INTERVAL),
       m_heartbeatConnectionRetryInterval(HEARTBEAT_CONNECTION_RETRY_INTERVAL),
+      m_maxPendingConnections(MAX_PENDING_CONNECTIONS),
+      m_maxActiveConnections(MAX_ACTIVE_CONNECTIONS),
       m_minKeySize(MIN_KEY_SIZE),
       m_maxKeySize(MAX_KEY_SIZE),
       m_maxValueSize(MAX_VALUE_SIZE),
       m_maxVersionSize(MAX_VERSION_SIZE),
       m_maxTagSize(MAX_TAG_SIZE),
-      m_maxConnectionse(MAX_CONNECTIONS),
+      m_maxAlgorithmSize(MAX_ALGORITHM_SIZE),
       m_maxOutstandingReadRequests(MAX_OUTSTANDING_READ_REQUESTS),
       m_maxOutstandingWriteRequests(MAX_OUTSTANDING_WRITE_REQUESTS),
       m_maxMessageSize(MAX_MESSAGE_SIZE),
@@ -210,10 +215,7 @@ GlobalConfig::GlobalConfig()
       m_maxPinSize(MAX_PIN_SIZE),
       m_maxOperationCountPerBatch(MAX_OPERATION_COUNT_PER_BATCH),
       m_maxBatchCountPerDevice(MAX_BATCH_COUNT_PER_DEVICE),
-      m_maxAlgorithmSize(MAX_ALGORITHM_SIZE),
       m_maxHmacKeySize(MAX_HMAC_KEY_SIZE),
-      m_sslPrivateKeyFile(SSL_PRIVATE_KEY_FILE),
-      m_sslCertificateFile(SSL_CERTIFICATE_FILE),
       m_defaultClusterVersion(DEFAULT_CLUSTER_VERSION),
       m_defaultLocked(DEFAULT_LOCKED),
       m_defaultLockPin(DEFAULT_LOCK_PIN),
@@ -224,7 +226,6 @@ GlobalConfig::GlobalConfig()
       m_accessControlDefaultHmacAlgorithm(ACCESS_CONTROL_DEFAULT_HMAC_ALGORITHM),
       m_accessScopeDefaultKeySubstring(ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING),
       m_accessScopeDefaultKeySubstringOffset(ACCESS_SCOPE_DEFAULT_KEY_SUBSTRING_OFFSET),
-      m_flushDataKey(createFlushDataKey()),
     m_defaultLogTypes({
     com::seagate::kinetic::proto::Command_GetLog_Type_STATISTICS,
     com::seagate::kinetic::proto::Command_GetLog_Type_CONFIGURATION,
@@ -328,36 +329,38 @@ GlobalConfig::GlobalConfig()
     freeifaddrs(interfaceList);
 
     /*
-     * Get the serial number and world-wide name from the drive.
+     * Get the serial number and world-wide name of the drive.
      */
-    FILE* fp = popen("/sbin/hdparm -I /dev/sda", "r");
-    if (fp == nullptr) {
-        LOG(ERROR) << "Failed to obtain drive information: error code=" << errno << ", description=" << strerror(errno);
+    int32_t driveHandle = open(DRIVE_DEV_NODE, O_RDONLY | O_NONBLOCK);
+    if (driveHandle < 0) {
+        LOG(ERROR) << "Failed to access drive information: error code=" << errno << ", description=" << strerror(errno);
     }
     else {
-        char* line = nullptr;
-        size_t length = 0;
-        ssize_t read;
-        const int32_t GET_LINE_FAILURE(-1);
-        const string serialNumberLabel("Serial Number:");
-        const string worldWideNameLabel("Logical Unit WWN Device Identifier:");
-        while ((read = getline(&line, &length, fp)) != GET_LINE_FAILURE) {
-            string stringLine(line);
-            if (m_serialNumber.empty()) {
-                std::size_t index = stringLine.find(serialNumberLabel);
-                if (index != std::string::npos)
-                    m_serialNumber = stringLine.substr(index + serialNumberLabel.size());
-            }
-
-            if (m_worldWideName.empty()) {
-                std::size_t index = stringLine.find(worldWideNameLabel);
-                if (index != std::string::npos)
-                    m_worldWideName = stringLine.substr(index + worldWideNameLabel.size());
-            }
+        struct hd_driveid driveInfo;
+        if (ioctl(driveHandle, HDIO_GET_IDENTITY, &driveInfo) != STATUS_SUCCESS) {
+            LOG(ERROR) << "Failed to obtain drive information: error code=" << errno << ", description=" << strerror(errno);
         }
-        free(line);
-        pclose(fp);
-        boost::trim(m_serialNumber);
-        boost::trim(m_worldWideName);
+        else {
+            /*
+             * Null terminate the serial number character array (we don't care that we set to zero
+             * the buf_type field that follows the serial number because we don't use it and it has
+             * been retired. Also, remove any space characters.  Convert the world-wide name to a
+             * hex string.
+             */
+            const uint32_t SERIAL_NUMBER_SIZE(20);
+            driveInfo.serial_no[SERIAL_NUMBER_SIZE] = 0;
+            m_serialNumber = reinterpret_cast<char*>(driveInfo.serial_no);
+            boost::trim(m_serialNumber);
+
+            const uint32_t WWN_STARTING_INDEX(4);
+            std::stringstream worldWideNameStream;
+            worldWideNameStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(driveInfo.words104_125[WWN_STARTING_INDEX])
+                                << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(driveInfo.words104_125[WWN_STARTING_INDEX + 1])
+                                << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(driveInfo.words104_125[WWN_STARTING_INDEX + 2])
+                                << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(driveInfo.words104_125[WWN_STARTING_INDEX + 3]);
+            m_worldWideName = worldWideNameStream.str();
+            boost::trim(m_worldWideName);
+        }
+        close(driveHandle);
     }
 }

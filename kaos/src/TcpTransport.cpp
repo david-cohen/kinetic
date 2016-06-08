@@ -71,7 +71,7 @@ int32_t TcpTransport::serverSetup(uint32_t port) {
         throw std::runtime_error("Failed to bind socket on port " + std::to_string(port) + ": error code="
                                  + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 
-    if (listen(listeningSocketDescriptor, globalConfig.maxPendingAdminConnections()) == STATUS_FAILURE)
+    if (listen(listeningSocketDescriptor, globalConfig.maxPendingConnections()) == STATUS_FAILURE)
         throw std::runtime_error("Failed to listen to socket on port " + std::to_string(port) + ": error code="
                                  + std::to_string(errno) + ", description=" + std::string(strerror(errno)));
 

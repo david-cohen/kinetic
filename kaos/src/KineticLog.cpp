@@ -83,7 +83,7 @@ void KineticLog::getLimits(Command_GetLog* const response) {
     limits->set_maxvaluesize(globalConfig.maxValueSize());
     limits->set_maxversionsize(globalConfig.maxVersionSize());
     limits->set_maxtagsize(globalConfig.maxTagSize());
-    limits->set_maxconnections(globalConfig.maxConnections());
+    limits->set_maxconnections(static_cast<uint32_t>(globalConfig.maxActiveConnections()));
     limits->set_maxoutstandingreadrequests(globalConfig.maxOutstandingReadRequests());
     limits->set_maxoutstandingwriterequests(globalConfig.maxOutstandingWriteRequests());
     limits->set_maxmessagesize(globalConfig.maxMessageSize());
@@ -139,6 +139,7 @@ void KineticLog::getCapacities(Command_GetLog* const response) {
  */
 void KineticLog::getMessage(Command_GetLog* const response) {
     std::string* message = response->mutable_messages();
+    // TODO(gballance): Populate the response with the contents of /var/log/kaos.log (up to 1 MB).
     message->assign("System started");
 }
 
@@ -165,6 +166,7 @@ void KineticLog::getDevice(const Command_GetLog& request, std::string& responseV
  */
 void KineticLog::getTemperatures(Command_GetLog* const response) {
     Command_GetLog_Temperature* temperature(response->add_temperatures());
+    // TODO(gballance): Get the actual values from the hard drive instead of hard coding values (used to verify that the command worked).
     temperature->set_name("HDA");
     temperature->set_current(75);
     temperature->set_target(25);
@@ -179,6 +181,7 @@ void KineticLog::getTemperatures(Command_GetLog* const response) {
  */
 void KineticLog::getUtilizations(Command_GetLog* const response) {
     Command_GetLog_Utilization* utilization(response->add_utilizations());
+    // TODO(gballance): Get the actual values from the system instead of hard coding values (used to verify that the command worked).
     utilization->set_name("HDA");
     utilization->set_value(.1);
     utilization = response->add_utilizations();

@@ -6,3 +6,8 @@ Config file/options to easily swap the database library being used (once abstrac
 Distribution agnostic tools install script
 
 Make Makefile easy to use with the options to swap in/out DBs
+
+Complete Kinetic log support by having the following log messages return correct (instead of demo) values:
+   * Get Message
+   * Get Temperatures
+   * Get Utilizations

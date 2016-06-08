@@ -94,30 +94,30 @@ Connection::~Connection() {
 }
 
 /**
- * Performs the work of the Connection handler (with a dedicated thread).  It blocks waiting to
- * receive a message, and when it does, it calls a message handler to process it.
- *
- * Receives and deserializes a Kinetic Request.  It performs a blocking read from the stream and
+ * Receives and deserializes a Kinetic Requests.  It performs a blocking read from the stream and
  * returns when a complete message has been received (or an error is encountered).  It's
  * understanding of the Kinetic protocol is limited to the framing of the message.  The following
- * framing errors will result in the connection being terminated:
+ * framing errors will result in a response with an "invalid request" status code:
+ *     The value size is too large
+ * The following framing errors will result in the connection being terminated:
  *     Incorrect PDU magic number
  *     Total message size is too small
  *     Total message size is too large
  *     Invalid message format (failed protocol buffer deserialization)
- * The following framing errors will result in a response with an "invalid request" status code:
- *     The value size is too large
  */
 void Connection::receiver() {
     Transaction* transaction(nullptr);
     try {
+        /*
+         * Receive requests until terminated.
+         */
         while (!m_terminated) {
             transaction = new Transaction();
             /*
              * First, read in the framing data, which consists of a magic number, the size of the
              * protocol buffer message and the size of the (optional) value.  Then, validate the framing
              * data.  If the magic number is not correct or the sizes specified are invalid, throw an
-             * exception, which will cause the connection to be fail.
+             * exception, which will cause the connection to closed.
              */
             KineticMessageFraming messageFraming;
             m_stream->read(reinterpret_cast<char*>(&messageFraming), sizeof(messageFraming));
@@ -134,8 +134,8 @@ void Connection::receiver() {
             KineticMessagePtr& request = transaction->request;
             /*
              * If the size of the message exceeds the support maximum value, read and save as much as
-             * possible so that the response will contain the correct header information.  Read and
-             * dispose of the remaining data (which should be the value, not the command).
+             * possible so that the response will contain the correct header information.  Then,
+             * read and dispose of the remaining data (which should be the value, not the command).
              */
             if (messageSize > globalConfig.maxMessageSize()) {
                 std::unique_ptr<char> messageBuffer(new char[globalConfig.maxMessageSize()]);
@@ -224,7 +224,7 @@ void Connection::transmitter() {
                 response->serializeData(messageBuffer.get(), messageSize);
 
                 /*
-                 * Create the framing for the message and sent it (it preceeds the message).
+                 * Create the framing for the message and sent it (it precedes the message).
                  */
                 KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, response->value().size());
                 m_stream->write((const char*) &messageFraming, sizeof(messageFraming));
@@ -249,6 +249,9 @@ void Connection::transmitter() {
     tearDownThread(TRANSMITTER_THREAD_ID);
 }
 
+/**
+ * Process the request.  In the future this is where the requests will be scheduled for processing.
+ */
 void Connection::scheduler() {
     while (!m_terminated) {
         Transaction* transaction(m_schedulerQueue.remove());
@@ -259,8 +262,8 @@ void Connection::scheduler() {
 }
 
 /**
- * Terminates the specified thread and free the resources used by the threads when the last thread
- * has been torn down.
+ * Terminates the specified thread and free the resources used by all the threads when the last
+ * thread has been torn down.
  *
  * @param threadId  Identifies the thread being torn down.
  */

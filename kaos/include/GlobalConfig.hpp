@@ -60,6 +60,8 @@ public:
     inline bool debugEnabled() const {return m_debugEnabled;}
     inline const char* pidFileName() const {return m_pidFileName;}
     inline std::string databaseDirectory() const {return m_databaseDirectory;}
+    inline std::string sslPrivateKeyFile() const {return m_sslPrivateKeyFile;}
+    inline std::string sslCertificateFile() const {return m_sslCertificateFile;}
     inline std::string serverSettingsFile() const {return m_serverSettingsFile;}
     inline const char* vendor() const {return m_vendor;}
     inline const char* model() const {return m_model;}
@@ -71,20 +73,20 @@ public:
     inline const char* sourceHash() const {return m_sourceHash;}
     inline bool objectStoreCompressionEnabled() const {return m_objectStoreCompressionEnabled;}
     inline uint32_t objectStoreCacheSize() const {return m_objectStoreCacheSize;}
-    inline int32_t maxPendingAdminConnections() const {return m_maxPendingAdminConnections;}
-    inline uint32_t maxActiveAdminConnections() const {return m_maxActiveAdminConnections;}
+    inline const std::string& flushDataKey() const {return m_flushDataKey;}
     inline uint32_t tcpPort() const {return m_tcpPort;}
     inline uint32_t sslPort() const {return m_sslPort;}
     inline uint32_t multicastPort() const {return m_multicastPort;}
     inline const char* multicastIpAddress() const {return m_multicastIpAddress;}
     inline uint32_t heartbeatSendInterval() const {return m_heartbeatSendInterval;}
     inline uint32_t heartbeatConnectionRetryInterval() const {return m_heartbeatConnectionRetryInterval;}
+    inline size_t maxPendingConnections() const {return m_maxPendingConnections;}
+    inline size_t maxActiveConnections() const {return m_maxActiveConnections;}
     inline size_t minKeySize() const {return m_minKeySize;}
     inline size_t maxKeySize() const {return m_maxKeySize;}
     inline size_t maxValueSize() const {return m_maxValueSize;}
     inline size_t maxVersionSize() const {return m_maxVersionSize;}
     inline size_t maxTagSize() const {return m_maxTagSize;}
-    inline size_t maxConnections() const {return m_maxConnectionse;}
     inline size_t maxOutstandingReadRequests() const {return m_maxOutstandingReadRequests;}
     inline size_t maxOutstandingWriteRequests() const {return m_maxOutstandingWriteRequests;}
     inline size_t maxMessageSize() const {return m_maxMessageSize;}
@@ -95,8 +97,6 @@ public:
     inline size_t maxBatchCountPerDevice() const {return m_maxBatchCountPerDevice;}
     inline size_t maxAlgorithmSize() const {return m_maxAlgorithmSize;}
     inline size_t maxHmacKeySize() const {return m_maxHmacKeySize;}
-    inline std::string sslPrivateKeyFile() const {return m_sslPrivateKeyFile;}
-    inline std::string sslCertificateFile() const {return m_sslCertificateFile;}
     inline int64_t defaultClusterVersion() const {return m_defaultClusterVersion;}
     inline bool defaultLocked() const {return m_defaultLocked;}
     inline std::string defaultLockPin() const {return m_defaultLockPin;}
@@ -107,7 +107,6 @@ public:
     inline HmacAlgorithm accessControlDefaultHmacAlgorithm() const {return m_accessControlDefaultHmacAlgorithm;}
     inline std::string accessScopeDefaultKeySubstring() const {return m_accessScopeDefaultKeySubstring;}
     inline uint32_t accessScopeDefaultKeySubstringOffset() const {return m_accessScopeDefaultKeySubstringOffset;}
-    inline const std::string& flushDataKey() const {return m_flushDataKey;}
     inline std::set<com::seagate::kinetic::proto::Command_GetLog_Type> defaultLogTypes() const {return m_defaultLogTypes;}
     inline NetworkInterfaceMap networkInterfaceMap() const {return m_networkInterfaceMap;}
 
@@ -115,60 +114,59 @@ private:
     /*
      * Private Data Members
      */
-    bool                 m_runAsDaemon;
-    bool                 m_debugEnabled;
-    const char*          m_pidFileName;
-    std::string          m_databaseDirectory;
-    std::string          m_serverSettingsFile;
-    const char*          m_vendor;
-    const char*          m_model;
-    const char*          m_version;
-    std::string          m_serialNumber;
-    std::string          m_worldWideName;
-    const char*          m_protocolVersion;
-    const char*          m_compilationDate;
-    const char*          m_sourceHash;
-    bool                 m_objectStoreCompressionEnabled;
-    uint32_t             m_objectStoreCacheSize;
-    int32_t              m_maxPendingAdminConnections;
-    uint32_t             m_maxActiveAdminConnections;
-    uint32_t             m_tcpPort;
-    uint32_t             m_sslPort;
-    uint32_t             m_multicastPort;
-    const char*          m_multicastIpAddress;
-    uint32_t             m_heartbeatSendInterval;
-    uint32_t             m_heartbeatConnectionRetryInterval;
-    size_t               m_minKeySize;
-    size_t               m_maxKeySize;
-    size_t               m_maxValueSize;
-    size_t               m_maxVersionSize;
-    size_t               m_maxTagSize;
-    size_t               m_maxConnectionse;
-    size_t               m_maxOutstandingReadRequests;
-    size_t               m_maxOutstandingWriteRequests;
-    size_t               m_maxMessageSize;
-    size_t               m_maxKeyRangeCount;
-    size_t               m_maxIdentityCount;
-    size_t               m_maxPinSize;
-    size_t               m_maxOperationCountPerBatch;
-    size_t               m_maxBatchCountPerDevice;
-    size_t               m_maxAlgorithmSize;
-    size_t               m_maxHmacKeySize;
-    std::string          m_sslPrivateKeyFile;
-    std::string          m_sslCertificateFile;
-    int64_t              m_defaultClusterVersion;
-    bool                 m_defaultLocked;
-    std::string          m_defaultLockPin;
-    std::string          m_defaultErasePin;
-    bool                 m_accessControlDefaultTlsRequired;
-    int64_t              m_accessControlDefaultIdentity;
-    std::string          m_accessControlDefaultHmacKey;
-    HmacAlgorithm        m_accessControlDefaultHmacAlgorithm;
-    std::string          m_accessScopeDefaultKeySubstring;
-    uint32_t             m_accessScopeDefaultKeySubstringOffset;
-    const std::string    m_flushDataKey;
-    GetLogTypeSet        m_defaultLogTypes;
-    NetworkInterfaceMap  m_networkInterfaceMap;
+    bool                 m_runAsDaemon;                             //!< True if the server is to run in the background as a daemon
+    bool                 m_debugEnabled;                            //!< True if the server is to run in debug mode (provide additional output)
+    const char*          m_pidFileName;                             //!< Name of the server's process ID file (used by the start/stop script)
+    std::string          m_databaseDirectory;                       //!< Path to the location of the database files
+    std::string          m_serverSettingsFile;                      //!< Path to the location of the server settings file
+    std::string          m_sslPrivateKeyFile;                       //!< Path to the location of the SSL private key file
+    std::string          m_sslCertificateFile;                      //!< Path to the location of the SSL certificate file
+    const char*          m_vendor;                                  //!< Text description of the vendor of the Kinetic device
+    const char*          m_model;                                   //!< Text description of the model of the Kinetic device
+    const char*          m_version;                                 //!< Text description of the version of the Kinetic device
+    std::string          m_serialNumber;                            //!< Text description of the serial number of the Kinetic device
+    std::string          m_worldWideName;                           //!< Text description of the world-wide name of the Kinetic device
+    const char*          m_protocolVersion;                         //!< Text description of the supported Kinetic protocol version
+    const char*          m_compilationDate;                         //!< Text description of the date the Kinetic code was compiled
+    const char*          m_sourceHash;                              //!< Text description of the hast of the Kinetic source code
+    bool                 m_objectStoreCompressionEnabled;           //!< True if compression is to be used by the object store
+    uint32_t             m_objectStoreCacheSize;                    //!< Size of the object store's cache
+    const std::string    m_flushDataKey;                            //!< Data key used to flush object store's data
+    uint32_t             m_tcpPort;                                 //!< TCP port number for clear text communications
+    uint32_t             m_sslPort;                                 //!< TCP port number of SSL/TLS communications
+    uint32_t             m_multicastPort;                           //!< Multicast port number for heartbeat message broadcast
+    const char*          m_multicastIpAddress;                      //!< Multicast IP address for heartbeat message broadcast
+    uint32_t             m_heartbeatSendInterval;                   //!< Number of seconds between heartbeat message broadcast
+    uint32_t             m_heartbeatConnectionRetryInterval;        //!< Number of seconds to wait between attempting heartbeat connection
+    size_t               m_maxPendingConnections;                   //!< Number of allowed pending Kinetic connections
+    uint32_t             m_maxActiveConnections;                    //!< Number of allowed active Kinetic connections
+    size_t               m_minKeySize;                              //!< Number of bytes for smallest object key size
+    size_t               m_maxKeySize;                              //!< Number of bytes for largest object key size
+    size_t               m_maxValueSize;                            //!< Number of bytes for largest object value size
+    size_t               m_maxVersionSize;                          //!< Number of bytes for largest object version size
+    size_t               m_maxTagSize;                              //!< Number of bytes for largest object tag size
+    size_t               m_maxAlgorithmSize;                        //!< Number of bytes for largest object algorithm size
+    size_t               m_maxOutstandingReadRequests;              //!< Maximum number read requests allowed to be held at one time
+    size_t               m_maxOutstandingWriteRequests;             //!< Maximum number writes requests allowed to be held at one time
+    size_t               m_maxMessageSize;                          //!< Number of bytes for the largest message size
+    size_t               m_maxKeyRangeCount;                        //!< Maximum count allowed for a get key range request
+    size_t               m_maxIdentityCount;                        //!< Maximum number of identities allowed
+    size_t               m_maxPinSize;                              //!< Maximum number of bytes allowed for a personal ID number
+    size_t               m_maxOperationCountPerBatch;               //!< Maximum number of operations (put/delete) allowed for a single batch command
+    size_t               m_maxBatchCountPerDevice;                  //!< Maximum number of active batch commands allowed on the server
+    size_t               m_maxHmacKeySize;                          //!< Maximum number of bytes allowed for an HMAC key
+    int64_t              m_defaultClusterVersion;                   //!< Default value fo the server's cluster version
+    bool                 m_defaultLocked;                           //!< Default locked state for the server
+    std::string          m_defaultLockPin;                          //!< Default value for the server's lock PIN
+    std::string          m_defaultErasePin;                         //!< Default value for the server's erase PIN
+    bool                 m_accessControlDefaultTlsRequired;         //!< TLS required value for the default access control
+    int64_t              m_accessControlDefaultIdentity;            //!< Identity value for the default access control
+    std::string          m_accessControlDefaultHmacKey;             //!< HMAC key value for the default access control
+    HmacAlgorithm        m_accessControlDefaultHmacAlgorithm;       //!< HMAC algorithm value for the default access control
+    std::string          m_accessScopeDefaultKeySubstring;          //!< Key substring value for the default access control
+    uint32_t             m_accessScopeDefaultKeySubstringOffset;    //!< Key substring offset value for the default access control
+    GetLogTypeSet        m_defaultLogTypes;                         //!< Log types returned when no type is specified for the get log request
+    NetworkInterfaceMap  m_networkInterfaceMap;                     //!< Describes the network interface for the server
 };
 
 extern GlobalConfig globalConfig;

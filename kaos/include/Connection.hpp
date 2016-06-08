@@ -64,10 +64,10 @@ public:
     inline int64_t connectionId() const {return m_connectionId;}
     inline int64_t previousSequence() const {return m_previousSequence;}
     inline bool processedFirstRequest() const {return m_processedFirstRequest;}
-    inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
-    inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
     inline uint32_t activeBatchCommands() {return m_batchListMap.size();}
     inline Security security() {return m_stream->security();}
+    inline void setPreviousSequence(int64_t previousSequence) {m_previousSequence = previousSequence;}
+    inline void setProcessedFirstRequest(int64_t processedFirstRequest) {m_processedFirstRequest = processedFirstRequest;}
 
     /*
      * Batch Functions
@@ -107,7 +107,7 @@ private:
     /*
      * Private Data Member
      */
-    Server*                         m_server;                   //!< Manager of the connection
+    Server* const                   m_server;                   //!< Manager of the connection
     MessageHandler* const           m_messageHandler;           //!< Message handler for the connection
     StreamInterface* const          m_stream;                   //!< Connection's I/O Stream (encrypted or clear text)
     MessageQueue<Transaction*>      m_schedulerQueue;           //!< Queue containing requests to be scheduled

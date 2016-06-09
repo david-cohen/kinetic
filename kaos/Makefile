@@ -5,17 +5,11 @@ TIMESTAMP   := $(shell date)
 SOURCE_HASH := $(shell ./tools/create-source-hash.sh)
 PACKAGE_NAME = wdc-kinetic
 
-# Cross Compile for ARM and native compile for everything else
+# Currently only supports native builds
 
-ifdef (ARM_CROSS_COMPILER)
-COMPILER_PREFIX     = arm-marvell-linux-gnueabi-
-TOOLCHAIN_BIN_DIR   = $(BASE_DIR)/a370-tool-chain/bin
-TOOLCHAIN_LIB_DIR   = $(BASE_DIR)/a370-tool-chain/arm-marvell-linux-gnueabi/libc/lib
-else
 COMPILER_PREFIX     =
 TOOLCHAIN_BIN_DIR   = /usr/bin
 TOOLCHAIN_LIB_DIR   = /usr/lib/x86_64-linux-gnu
-endif
 
 # Build Input Directories
 
@@ -54,8 +48,8 @@ CONFIG_DIR          = /etc/kaos
 
 GTEST_LIBRARY       = $(GOOGLE_TEST_DIR)/make/gtest_main.a
 ROCKSDB_LIBRARY     = $(ROCKSDB_DIR)/librocksdb.a
-LEVELDB_LIBRARY 	= $(LEVELDB_DIR)/libleveldb.a
-PROTOBUF_LIBRARY	= $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
+LEVELDB_LIBRARY     = $(LEVELDB_DIR)/libleveldb.a
+PROTOBUF_LIBRARY    = $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
 
 # Compiler/Linker Parameters
@@ -119,27 +113,13 @@ cpp-check:
 # Made the code follow a consistent coding style
 
 conform:
-	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --indent-switches	--keep-one-line-blocks	--recursive	"$(INCLUDE_DIR)/*.hpp"
-	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --indent-switches	--keep-one-line-blocks	--recursive	"$(TEST_SRC_DIR)/*.cpp"
-	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --indent-switches	--keep-one-line-blocks	--recursive	"$(APP_SRC_DIR)/*.cpp"
-
-# Install the tool chain for the Marvel ARM A370
-
-cross-compiler:
-	wget -P $(BASE_DIR) http://wdscnasbuild01.wdc.com:8081/nexus/service/local/repositories/cross-compiler/content/arm/armv7-marvell-linux-gnueabi/4.6.4/armv7-marvell-linux-gnueabi-4.6.4-hard_i686_64K_Dev_20131002.tbz2
-	tar -xvjf $(BASE_DIR)/armv7-marvell-linux-gnueabi-4.6.4-hard_i686_64K_Dev_20131002.tbz2 -C $(BASE_DIR)
-	rm $(BASE_DIR)/armv7-marvell-linux-gnueabi-4.6.4-hard_i686_64K_Dev_20131002.tbz2
-	mv $(BASE_DIR)/armv7-marvell-linux-gnueabi-hard_i686_64K_Dev_20131002 $(BASE_DIR)/a370-tool-chain
-	echo "export PATH=\$$PATH:$(BASE_DIR)/a370-tool-chain/bin" >> ~/.bashrc
-
-install-cert:
-	sudo mkdir $(CONFIG_DIR)
-	sudo chmod 777 $(CONFIG_DIR)
-	sudo cp cert/cert.pem $(CONFIG_DIR)
+	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --indent-switches	--keep-one-line-blocks --recursive "$(INCLUDE_DIR)/*.hpp"
+	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --indent-switches	--keep-one-line-blocks --recursive "$(TEST_SRC_DIR)/*.cpp"
+	- $(ASTYLE_DIR)/astyle --suffix=none --lineend=linux --convert-tabs --indent=spaces=4 --style=java --break-closing-brackets --pad-oper --pad-header --unpad-paren --attach-classes --attach-namespaces --align-pointer=type --close-templates --indent-switches	--keep-one-line-blocks --recursive "$(APP_SRC_DIR)/*.cpp"
 
 # Build the required dependencies
 
-dependencies: dependencies-dir boost leveldb openssl protobuf googletest lint astyle install-cert
+dependencies: dependencies-dir boost leveldb rocksdb openssl protobuf googletest lint astyle
 
 dependencies-dir:
 	mkdir -p $(DEPENDENCIES_DIR)
@@ -154,7 +134,7 @@ boost:
 	mv $(DEPENDENCIES_DIR)/boost_1_59_0 $(DEPENDENCIES_DIR)/boost
 	sed -i '71d' $(BOOST_DIR)/boost/property_tree/detail/json_parser/narrow_encoding.hpp
 
-# Build the level DB library
+# Build the levelDB library
 
 leveldb:
 	wget -P $(DEPENDENCIES_DIR) https://github.com/google/leveldb/archive/v1.18.tar.gz
@@ -239,7 +219,8 @@ doxygen:
 	rm -rf $(BUILD_DOXYGEN_DIR)
 	doxygen $(CONF_DIR)/Doxyfile
 
-# Build a Debian package for kaos
+# Build a Debian package for Kaos
+
 package:
 	rm -rf $(BUILD_PACKAGE_DIR)
 	mkdir -p $(BUILD_PACKAGE_DIR)
@@ -259,7 +240,7 @@ all:	clean kaos test package doxygen
 
 # Identify the targets that are not files
 
-.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb rocksdb boost dependencies-dir dependencies cross-compiler conform check cpp-check proto run-tests install-cert
+.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb rocksdb boost dependencies-dir dependencies conform check cpp-check proto run-tests
 
 # Build kaos application
 
@@ -347,5 +328,3 @@ $(BUILD_TEST_BIN_DIR)/heartbeatProviderUnitTest: \
 	$(BUILD_TEST_OBJ_DIR)/HeartbeatProviderUnitTest.o
 	@mkdir -p $(@D)
 	$(CXX) $^ $(TEST_LIBRARIES) -o $@
-
-

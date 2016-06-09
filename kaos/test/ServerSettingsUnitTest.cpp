@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <list>
 #include <vector>
+#include <memory>
 #include <string>
 #include <climits>
 #include "gtest/gtest.h"
@@ -189,7 +190,7 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_On_Initial_Creation) {
     ASSERT_STREQ(accessControl->hmacKey().c_str(), globalConfig.accessControlDefaultHmacKey().c_str());
     ASSERT_TRUE(accessControl->hmacAlgorithm() == globalConfig.accessControlDefaultHmacAlgorithm());
 
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; operation++) {
         bool operationInvolvesKey = ((UINT32_TO_OPERATION(operation) == Operation::WRITE)
                                      | (UINT32_TO_OPERATION(operation) == Operation::READ)
@@ -244,7 +245,7 @@ TEST_F(Server_Settings_Unit_Test, Default_Values_Persisted_After_Initial_Creatio
     ASSERT_STREQ(accessControl->hmacKey().c_str(), globalConfig.accessControlDefaultHmacKey().c_str());
     ASSERT_TRUE(accessControl->hmacAlgorithm() == globalConfig.accessControlDefaultHmacAlgorithm());
 
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     for (uint32_t operation = 0; operation < NUMBER_OF_OPERATIONS; operation++) {
         bool operationInvolvesKey = ((UINT32_TO_OPERATION(operation) == Operation::WRITE)
                                      | (UINT32_TO_OPERATION(operation) == Operation::READ)
@@ -407,7 +408,7 @@ TEST_F(Server_Settings_Unit_Test, Set_Get_Save_Load_Access_Control_Test) {
     std::vector<bool> tlsRequiredArray = {false, true};
     std::vector<string> keySubstringArray = {"", "0", createBinaryString(globalConfig.maxKeySize()), createTextString(globalConfig.maxKeySize())};
     std::vector<size_t> keySubstringOffsetArray = {0, 1, globalConfig.maxKeySize() - 1};
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key("SampleKey");
 
     /*

@@ -23,6 +23,7 @@
  */
 #include <stdint.h>
 #include <string>
+#include <memory>
 #include <vector>
 #include <climits>
 #include <utility>
@@ -121,7 +122,7 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
     std::vector<bool> tlsRequiredArray = {false, true};
     std::vector<std::string> keySubstringArray = {"", "0", createBinaryString(), createLargeString()};
     std::vector<size_t> keySubstringOffsetArray = {0, 1, globalConfig.maxKeySize() / 4, globalConfig.maxKeySize() - 1};
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key("SampleKey");
 
     /*
@@ -198,7 +199,7 @@ TEST(Access_Control_Unit_Test, Core_Functionality_Test) {
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_Wrong_Text_Test) {
     std::string requestKey("SampleKey");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("Dummy", 0);
     ASSERT_FALSE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -208,7 +209,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_W
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_Wrong_Case_Test) {
     std::string requestKey("SampleKey");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("samplekey", 0);
     ASSERT_FALSE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -218,7 +219,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_No_Match_W
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Simple_Match_Test) {
     std::string requestKey("SampleKey");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("Sample", 0);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -228,7 +229,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Simple_Mat
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_Minimum_Sized_Text_Key_Test) {
     std::string requestKey("abcdefghijklmnopqrstuvwxyz");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("a", 0);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -238,7 +239,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_M
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Match_Of_Minimum_Sized_Text_Key_Test) {
     std::string requestKey("a");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("a", 0);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -248,7 +249,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Matc
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_Maximum_Sized_Text_Key_Test) {
     std::string requestKey(createLargeString());
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl(createLargeString(), 0);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -258,7 +259,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Match_Of_M
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Match_Of_Maximum_Sized_Text_Key_Test) {
     std::string requestKey(createLargeString());
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl(createLargeString(), 0);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -268,7 +269,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Matc
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Match_Of_Binary_Key_Test) {
     std::string requestKey(createBinaryString());
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl(requestKey, 0);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -278,7 +279,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_Without_Offset_Exact_Matc
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_No_Match_Of_Key_Test) {
     std::string requestKey("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
 
     for (uint32_t offset = 0; offset < 40; offset++) {
@@ -293,7 +294,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_No_Match_Of_K
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Key_Smaller_Than_Offset_No_Match_Of_Key_Test) {
     std::string requestKey("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("KLMNOPQRST", 100);
     ASSERT_FALSE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -303,7 +304,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Key_Smaller_T
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Text_Key_Test) {
     std::string requestKey("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl("KLMNOPQRST", 10);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -313,7 +314,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Text
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Binary_Key_Test) {
     std::string requestKey(createBinaryString());
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     message->mutable_command()->mutable_body()->mutable_keyvalue()->set_key(requestKey);
     AccessControl accessControl = createAccessControl(createBinaryString(10, 10), 10);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::READ, true, message->command()->body()));
@@ -322,7 +323,7 @@ TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Match_Of_Bina
 }
 
 TEST(Access_Control_Unit_Test, Permission_Single_Scope_With_Offset_Operation_Has_No_Key_Test) {
-    KineticMessagePtr message(new KineticMessage());
+    std::unique_ptr<KineticMessage> message(new KineticMessage());
     AccessControl accessControl = createAccessControl("KLMNOPQRST", 10);
     ASSERT_TRUE(accessControl.operationPermitted(Operation::SETUP, false, message->command()->body()));
 }

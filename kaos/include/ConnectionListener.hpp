@@ -40,9 +40,9 @@
 template <class StreamType> class ConnectionListener : public ListenerInterface {
 public:
     /**
-     * ConnectionListener Constructor
+     * Initializes the Connection Listener.
      *
-     * @param   server  The server that will manage the new conections
+     * @param   server  The server that will manage the new connections
      * @param   port    The port to listen on for new connections
      */
     explicit ConnectionListener(Server* const server, uint32_t port)
@@ -50,20 +50,16 @@ public:
     }
 
     /**
-     * Started
+     * Indicates if the listener has started.
      *
      * @return true if the listener has started, false otherwise
-     *
-     * Indicates if the listener has started.
      */
     inline bool started() const {return (m_thread != nullptr);}
 
     /**
-     * Start
+     * Starts the listener.
      *
      * @return true if the thread was successfully created
-     *
-     * Starts the listener.
      */
     bool start() {
         try {
@@ -81,8 +77,6 @@ public:
     }
 
     /**
-     * Stop
-     *
      * Terminates the listener.
      */
     void stop() {
@@ -94,11 +88,10 @@ public:
 
 private:
     /**
-     * Listener Thread
-     *
-     * Loops waiting for a client to attempt a connection through the listening port.  When an
-     * attempt is make, a connection and stream object are created to service the client.  If a
-     * critical error is encountered, wait a period of time before retrying the connection.
+     * Listens (on the listening port) for a client to attempt a connection. When an attempt is
+     * made, a connection and stream object are created to service the client. If a critical error
+     * is encountered, the listener waits for a period of time before attempting to resume
+     * listening.
      */
     void listenerThread() {
         const uint32_t BACKOFF_PERIOD(60);

@@ -28,23 +28,38 @@
 #include "AccessControl.hpp"
 #include "KineticMessage.hpp"
 
-/*
- * Incomplete Class Definition (to avoid circular dependencies)
- */
-class Connection;
-
 /**
- * Describes a Kinetic transaction (in a passive data structure), which includes of the request
- * message, the optional response message, and other context information such as the connection and
- * access control.
+ * Describes a single Kinetic request and (optional) response transaction, which includes the
+ * request message, optional response message, and needed context information such as the access
+ * control.
  */
-struct Transaction {
+class Transaction {
+public:
+    /*
+     * Constructor
+     */
     Transaction()
-        : request(new KineticMessage()), response(new KineticMessage()), accessControl() {}
+        : m_request(), m_response(), m_hasResponse(true), m_accessControl() {}
 
-    KineticMessagePtr   request;        //!< Request message
-    KineticMessagePtr   response;       //!< Response message (may not be used)
-    AccessControlPtr    accessControl;  //!< Access allowed for transaction
+    /*
+     * Public Accessors
+     */
+    inline KineticMessage& request() {return m_request;}
+    inline KineticMessage& response() {return m_response;}
+    inline bool hasResponse() {return m_hasResponse;}
+    inline void setNoResponse() {m_hasResponse = false;}
+    inline AccessControlPtr& accessControl() {return m_accessControl;}
+    inline bool hasAccessControl() {return m_accessControl != nullptr;}
+    inline void setAccessControl(AccessControlPtr accessControl) {m_accessControl = accessControl;}
+
+private:
+    /*
+     * Private Data Members
+     */
+    KineticMessage      m_request;          //!< Request message
+    KineticMessage      m_response;         //!< Response message (may not be used)
+    bool                m_hasResponse;      //!< True if a response is to be sent
+    AccessControlPtr    m_accessControl;    //!< Access allowed for transaction
 };
 
 #endif

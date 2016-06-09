@@ -36,10 +36,10 @@
 
 /**
  * Contains the contents of a Kinetic protocol buffer message and its associated object value.
- * Although the protocol buffer has many substructure, at the top level, it is made up of a
- * encoded command and authentication information (authentication type and HMAC authentication
- * parameters or PIN authentication parameters).  In addition to combining the message with the
- * value, it also provides an interface to the decoded command.
+ * Although the protocol buffer has many substructure, at the top level, it is made up of encoded
+ * command and authentication information (authentication type and HMAC authentication parameters or
+ * PIN authentication parameters).  In addition to combining the message with the value, it also
+ * provides an interface to the decoded command.
  */
 class KineticMessage {
 public:
@@ -76,7 +76,7 @@ public:
         m_protoMessage->mutable_hmacauth()->set_hmac(Hmac::compute(m_protoMessage->commandbytes(), key, algorithm));
     }
 
-    bool validateHmac(const std::string& key, HmacAlgorithm algorithm) {
+    bool validateHmac(const std::string& key, HmacAlgorithm algorithm) const {
         if (!m_protoMessage->hmacauth().has_hmac())
             return false;
         std::string expectedHmac(Hmac::compute(m_protoMessage->commandbytes(), key, algorithm));
@@ -103,8 +103,8 @@ public:
     /*
      * Message Size Functions
      */
-    inline uint32_t serializedSize() { return m_protoMessage->ByteSize();}
-    inline uint32_t totalSize() {return sizeof(KineticMessageFraming) + m_protoMessage->ByteSize() + m_value.size();}
+    inline uint32_t serializedSize() const { return m_protoMessage->ByteSize();}
+    inline uint32_t totalSize() const {return sizeof(KineticMessageFraming) + m_protoMessage->ByteSize() + m_value.size();}
 
 private:
     /*
@@ -118,8 +118,7 @@ private:
 /*
  * Map, list, and pointers for Kinetic messages
  */
-typedef std::shared_ptr<KineticMessage> KineticMessagePtr;
-typedef std::list<KineticMessagePtr> KineticMessageList;
+typedef std::list<KineticMessage*> KineticMessageList;
 typedef std::shared_ptr<KineticMessageList> KineticMessageListPtr;
 typedef std::map<uint32_t, KineticMessageListPtr> KineticMessageListMap;
 

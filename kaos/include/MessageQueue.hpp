@@ -69,6 +69,9 @@ public:
     }
 
 private:
+    /*
+     * Private Data Members
+     */
     std::mutex                  m_mutex;            //!< Ensures exclusive access to the queue
     std::condition_variable     m_accessControl;    //!< Object that coordinates access to the queue
     std::deque<MessageType>     m_queue;            //!< Message queue

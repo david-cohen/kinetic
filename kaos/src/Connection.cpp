@@ -76,7 +76,7 @@ Connection::Connection(Server* server, StreamInterface* stream, ClientServerConn
      * message that describes some of the device's capabilities.
      */
     Transaction* transaction = new Transaction();
-    m_messageHandler->buildUnsolicitedStatusMessage(this, transaction->response);
+    m_messageHandler->buildUnsolicitedStatusMessage(this, transaction->response());
     m_transmitterQueue.add(transaction);
 }
 
@@ -131,7 +131,7 @@ void Connection::receiver() {
             if (messageSize == 0)
                 throw std::runtime_error("Message size too small");
 
-            KineticMessagePtr& request = transaction->request;
+            KineticMessage& request = transaction->request();
             /*
              * If the size of the message exceeds the support maximum value, read and save as much as
              * possible so that the response will contain the correct header information.  Then,
@@ -142,14 +142,14 @@ void Connection::receiver() {
                 m_stream->read(messageBuffer.get(), messageSize);
                 try {
                     m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
-                    request->deserializeData(messageBuffer.get(), messageSize);
+                    request.deserializeData(messageBuffer.get(), messageSize);
                 }
                 catch (std::exception& ex) {
                     LOG(ERROR) << "Exception while receiving request: " << ex.what();
                 }
 
                 if (globalConfig.debugEnabled())
-                    MessageTrace::outputContents(messageFraming, request.get());
+                    MessageTrace::outputContents(messageFraming, &request);
 
                 throw std::runtime_error("Message size too large");
             }
@@ -165,11 +165,11 @@ void Connection::receiver() {
 
             if (valueSize > globalConfig.maxValueSize()) {
                 m_stream->blackHoleRead(valueSize);
-                if (!request->deserializeData(messageBuffer.get(), messageSize))
+                if (!request.deserializeData(messageBuffer.get(), messageSize))
                     throw std::runtime_error("Invalid message format");
 
                 if (globalConfig.debugEnabled())
-                    MessageTrace::outputContents(messageFraming, request.get());
+                    MessageTrace::outputContents(messageFraming, &request);
 
                 std::stringstream errorStream;
                 errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
@@ -182,14 +182,14 @@ void Connection::receiver() {
             if (valueSize > 0) {
                 std::unique_ptr<char> valueBuffer(new char[valueSize]);
                 m_stream->read(valueBuffer.get(), valueSize);
-                request->setValue(valueBuffer.get(), valueSize);
+                request.setValue(valueBuffer.get(), valueSize);
             }
 
-            if (!request->deserializeData(messageBuffer.get(), messageSize))
+            if (!request.deserializeData(messageBuffer.get(), messageSize))
                 throw std::runtime_error("Invalid message format");
 
             if (globalConfig.debugEnabled())
-                MessageTrace::outputContents(messageFraming, request.get());
+                MessageTrace::outputContents(messageFraming, &request);
             m_schedulerQueue.add(transaction);
         }
     }
@@ -214,30 +214,31 @@ void Connection::transmitter() {
             if (m_terminated)
                 break;
 
-            KineticMessagePtr& response = transaction->response;
-            if (response != nullptr) {
+
+            if (transaction->hasResponse()) {
+                KineticMessage& response = transaction->response();
                 /*
                  * Convert the message into its serialized proto-buffer format.
                  */
-                uint32_t messageSize = response->serializedSize();
+                uint32_t messageSize = response.serializedSize();
                 std::unique_ptr<char> messageBuffer(new char[messageSize]);
-                response->serializeData(messageBuffer.get(), messageSize);
+                response.serializeData(messageBuffer.get(), messageSize);
 
                 /*
                  * Create the framing for the message and sent it (it precedes the message).
                  */
-                KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, response->value().size());
+                KineticMessageFraming messageFraming(KINETIC_MESSAGE_FRAMING_MAGIC_NUMBER, messageSize, response.value().size());
                 m_stream->write((const char*) &messageFraming, sizeof(messageFraming));
 
                 /*
                  * Send the message and its optional value (which is not serialized).
                  */
                 m_stream->write(messageBuffer.get(), messageSize);
-                if (!response->value().empty())
-                    m_stream->write(response->value().c_str(), response->value().size());
+                if (!response.value().empty())
+                    m_stream->write(response.value().c_str(), response.value().size());
 
                 if (globalConfig.debugEnabled())
-                    MessageTrace::outputContents(messageFraming, response.get());
+                    MessageTrace::outputContents(messageFraming, &response);
             }
         }
     }

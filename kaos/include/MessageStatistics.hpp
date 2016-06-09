@@ -39,8 +39,8 @@ class MessageStatistics {
     /**
      * Private Stats Record
      *
-     * Maintains the count for number of times a message type has been processed and the number of
-     * bytes transferred for the request and response messages.  There is one stats object for every
+     * Maintains the count for number of transactions for each message type and the number of bytes
+     * transferred for the request and response messages.  There is one stats object for every
      * message type.
      */
     class Stats {
@@ -57,9 +57,9 @@ class MessageStatistics {
         inline uint64_t byteCount() const {return m_byteCount;}
 
         /**
-         * Increments the message count and add the size of the message to the total bytes.
+         * Increments the transaction count and add the size of the messages to the total bytes.
          *
-         * @param size The size of the message
+         * @param   size    The size of the messages for a given transaction
          */
         void add(uint32_t size) {
             m_byteCount += size;
@@ -70,17 +70,15 @@ class MessageStatistics {
         /*
          * Private Data Members
          */
-        uint32_t    m_count;        //!< Number of times message has been processed
-        uint64_t    m_byteCount;    //!< Number of bytes received and send in processing of message
+        uint32_t    m_count;        //!< Number of transactions processed
+        uint64_t    m_byteCount;    //!< Number of bytes received and send for the transactions
     };
 
     typedef std::map<com::seagate::kinetic::proto::Command_MessageType, Stats*> StatsMap;
 
 public:
     /**
-     * Message Statistics Constructor
-     *
-     * Initializes the tables that maintains the stats for each message type.
+     * Initializes the table that maintains the statistics for each message type.
      */
     MessageStatistics()
         : m_statsTable({
@@ -106,36 +104,32 @@ public:
     }) {}
 
     /**
-     * Update
-     *
-     * @param requestMessage    a processed request message
-     * @param responseMessage   the associated response
-     *
      * Updates the number times this operation has been performed and the number of bytes
      * transferred for its request and response.  Some operations have no response (such as a
-     * batched put).  In those cases, there is still a response message, but it is unused and will
-     * have a message size of zero.
+     * batched put).  In those cases, an unused response message will be passed in, which has a
+     * message size of zero.
+     *
+     * @param   requestMessage      A processed request message
+     * @param   responseMessage     The associated response
      */
-    void update(const KineticMessagePtr& requestMessage, const KineticMessagePtr& responseMessage) {
+    void update(const KineticMessage& requestMessage, const KineticMessage& responseMessage) {
         std::unique_lock<std::mutex> scopedLock(m_mutex);
-        StatsMap::iterator iter = m_statsTable.find(requestMessage->command()->header().messagetype());
+        StatsMap::iterator iter = m_statsTable.find(requestMessage.command()->header().messagetype());
         if (iter != m_statsTable.end()) {
             Stats* messageStats = iter->second;
-            messageStats->add(requestMessage->totalSize() + responseMessage->totalSize());
+            messageStats->add(requestMessage.totalSize() + responseMessage.totalSize());
         }
     }
 
     /**
-     * Get
+     * Gets the statistics for the specified message types.
      *
-     * @param response  pointer to where the statistics are to be set
-     *
-     * Sets the statistic values for all the message types.
+     * @param   getLogResponse  Where the statistics are to be set
      */
-    void get(com::seagate::kinetic::proto::Command_GetLog* const response) {
+    void get(com::seagate::kinetic::proto::Command_GetLog* const getLogResponse) {
         std::unique_lock<std::mutex> scopedLock(m_mutex);
         for (auto& messageStats : m_statsTable) {
-            com::seagate::kinetic::proto::Command_GetLog_Statistics* statistics(response->add_statistics());
+            com::seagate::kinetic::proto::Command_GetLog_Statistics* statistics(getLogResponse->add_statistics());
             statistics->set_messagetype(messageStats.first);
             statistics->set_count(messageStats.second->count());
             statistics->set_bytes(messageStats.second->byteCount());

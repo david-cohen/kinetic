@@ -60,7 +60,6 @@ private:
 /*
  * Network Interface Shared Pointer and Unordered Map
  */
-
 typedef std::shared_ptr<NetworkInterface> NetworkInterfacePtr;
 typedef std::unordered_map<std::string, NetworkInterfacePtr> NetworkInterfaceMap;
 

@@ -29,7 +29,7 @@
 #include "ClientServerConnectionInfo.hpp"
 
 /**
- * Provides functions to establish new TCP connections for a server or client.
+ * Provides functions to establish new TCP connections with a server or client.
  */
 class TcpTransport {
 public:

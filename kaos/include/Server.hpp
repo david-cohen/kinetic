@@ -65,6 +65,9 @@ public:
     void removeConnection(Connection* connection);
 
 private:
+    /*
+     * Private Data Members
+     */
     ServerSettings                  m_settings;             //!< User configurable server settings
     ObjectStoreInterface* const     m_objectStore;          //!< Server's object store database
     MessageStatistics               m_messageStatistics;    //!< Statistics on messages processed

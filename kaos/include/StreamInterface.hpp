@@ -22,11 +22,6 @@
 #define STREAM_INTERFACE_HPP
 
 /*
- * Include Files
- */
-#include <cstddef>
-
-/*
  * Stream Security
  */
 enum class Security {

@@ -34,8 +34,14 @@
 */
 class MessageTrace {
 public:
+    /*
+     * Public Member Function
+     */
     static void outputContents(KineticMessageFraming& messageFraming, KineticMessage* message);
 private:
+    /*
+     * Private Member Functions
+     */
     static void outputHeader(const com::seagate::kinetic::proto::Command_Header& header);
     static void outputKeyValue(const com::seagate::kinetic::proto::Command_KeyValue& keyvalue);
     static void outputRange(const com::seagate::kinetic::proto::Command_Range& range);

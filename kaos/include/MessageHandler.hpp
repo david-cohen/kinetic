@@ -34,8 +34,8 @@
 #include "ObjectStoreInterface.hpp"
 
 /**
- * A message handler for Kinetic messages.  A message handler is called for each Kinetic request
- * received.
+ * The message handler for Kinetic messages, which is called for each Kinetic request received.
+ * There is one message handler for each connection.
  */
 class MessageHandler {
 public:
@@ -69,11 +69,10 @@ public:
     void processInvalidRequest(Transaction* const transaction);
     void buildResponseWithError(Transaction* const transaction, com::seagate::kinetic::proto::Command_Status_StatusCode errorCode,
                                 const std::string& errorMessage);
-
     /*
      * Public Class Member Functions
      */
-    static void buildUnsolicitedStatusMessage(Connection* const connection, KineticMessagePtr& response);
+    static void buildUnsolicitedStatusMessage(Connection* const connection, KineticMessage& response);
 
 private:
     /*
@@ -90,8 +89,7 @@ private:
     /*
      * Private Data Members
      */
-
-    Connection* const           m_connection;           //!< Connection messages are tranferred through
+    Connection* const           m_connection;           //!< Connection messages are transferred through
     ObjectStoreInterface* const m_objectStore;          //!< Server's object store
     ServerSettings&             m_serverSettings;       //!< Server's user settings
     MessageStatistics&          m_messageStatistics;    //!< Statistics on processed messages

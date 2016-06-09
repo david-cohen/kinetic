@@ -7,18 +7,8 @@ A Linux userspace application that performs the functions of a Kinetic Device, w
 1.  git clone (or copy) kaos project on Debian system
 2.  change directories into the kaos directory
 3.  run tools/install-packages.sh (to install needed Debian packages)
-4.  run make dependencies (to download and build needed libraries), if using rocksdb, export USE_ENV_DB=rocksdb before running make dependencies
+4.  run make dependencies (to download and build needed libraries)
 5.  run make all (to build kaos application and associated unit tests)
-
-###Cross Compiled Build on a Debian System
-1.  git clone (or copy) kaos project on Debian system
-2.  change directories into the kaos directory
-3.  run tools/install-packages.sh (to install needed Debian packages)
-4.  export ARM_CROSS_COMPILER=true
-4.  run make cross-compiler (to install the cross compiler tool chain)
-5.  source ~/.bashrc (to use newly added environment variables)
-6.  run make dependencies (to download and build needed libraries)
-7.  run make all (to build kaos application and associated unit tests)
 
 ###Make Options
 * make all - will perform a clean build of the kaos application, unit tests, documentation, and Debian package

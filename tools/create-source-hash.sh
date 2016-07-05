@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 # Copyright (c) 2014-2016 Western Digital Corporation or its affiliates <copyrightagent@wdc.com>
 #
 # SPDX-License-Identifier: GPL-2.0+

@@ -158,15 +158,6 @@ MessageHandler::MessageHandler(Connection* const connection)
  * Processes the Kinetic request.
  *
  * @param transaction.request   the request message to be processed
- *
- * Below are the values for unspecified parameters;
- * requestHeader.sequence 0 - that value will cause an error so no need to check if message has
- * requestHeader.messagetype -1 - will cause an error because it is an invalid message type
- * request->hmacauth().identity() 0
- * request->authtype() -1 - not a valid value
- * requestHeader.connectionid 0 - is never zero so will detect error
- *
- * requestHeader.clusterversion 0 - this could be set to a valid value even when not set
  */
 void MessageHandler::processRequest(Transaction* const transaction) {
     try {
@@ -191,9 +182,10 @@ void MessageHandler::processRequest(Transaction* const transaction) {
         /*
          * Verify that the cluster version is set and correct (for non-pinauth requests, which
          * doesn't require the cluster version).
+         *
+         * Note: the smoke test expected the "CLUSTER_VERSION_FAILURE" text.
          */
         if (transaction->request().authtype() != Message_AuthType_PINAUTH) {
-            // Note: the smoke test expected the "CLUSTER_VERSION_FAILURE" test.
             if (requestHeader.clusterversion() != m_serverSettings.clusterVersion()) {
                 throw MessageException(Command_Status_StatusCode_VERSION_FAILURE, "CLUSTER_VERSION_FAILURE");
             }
@@ -213,8 +205,9 @@ void MessageHandler::processRequest(Transaction* const transaction) {
 
         m_connection->setPreviousSequence(requestHeader.sequence());
 
-        // PIN operations don't require specified access control, they just need to specify the PIN.
-
+        /*
+         * PIN operations don't require specified access control, they just need to specify the PIN.
+         */
         if (transaction->request().authtype() == Message_AuthType_HMACAUTH) {
             if (!transaction->hasAccessControl()) {
                 throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Identity does not have access");
@@ -231,7 +224,9 @@ void MessageHandler::processRequest(Transaction* const transaction) {
             if (transaction->accessControl()->tlsRequired(operationInfo.operation()) && (m_connection->security() != Security::SSL))
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "Requires TLS connection for request");
 
-            // Note: the smoke test expected the "permission denied" test.
+            /*
+             * Note: the smoke test expected the "permission denied" test.
+             */
             if (!transaction->accessControl()->operationPermitted(operationInfo.operation(), operationInfo.operationInvolvesKey(),
                     transaction->request().command()->body())) {
                 throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
@@ -321,14 +316,9 @@ void MessageHandler::processSetupRequest(Transaction* const transaction) {
      * fail the request.  If so, record that a firmware image is to be saved.
      */
     if (setupRequest.firmwaredownload()) {
-        if (transaction->request().value().empty())  // or not valid
+        if (transaction->request().value().empty())
             throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Invalid firmware image (empty)");
     }
-
-    /*
-     * If the cluster version and/or personal ID number are to be set, validate the specified
-     * values, and if valid, perform the update.  Otherwise, fail the request.
-     */
 
     /*
      * If the cluster version was specified, verify that its a legal value (not zero).  If not,
@@ -336,14 +326,6 @@ void MessageHandler::processSetupRequest(Transaction* const transaction) {
      * setup parameters have been validated.
      */
     if (setupRequest.has_newclusterversion()) {
-        /*
-            const int64_t ILLEGAL_CLUSTER_VERSION(0L);
-            if (request.newclusterversion() == ILLEGAL_CLUSTER_VERSION) {
-            status->set_code(Command_Status_StatusCode_INVALID_REQUEST);
-            status->set_statusmessage("Invalid Cluster version value (0)");
-            return;
-            }
-        */
         m_serverSettings.setClusterVersion(setupRequest.newclusterversion());
         m_serverSettings.save();
     }
@@ -456,13 +438,9 @@ void MessageHandler::processSecurityRequest(Transaction* const transaction) {
                 if (acl.hmacalgorithm() != Command_Security_ACL_HMACAlgorithm_HmacSHA1) {
                     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Invalid security HMAC algorithm");
                 }
-                // verified though use of simulator
-
                 if (acl.scope_size() == 0) {
                     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing security scope");
                 }
-                // found though use of simulator
-
                 if (acl.identity() < 0) {
                     throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Identity can not be less than zero");
                 }
@@ -474,9 +452,6 @@ void MessageHandler::processSecurityRequest(Transaction* const transaction) {
 
                 for (auto scopeIndex = 0; scopeIndex < acl.scope_size(); scopeIndex++) {
                     const Command_Security_ACL_Scope& aclScope = acl.scope(scopeIndex);
-
-                    // verified though use of simulator
-
                     if (aclScope.permission_size() == 0) {
                         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Missing security scope permission");
                     }
@@ -612,7 +587,6 @@ void MessageHandler::processPutRequest(Transaction* const transaction) {
     /*
      * Validate the parameters.
      */
-
     if (params.key().size() > globalConfig.maxKeySize())
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "Key size too large");
 
@@ -674,8 +648,9 @@ void MessageHandler::processGetNextRequest(Transaction* const transaction) {
     /*
      * If the entry was found, a check must be performed to ensure the user has access to the entry
      * based on the key (because a user can be limited to accessing only specified key ranges).
+     *
+     * Note: the conformance test expects the "permission denied text.
      */
-    // Note: the conformance test expects the "permission denied text.
     if ((transaction->hasAccessControl()) && !transaction->accessControl()->permissionToRead(returnMetadata->key())) {
         throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
     }
@@ -683,7 +658,7 @@ void MessageHandler::processGetNextRequest(Transaction* const transaction) {
 
 /**
  * Processes a get previous request.  The database is sorted in lexicographical order, so an attempt
- * will be made to get the entry whose key preceeds the specified key.
+ * will be made to get the entry whose key precedes the specified key.
  *
  * @param   transaction     Contains the request and response message
  *
@@ -692,7 +667,7 @@ void MessageHandler::processGetNextRequest(Transaction* const transaction) {
  */
 void MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
     /*
-     * Attempt to get the entry that preceeds the specified key.  If there is not following entry,
+     * Attempt to get the entry that precedes the specified key.  If there is not following entry,
      * the NOT_FOUND exception will be thrown.
      */
     Command_KeyValue* returnMetadata = transaction->response().mutable_command()->mutable_body()->mutable_keyvalue();
@@ -701,8 +676,9 @@ void MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
     /*
      * If the entry was found, a check must be performed to ensure the user has access to the entry
      * based on the key (because a user can be limited to accessing only specified key ranges).
+     *
+     * Note: the conformance test expects the "permission denied text.
      */
-    // Note: the conformance test expects the "permission denied text.
     if ((transaction->hasAccessControl()) && !transaction->accessControl()->permissionToRead(returnMetadata->key())) {
         throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "permission denied");
     }
@@ -716,21 +692,6 @@ void MessageHandler::processGetPreviousRequest(Transaction* const transaction) {
 void
 MessageHandler::processGetKeyRangeRequest(Transaction* const transaction) {
     const Command_Range& params(transaction->request().command()->body().range());
-
-#if 0
-    int32_t maxReturned = params.maxreturned() > globalConfig.maxKeyRangeCount() ? globalConfig.maxKeyRangeCount() : params.maxreturned();
-#endif
-
-#if 0  // THIS IS NOT HOW THE OPERATION WORKS
-    if (accessControl != nullptr) {
-        if ((params.startkey().size() > 0) && !accessControl()->permissionToRead(params.startkey())) {
-            throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "The user does not have permission");
-        }
-        if ((params.endkey().size() > 0) && !accessControl()->permissionToRead(params.endkey())) {
-            throw MessageException(Command_Status_StatusCode_NOT_AUTHORIZED, "The user does not have permission");
-        }
-    }
-#endif
 
     Command_Range* response(transaction->response().mutable_command()->mutable_body()->mutable_range());
 
@@ -965,6 +926,13 @@ void MessageHandler::processAbortBatchRequest(Transaction* const transaction) {
         throw MessageException(Command_Status_StatusCode_INVALID_REQUEST, "No batch with specified Batch ID");
 }
 
+/**
+ * Build an unsolicited status message (which is sent to the client when a connection is first
+ * established.
+ *
+ * @param connection    Contains connection information needed for the message
+ * @param response      The status message to be built
+ */
 void MessageHandler::buildUnsolicitedStatusMessage(Connection* const connection, KineticMessage& response) {
     response.set_authtype(Message_AuthType_UNSOLICITEDSTATUS);
     Command* const command = response.mutable_command();
@@ -984,6 +952,8 @@ void MessageHandler::buildUnsolicitedStatusMessage(Connection* const connection,
  * Completes the processing of a request that failed due to an error.
  *
  * @param   transaction     Contains the request and response message
+ * @param   errorCode       The error code to be set
+ * @param   errorMessage    The error message to be set
  */
 void MessageHandler::buildResponseWithError(Transaction* const transaction, Command_Status_StatusCode errorCode, const std::string& errorMessage) {
     Command_Status* status = transaction->response().mutable_command()->mutable_status();

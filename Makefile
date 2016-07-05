@@ -9,7 +9,7 @@ PACKAGE_NAME = wdc-kinetic
 
 COMPILER_PREFIX     =
 TOOLCHAIN_BIN_DIR   = /usr/bin
-TOOLCHAIN_LIB_DIR   = /usr/lib/x86_64-linux-gnu
+TOOLCHAIN_LIB_DIR   = /usr/lib/arm-linux-gnueabihf
 
 # Build Input Directories
 
@@ -39,6 +39,7 @@ BOOST_DIR           = $(DEPENDENCIES_DIR)/boost
 GOOGLE_TEST_DIR     = $(DEPENDENCIES_DIR)/googletest
 ROCKSDB_DIR         = $(DEPENDENCIES_DIR)/rocksdb
 LEVELDB_DIR         = $(DEPENDENCIES_DIR)/leveldb
+SNAPPY_DIR          = $(DEPENDENCIES_DIR)/snappy
 LINT_DIR            = $(DEPENDENCIES_DIR)/styleguide/cpplint
 PROTOBUF_DIR        = $(DEPENDENCIES_DIR)/protobuf
 OPENSSL_DIR         = $(DEPENDENCIES_DIR)/openssl
@@ -51,6 +52,9 @@ ROCKSDB_LIBRARY     = $(ROCKSDB_DIR)/librocksdb.a
 LEVELDB_LIBRARY     = $(LEVELDB_DIR)/libleveldb.a
 PROTOBUF_LIBRARY    = $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
+ZIP_LIBRARY         = $(TOOLCHAIN_LIB_DIR)/libz.a
+BZIP_LIBRARY        = $(TOOLCHAIN_LIB_DIR)/libbz2.a
+SNAPPY_LIBRARY      = $(SNAPPY_DIR)/.libs/libsnappy.a
 
 # Compiler/Linker Parameters
 
@@ -59,7 +63,7 @@ CXX             = $(COMPILER_PREFIX)g++
 CXX_APP_FLAGS   = -std=c++0x -g -Wall -Wextra -DTIMESTAMP="\"$(TIMESTAMP)\"" -DSOURCE_HASH="\"$(SOURCE_HASH)\""
 CXX_TEST_FLAGS  = $(CXX_APP_FLAGS) -DUNIT_TEST -DTIMESTAMP="\"$(TIMESTAMP)\""
 APP_INCLUDES    = -I$(BASE_DIR)/include -I$(BOOST_DIR) -I$(LEVELDB_DIR)/include -I$(ROCKSDB_DIR)/include -I$(PROTOBUF_DIR)/src -I$(OPENSSL_DIR)/include
-APP_LIBRARIES   = $(LEVELDB_LIBRARY) $(ROCKSDB_LIBRARY) $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) -L$(TOOLCHAIN_LIB_DIR) -lrt -lpthread
+APP_LIBRARIES   = $(LEVELDB_LIBRARY) $(ROCKSDB_LIBRARY) $(PROTOBUF_LIBRARY) $(OPENSSL_LIBRARIES) $(ZIP_LIBRARY) $(BZIP_LIBRARY) $(SNAPPY_LIBRARY) -lrt -lpthread
 TEST_INCLUDES   = $(APP_INCLUDES) -I$(GOOGLE_TEST_DIR)/include
 TEST_LIBRARIES  = $(GTEST_LIBRARY) $(APP_LIBRARIES)
 
@@ -119,7 +123,7 @@ conform:
 
 # Build the required dependencies
 
-dependencies: dependencies-dir boost leveldb rocksdb openssl protobuf googletest lint astyle
+dependencies: dependencies-dir boost leveldb rocksdb snappy openssl protobuf googletest lint astyle
 
 dependencies-dir:
 	mkdir -p $(DEPENDENCIES_DIR)
@@ -155,6 +159,15 @@ rocksdb:
 	sed -i "s/CXXFLAGS += /CXXFLAGS += -DNDEBUG /g" $(ROCKSDB_DIR)/Makefile
 	export CC=$(CC) && export CXX=$(CXX) && cd $(ROCKSDB_DIR) && \
 	make static_lib
+
+# Build the Snappy compression library
+
+snappy:
+	wget -P $(DEPENDENCIES_DIR) https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+	tar -zxf $(DEPENDENCIES_DIR)/snappy-1.1.1.tar.gz -C $(DEPENDENCIES_DIR)
+	rm $(DEPENDENCIES_DIR)/snappy-1.1.1.tar.gz
+	mv $(DEPENDENCIES_DIR)/snappy-1.1.1 $(SNAPPY_DIR)
+	cd $(SNAPPY_DIR) && $(SNAPPY_DIR)/configure && make
 
 # Build the Open SSL libraries
 
@@ -240,7 +253,7 @@ all:	clean kaos test package doxygen
 
 # Identify the targets that are not files
 
-.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb rocksdb boost dependencies-dir dependencies conform check cpp-check proto run-tests
+.PHONY: all clean package doxygen astyle lint googletest protobuf openssl leveldb rocksdb snappy boost dependencies-dir dependencies conform check cpp-check proto run-tests
 
 # Build kaos application
 

@@ -1,13 +1,16 @@
 # Created by Bhaumik Bhatt <bhaumik.vasav.bhatt@hgst.com>
 # TODO's
 
-Config file/options to easily swap the database library being used (once abstract interface for ObjectStore class is in place): Right now there is an environment variable 'export' option to do this. eg. export USE_ENV_DB=<db_name>
+Make package installation distribution agnostic
 
-Distribution agnostic tools install script
-
-Make Makefile easy to use with the options to swap in/out DBs
+Make the selection of which database to use easy to configure and build
 
 Complete Kinetic log support by having the following log messages return correct (instead of demo) values:
    * Get Message
    * Get Temperatures
    * Get Utilizations
+
+Added Peer-to-Peer message support
+
+
+

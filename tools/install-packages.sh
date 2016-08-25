@@ -37,8 +37,5 @@ install yagiuda
 install cppcheck
 install doxygen
 install libgflags-dev
-install libsnappy-dev
-install zlib1g-dev
-install libbz2-dev
 
 exit 0

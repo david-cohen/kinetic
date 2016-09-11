@@ -164,10 +164,10 @@ rocksdb:
 # Build the Snappy compression library
 
 snappy:
-	wget -P $(DEPENDENCIES_DIR) https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-	tar -zxf $(DEPENDENCIES_DIR)/snappy-1.1.1.tar.gz -C $(DEPENDENCIES_DIR)
-	rm $(DEPENDENCIES_DIR)/snappy-1.1.1.tar.gz
-	mv $(DEPENDENCIES_DIR)/snappy-1.1.1 $(SNAPPY_DIR)
+	wget -P $(DEPENDENCIES_DIR) https://github.com/google/snappy/releases/download/1.1.3/snappy-1.1.3.tar.gz
+	tar -zxf $(DEPENDENCIES_DIR)/snappy-1.1.3.tar.gz -C $(DEPENDENCIES_DIR)
+	rm $(DEPENDENCIES_DIR)/snappy-1.1.3.tar.gz
+	mv $(DEPENDENCIES_DIR)/snappy-1.1.3 $(SNAPPY_DIR)
 	cd $(SNAPPY_DIR) && $(SNAPPY_DIR)/configure && make
 
 zlib:

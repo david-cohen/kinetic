@@ -23,9 +23,10 @@
  */
 #include <stdint.h>
 #include <atomic>
+#include <memory>
 #include <string>
-#include <exception>
 #include <sstream>
+#include <exception>
 #include "Logger.hpp"
 #include "Server.hpp"
 #include "Connection.hpp"
@@ -131,7 +132,7 @@ void Connection::receiver() {
             if (messageSize == 0)
                 throw std::runtime_error("Message size too small");
 
-            KineticMessage& request = transaction->request();
+            KineticMessage* request = transaction->request();
             /*
              * If the size of the message exceeds the support maximum value, read and save as much as
              * possible so that the response will contain the correct header information.  Then,
@@ -142,14 +143,14 @@ void Connection::receiver() {
                 m_stream->read(messageBuffer.get(), messageSize);
                 try {
                     m_stream->blackHoleRead(messageSize - globalConfig.maxMessageSize());
-                    request.deserializeData(messageBuffer.get(), messageSize);
+                    request->deserializeData(messageBuffer.get(), messageSize);
                 }
                 catch (std::exception& ex) {
                     LOG(ERROR) << "Exception while receiving request: " << ex.what();
                 }
 
                 if (globalConfig.debugEnabled())
-                    MessageTrace::outputContents(messageFraming, &request);
+                    MessageTrace::outputContents(messageFraming, request);
 
                 throw std::runtime_error("Message size too large");
             }
@@ -165,11 +166,11 @@ void Connection::receiver() {
 
             if (valueSize > globalConfig.maxValueSize()) {
                 m_stream->blackHoleRead(valueSize);
-                if (!request.deserializeData(messageBuffer.get(), messageSize))
+                if (!request->deserializeData(messageBuffer.get(), messageSize))
                     throw std::runtime_error("Invalid message format");
 
                 if (globalConfig.debugEnabled())
-                    MessageTrace::outputContents(messageFraming, &request);
+                    MessageTrace::outputContents(messageFraming, request);
 
                 std::stringstream errorStream;
                 errorStream << "Value size (" << valueSize << " bytes) exceeded maximum supported size";
@@ -182,14 +183,14 @@ void Connection::receiver() {
             if (valueSize > 0) {
                 std::unique_ptr<char> valueBuffer(new char[valueSize]);
                 m_stream->read(valueBuffer.get(), valueSize);
-                request.setValue(valueBuffer.get(), valueSize);
+                request->setValue(valueBuffer.get(), valueSize);
             }
 
-            if (!request.deserializeData(messageBuffer.get(), messageSize))
+            if (!request->deserializeData(messageBuffer.get(), messageSize))
                 throw std::runtime_error("Invalid message format");
 
             if (globalConfig.debugEnabled())
-                MessageTrace::outputContents(messageFraming, &request);
+                MessageTrace::outputContents(messageFraming, request);
             m_schedulerQueue.add(transaction);
         }
     }
@@ -210,10 +211,10 @@ void Connection::transmitter() {
     try {
         for (;;) {
             std::unique_ptr<Transaction> transaction(m_transmitterQueue.remove());
+            transaction->freeRequest();
 
             if (m_terminated)
                 break;
-
 
             if (transaction->hasResponse()) {
                 KineticMessage& response = transaction->response();

@@ -21,6 +21,7 @@
 /*
  * Include Files
  */
+#include <getopt.h>
 #include <signal.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -83,17 +84,20 @@ Server::Server()
  * The server's entry point.  It daemonizes the application (unless otherwise directed), starts the
  * TCP connection listeners and heartbeat provider, and then waits to be shutdown.
  *
+ * @param   runInForeground     True if the program is to run in the foreground, otherwise the
+ *                              program is to run in the background as a daemon
+ *
  * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
  */
-int32_t Server::run() {
+int32_t Server::run(bool runInForeground) {
     /*
      * If the application is running in the foreground, output logs to stdout.
      */
-    if (!globalConfig.runAsDaemon())
+    if (runInForeground)
         logControl.setStandardOutEnabled(true);
 
     LOG(INFO) << "Starting Kaos application, version " << globalConfig.version()
-              << " (running in " << (globalConfig.runAsDaemon() ? "background)" : "foreground)");
+              << " (running in " << (runInForeground ? "foreground)" : "background)");
 
     /*
      * If the daemon is to run in the background, daemonize the process. That causes the process to
@@ -102,7 +106,7 @@ int32_t Server::run() {
      * to the root directory so that the daemon can't prevent the root file system from being
      * unmounted.
      */
-    if ((globalConfig.runAsDaemon()) && (daemon(0, 0) != STATUS_SUCCESS)) {
+    if (!runInForeground && (daemon(0, 0) != STATUS_SUCCESS)) {
         LOG(ERROR) << "Failed to become daemon: Error Code=" << errno << ", Description=" << strerror(errno);
         return EXIT_FAILURE;
     }
@@ -212,9 +216,35 @@ uint32_t Server::activeBatchCommands() {
  * instructed to run in the foreground.  The application will run until receiving a SIGTERM, which
  * is normally sent by the kaos start/stop script when called to stop.
  *
+ * @param   argc   Number of command line arguments
+ * @param   argv   Array of command line arguments
+ *
  * @return  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise
  */
-int32_t main() {
-    return server.run();
+int32_t main(int argc, char** argv) {
+    bool runInForeground(false);
+    struct option longopts[] = {
+        {"foreground",  no_argument,    nullptr, 'f'},
+        {"help",        no_argument,    nullptr, 'h'},
+        {nullptr,       0,              nullptr, 0  }
+    };
+
+    /*
+     * Process the command line arguments.
+     */
+    int32_t opt(0);
+    int32_t longindex(0);
+    const int32_t ALL_ARGS_PROCESSED(-1);
+    while ((opt = getopt_long(argc, argv, "fh", longopts, &longindex)) != ALL_ARGS_PROCESSED) {
+        if (opt == 'f') {
+            runInForeground = true;
+        }
+        else if (opt == 'h') {
+            std::cout << "Usage: " << basename(argv[0])
+                      << " [--foreground|-f]|[--help|-h]" << std::endl;
+            return (EXIT_SUCCESS);
+        }
+    }
+    return server.run(runInForeground);
 }
 

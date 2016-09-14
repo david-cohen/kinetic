@@ -31,6 +31,7 @@
 #include <memory>
 #include <string>
 #include <climits>
+#include <utility>
 #include "gtest/gtest.h"
 #include "Hmac.hpp"
 #include "Logger.hpp"

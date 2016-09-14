@@ -1,5 +1,5 @@
 Package: wdc-kinetic
-Version: 1.0.3-FOR-EVAL-ONLY
+Version: 1.0.4
 Architecture: armhf
 Maintainer: Gary Ballance <gary.ballance@wdc.com>
 Depends: hdparm

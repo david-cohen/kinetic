@@ -59,7 +59,7 @@ public:
     /*
      * Public Member Functions
      */
-    int32_t run();
+    int32_t run(bool runInForeground);
     uint32_t activeBatchCommands();
     void addConnection(Connection* connection);
     void removeConnection(Connection* connection);

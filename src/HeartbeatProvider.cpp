@@ -106,9 +106,9 @@ void HeartbeatProvider::sendHeartbeatMessage() {
            << "\"tlsPort\":" << globalConfig.sslPort() << ","
            << "\"network_interfaces\":[";
 
-    auto interfaceCount = globalConfig.networkInterfaceMap().size();
-    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
-        auto networkInterface = networkInterfaceSet.second;
+    NetworkInterfaceList networkInterfaceList = globalConfig.networkInterfaceList();
+    auto interfaceCount = networkInterfaceList.size();
+    for (auto networkInterface : networkInterfaceList) {
         stream << "{\"name\":\"" << networkInterface->name() << "\","
                << "\"ipv4_addr\":\"" << networkInterface->ipv4() << "\","
                << "\"ipv6_addr\":\"" << networkInterface->ipv6() << "\","

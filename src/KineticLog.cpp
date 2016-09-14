@@ -62,8 +62,7 @@ void KineticLog::getConfiguration(Command_GetLog* const response) {
     configuration->set_tlsport(globalConfig.sslPort());
     configuration->set_worldwidename(globalConfig.worldWideName());
 
-    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
-        auto networkInterfaceConfig = networkInterfaceSet.second;
+    for (auto networkInterfaceConfig : globalConfig.networkInterfaceList()) {
         Command_GetLog_Configuration_Interface* networkInterface = configuration->add_interface();
         networkInterface->set_name(networkInterfaceConfig->name());
         networkInterface->set_mac(networkInterfaceConfig->macAddress());

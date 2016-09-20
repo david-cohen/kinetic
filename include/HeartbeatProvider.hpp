@@ -52,6 +52,7 @@ private:
      */
     void run();
     void openSocket();
+    void closeSocket();
     void sendHeartbeatMessage();
 
     /*

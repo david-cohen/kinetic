@@ -59,7 +59,7 @@ using std::string;
  */
 static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
-static const char* VERSION("1.0.5");
+static const char* VERSION("1.0.6");
 
 /*
  * Daemon Related Settings
@@ -401,6 +401,7 @@ NetworkInterfaceList GlobalConfig::networkInterfaceList() {
         }
     }
 
+    close(socketFileDescriptor);
     freeifaddrs(interfaceList);
     return networkInterfaceList;
 }

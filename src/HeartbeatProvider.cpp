@@ -88,6 +88,20 @@ void HeartbeatProvider::openSocket() {
 }
 
 /**
+ * Closes the datagram socket that was sending the multicast messages.
+ */
+void HeartbeatProvider::closeSocket() {
+    /*
+     * If the socket was successfully opened, close it (logging an error if one is encountered).
+     */
+    if (m_socketFd != STATUS_FAILURE) {
+        if (close(m_socketFd) == STATUS_FAILURE) {
+            LOG(ERROR) << "Failed to close socket: error code=" << errno << ", description=" << strerror(errno);
+        }
+    }
+}
+
+/**
  * Send a Kinetic heartbeat message to the multicast address.  Since some of the values in the
  * message can change, it is built from the latest values before sending.
  *
@@ -106,9 +120,9 @@ void HeartbeatProvider::sendHeartbeatMessage() {
            << "\"tlsPort\":" << globalConfig.sslPort() << ","
            << "\"network_interfaces\":[";
 
-    auto interfaceCount = globalConfig.networkInterfaceMap().size();
-    for (auto networkInterfaceSet : globalConfig.networkInterfaceMap()) {
-        auto networkInterface = networkInterfaceSet.second;
+    NetworkInterfaceList networkInterfaceList = globalConfig.networkInterfaceList();
+    auto interfaceCount = networkInterfaceList.size();
+    for (auto networkInterface : networkInterfaceList) {
         stream << "{\"name\":\"" << networkInterface->name() << "\","
                << "\"ipv4_addr\":\"" << networkInterface->ipv4() << "\","
                << "\"ipv6_addr\":\"" << networkInterface->ipv6() << "\","
@@ -142,6 +156,7 @@ void HeartbeatProvider::run() {
             LOG(ERROR) << "Heartbeat provider thread failure, description: " << ex.what();
             sleep(globalConfig.heartbeatConnectionRetryInterval());
         }
+        closeSocket();
     }
 }
 

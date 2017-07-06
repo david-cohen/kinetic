@@ -9,7 +9,6 @@ PACKAGE_NAME = wdc-kinetic
 
 COMPILER_PREFIX     =
 TOOLCHAIN_BIN_DIR   = /usr/bin
-TOOLCHAIN_LIB_DIR   = /usr/lib/arm-linux-gnueabihf
 
 # Build Input Directories
 
@@ -40,6 +39,8 @@ GOOGLE_TEST_DIR     = $(DEPENDENCIES_DIR)/googletest
 ROCKSDB_DIR         = $(DEPENDENCIES_DIR)/rocksdb
 LEVELDB_DIR         = $(DEPENDENCIES_DIR)/leveldb
 SNAPPY_DIR          = $(DEPENDENCIES_DIR)/snappy
+ZLIB_DIR            = $(DEPENDENCIES_DIR)/zlib
+BZIP2_DIR           = $(DEPENDENCIES_DIR)/bzip2
 LINT_DIR            = $(DEPENDENCIES_DIR)/styleguide/cpplint
 PROTOBUF_DIR        = $(DEPENDENCIES_DIR)/protobuf
 OPENSSL_DIR         = $(DEPENDENCIES_DIR)/openssl
@@ -52,8 +53,8 @@ ROCKSDB_LIBRARY     = $(ROCKSDB_DIR)/librocksdb.a
 LEVELDB_LIBRARY     = $(LEVELDB_DIR)/libleveldb.a
 PROTOBUF_LIBRARY    = $(PROTOBUF_DIR)/src/.libs/libprotobuf.a
 OPENSSL_LIBRARIES   = $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
-ZIP_LIBRARY         = $(TOOLCHAIN_LIB_DIR)/libz.a
-BZIP_LIBRARY        = $(TOOLCHAIN_LIB_DIR)/libbz2.a
+ZIP_LIBRARY         = $(ZLIB_DIR)/libz.a
+BZIP_LIBRARY        = $(BZIP2_DIR)/libbz2.a
 SNAPPY_LIBRARY      = $(SNAPPY_DIR)/.libs/libsnappy.a
 
 # Compiler/Linker Parameters
@@ -123,7 +124,7 @@ conform:
 
 # Build the required dependencies
 
-dependencies: dependencies-dir boost leveldb rocksdb snappy openssl protobuf googletest lint astyle
+dependencies: dependencies-dir boost leveldb rocksdb snappy bzip2 zlib openssl protobuf googletest lint astyle
 
 dependencies-dir:
 	mkdir -p $(DEPENDENCIES_DIR)
@@ -163,11 +164,28 @@ rocksdb:
 # Build the Snappy compression library
 
 snappy:
-	wget -P $(DEPENDENCIES_DIR) https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-	tar -zxf $(DEPENDENCIES_DIR)/snappy-1.1.1.tar.gz -C $(DEPENDENCIES_DIR)
-	rm $(DEPENDENCIES_DIR)/snappy-1.1.1.tar.gz
-	mv $(DEPENDENCIES_DIR)/snappy-1.1.1 $(SNAPPY_DIR)
+	wget -P $(DEPENDENCIES_DIR) https://github.com/google/snappy/releases/download/1.1.3/snappy-1.1.3.tar.gz
+	tar -zxf $(DEPENDENCIES_DIR)/snappy-1.1.3.tar.gz -C $(DEPENDENCIES_DIR)
+	rm $(DEPENDENCIES_DIR)/snappy-1.1.3.tar.gz
+	mv $(DEPENDENCIES_DIR)/snappy-1.1.3 $(SNAPPY_DIR)
 	cd $(SNAPPY_DIR) && $(SNAPPY_DIR)/configure && make
+
+zlib:
+	wget -P $(DEPENDENCIES_DIR) http://zlib.net/zlib-1.2.8.tar.gz
+	tar -zxf $(DEPENDENCIES_DIR)/zlib-1.2.8.tar.gz -C $(DEPENDENCIES_DIR)
+	rm $(DEPENDENCIES_DIR)/zlib-1.2.8.tar.gz
+	mv $(DEPENDENCIES_DIR)/zlib-1.2.8 $(ZLIB_DIR)
+	cd $(ZLIB_DIR) && $(ZLIB_DIR)/configure && make
+
+bzip2:
+	wget -P $(DEPENDENCIES_DIR) http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz
+	tar -zxf $(DEPENDENCIES_DIR)/bzip2-1.0.6.tar.gz -C $(DEPENDENCIES_DIR)
+	rm $(DEPENDENCIES_DIR)/bzip2-1.0.6.tar.gz
+	mv $(DEPENDENCIES_DIR)/bzip2-1.0.6 $(BZIP2_DIR)
+	cd $(BZIP2_DIR) && make
+
+
+
 
 # Build the Open SSL libraries
 

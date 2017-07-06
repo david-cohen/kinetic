@@ -173,21 +173,24 @@ void validateMessage(MulticastConnection& connection) {
     uint32_t sslPort = connection.messageNode.get<uint32_t>("tlsPort", KNOWN_INCORRECT_PORT_NUMBER);
     ASSERT_EQ(globalConfig.sslPort(), sslPort);
 
+    NetworkInterfaceList networkInterfaceList = globalConfig.networkInterfaceList();
+
     bool foundNetworkInterface = false;
     for (boost::property_tree::ptree::value_type& node : connection.messageNode.get_child("network_interfaces")) {
         string name = node.second.get<string>("name", NOT_FOUND_STRING);
-        NetworkInterfacePtr networkInterface = globalConfig.networkInterfaceMap()[name];
+        for (auto networkInterface : networkInterfaceList) {
+            if (networkInterface->name() == name) {
+                string ipv4 = node.second.get<string>("ipv4_addr", NOT_FOUND_STRING);
+                ASSERT_STREQ(networkInterface->ipv4().c_str(), ipv4.c_str());
 
-        if (networkInterface != nullptr) {
-            string ipv4 = node.second.get<string>("ipv4_addr", NOT_FOUND_STRING);
-            ASSERT_STREQ(networkInterface->ipv4().c_str(), ipv4.c_str());
+                string ipv6 = node.second.get<string>("ipv6_addr", NOT_FOUND_STRING);
+                ASSERT_STREQ(networkInterface->ipv6().c_str(), ipv6.c_str());
 
-            string ipv6 = node.second.get<string>("ipv6_addr", NOT_FOUND_STRING);
-            ASSERT_STREQ(networkInterface->ipv6().c_str(), ipv6.c_str());
-
-            string macAddress = node.second.get<string>("mac_addr", NOT_FOUND_STRING);
-            ASSERT_STREQ(networkInterface->macAddress().c_str(), macAddress.c_str());
-            foundNetworkInterface = true;
+                string macAddress = node.second.get<string>("mac_addr", NOT_FOUND_STRING);
+                ASSERT_STREQ(networkInterface->macAddress().c_str(), macAddress.c_str());
+                foundNetworkInterface = true;
+                break;
+            }
         }
     }
     ASSERT_TRUE(foundNetworkInterface);

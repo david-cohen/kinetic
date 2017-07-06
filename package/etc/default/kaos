@@ -30,9 +30,3 @@ USE_COMPRESSION=false
 # then the WARNING level will be used. 
 
 LOGGING_LEVEL=WARNING
-
-# Specify if the application is to run in the background as a daemon or in foreground outputting
-# log and debug (if enabled) information to stdout.  Possible values are: FOREGROUND or BACKGROUND.
-# If not specified (or understood), the application will be run as a daemon in the background.
-
-#RUN_MODE=FOREGROUND

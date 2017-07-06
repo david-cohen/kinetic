@@ -25,11 +25,14 @@
 #include <errno.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <net/if.h>
 #include <ifaddrs.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <linux/hdreg.h>
 #include <netpacket/packet.h>
 #include <boost/algorithm/string.hpp>
@@ -56,7 +59,7 @@ using std::string;
  */
 static const char* VENDOR("WDC");
 static const char* MODEL("Wasp");
-static const char* VERSION("1.0.4-FOR-EVAL-ONLY");
+static const char* VERSION("1.0.6");
 
 /*
  * Daemon Related Settings
@@ -88,7 +91,7 @@ static const uint32_t SSL_PORT(8443);
 static const uint32_t MULTICAST_PORT(8123);
 static const char*    MULTICAST_IP_ADDRESS("239.1.2.3");
 static const char*    PROTOCOL_VERSION("3.0.6");
-static const uint32_t HEARTBEAT_SEND_INTERVAL(5);
+static const uint32_t HEARTBEAT_SEND_INTERVAL(60);
 static const uint32_t HEARTBEAT_CONNECTION_RETRY_INTERVAL(60);
 
 /*
@@ -267,68 +270,6 @@ GlobalConfig::GlobalConfig()
     m_serverSettingsFile = storageDirectory + "/" + SERVER_SETTINGS_FILE;
 
     /*
-     * Determine if the application is to run as a daemon.
-     */
-    string runMode = defaultConfigData.get<string>("RUN_MODE", "BACKGROUND");
-    std::transform(runMode.begin(), runMode.end(), runMode.begin(), ::toupper);
-    m_runAsDaemon = runMode != "FOREGROUND";
-
-    /*
-     * Discover the network interfaces.
-     */
-    struct ifaddrs* interfaceList(nullptr);
-
-    if (getifaddrs(&interfaceList) == STATUS_FAILURE) {
-        LOG(ERROR) << "Failed to obtain network interface information: error code=" << errno << ", description=" << strerror(errno);
-        return;
-    }
-
-    /*
-     * Gather network interface information (which is reported in the Kinetic protocol).
-     */
-    std::set<string> interfaceNames;
-    for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next)
-        interfaceNames.insert(string(interface->ifa_name));
-
-    for (string name : interfaceNames) {
-        string ipv4, ipv6, macAddress;
-        for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next) {
-            if ((interface->ifa_addr == nullptr) || (name != string(interface->ifa_name)) || (name == "lo"))
-                continue;
-
-            int family = interface->ifa_addr->sa_family;
-            if (family == AF_PACKET) {
-                std::stringstream macAddressStream;
-                struct sockaddr_ll* sockaddr = static_cast<struct sockaddr_ll*>(static_cast<void*>(interface->ifa_addr));
-                macAddressStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[0]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[1]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[2]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[3]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[4]) << ":"
-                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(sockaddr->sll_addr[5]);
-                macAddress = macAddressStream.str();
-            }
-
-            else if (family == AF_INET) {
-                char addressBuffer[INET6_ADDRSTRLEN];
-                struct sockaddr_in* sockaddr = static_cast<struct sockaddr_in*>(static_cast<void*>(interface->ifa_addr));
-                ipv4 = inet_ntop(family, &sockaddr->sin_addr, addressBuffer, sizeof(addressBuffer));
-            }
-
-            else if (family == AF_INET6) {
-                char addressBuffer[INET6_ADDRSTRLEN];
-                struct sockaddr_in6* sockaddr = static_cast<struct sockaddr_in6*>(static_cast<void*>(interface->ifa_addr));
-                ipv6 = inet_ntop(family, &sockaddr->sin6_addr, addressBuffer, sizeof(addressBuffer));
-            }
-        }
-        if (!ipv4.empty() && !ipv6.empty() && !macAddress.empty()) {
-            NetworkInterfacePtr networkInterface(new NetworkInterface(name, macAddress, ipv4, ipv6));
-            m_networkInterfaceMap[name] = networkInterface;
-        }
-    }
-    freeifaddrs(interfaceList);
-
-    /*
      * Get the serial number and world-wide name of the drive.
      */
     int32_t driveHandle = open(DRIVE_DEV_NODE, O_RDONLY | O_NONBLOCK);
@@ -364,3 +305,104 @@ GlobalConfig::GlobalConfig()
         close(driveHandle);
     }
 }
+
+/**
+ * Obtains the network interface information.
+ *
+ * @return a list of the network interfaces
+ */
+NetworkInterfaceList GlobalConfig::networkInterfaceList() {
+    NetworkInterfaceList  networkInterfaceList;
+
+    /*
+     * Discover the network interfaces.
+     */
+    struct ifaddrs* interfaceList(nullptr);
+    if (getifaddrs(&interfaceList) == STATUS_FAILURE) {
+        LOG(ERROR) << "Failed to obtain network interface information: error code=" << errno << ", description=" << strerror(errno);
+        return networkInterfaceList;
+    }
+
+    /*
+     * Gather the network interface names (eliminating duplicates by using a set).
+     */
+    std::set<string> interfaceNames;
+    for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next) {
+        string interfaceName(interface->ifa_name);
+        if (interfaceName != "lo")
+            interfaceNames.insert(interfaceName);
+    }
+
+    /*
+     * Open the socket that will be used to perform the I/O control commands.
+     */
+    const int USE_DEFAULT_PROTOCOL(0);
+    int socketFileDescriptor = socket(AF_INET, SOCK_DGRAM, USE_DEFAULT_PROTOCOL);
+    if (socketFileDescriptor < 0) {
+        LOG(ERROR) << "Failed to open socket for network settings: error code=" << errno << ", description=" << strerror(errno);
+        return networkInterfaceList;
+    }
+
+    /*
+     * Get the version 4 IP address, version 6 IP address, and MAC address of each interface.  If an
+     * interface doesn't have all three, don't report it.
+     */
+    for (string interfaceName : interfaceNames) {
+        string ipv4, ipv6, macAddress;
+        struct ifreq interfaceRequest;
+        memset(&interfaceRequest, 0, sizeof(interfaceRequest));
+        strncpy(interfaceRequest.ifr_name, interfaceName.c_str(), IFNAMSIZ);
+        interfaceRequest.ifr_addr.sa_family = AF_INET;
+
+        /*
+         * Get the version 4 IP address.
+         */
+        if (ioctl(socketFileDescriptor, SIOCGIFADDR, &interfaceRequest) == STATUS_SUCCESS) {
+            char addressBuffer[INET6_ADDRSTRLEN];
+            struct sockaddr_in* sockaddr = static_cast<struct sockaddr_in*>(static_cast<void*>(&interfaceRequest.ifr_addr));
+            ipv4 = inet_ntop(AF_INET, &sockaddr->sin_addr, addressBuffer, sizeof(addressBuffer));
+
+            /*
+             * Get the version 6 IP address.
+             */
+            for (struct ifaddrs* interface = interfaceList; interface != nullptr; interface = interface->ifa_next) {
+                if ((interface->ifa_addr != nullptr) && (interfaceName == string(interface->ifa_name))
+                        && (interface->ifa_addr->sa_family == AF_INET6)) {
+                    char addressBuffer[INET6_ADDRSTRLEN];
+                    struct sockaddr_in6* sockaddr = static_cast<struct sockaddr_in6*>(static_cast<void*>(interface->ifa_addr));
+                    ipv6 = inet_ntop(AF_INET6, &sockaddr->sin6_addr, addressBuffer, sizeof(addressBuffer));
+                    break;
+                }
+            }
+
+            /*
+             * Get the MAC address.
+             */
+            memset(&interfaceRequest, 0, sizeof(interfaceRequest));
+            strncpy(interfaceRequest.ifr_name, interfaceName.c_str(), IFNAMSIZ);
+            if (ioctl(socketFileDescriptor, SIOCGIFHWADDR, &interfaceRequest) == STATUS_SUCCESS) {
+                std::stringstream macAddressStream;
+                macAddressStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(interfaceRequest.ifr_hwaddr.sa_data[0]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(interfaceRequest.ifr_hwaddr.sa_data[1]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(interfaceRequest.ifr_hwaddr.sa_data[2]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(interfaceRequest.ifr_hwaddr.sa_data[3]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(interfaceRequest.ifr_hwaddr.sa_data[4]) << ":"
+                                 << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(interfaceRequest.ifr_hwaddr.sa_data[5]);
+                macAddress = macAddressStream.str();
+            }
+
+            /*
+             * Report the interface if it has all of the required information.
+             */
+            if (!ipv4.empty() && !ipv6.empty() && !macAddress.empty()) {
+                NetworkInterfacePtr networkInterface(new NetworkInterface(interfaceName, macAddress, ipv4, ipv6));
+                networkInterfaceList.push_back(networkInterface);
+            }
+        }
+    }
+
+    close(socketFileDescriptor);
+    freeifaddrs(interfaceList);
+    return networkInterfaceList;
+}
+

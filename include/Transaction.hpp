@@ -39,24 +39,30 @@ public:
      * Constructor
      */
     Transaction()
-        : m_request(), m_response(), m_hasResponse(true), m_accessControl() {}
+        : m_request(new KineticMessage()), m_response(), m_hasResponse(true), m_accessControl() {}
 
     /*
      * Public Accessors
      */
-    inline KineticMessage& request() {return m_request;}
+    inline KineticMessage* request() {return m_request;}
     inline KineticMessage& response() {return m_response;}
     inline bool hasResponse() {return m_hasResponse;}
     inline void setNoResponse() {m_hasResponse = false;}
     inline AccessControlPtr& accessControl() {return m_accessControl;}
     inline bool hasAccessControl() {return m_accessControl != nullptr;}
     inline void setAccessControl(AccessControlPtr accessControl) {m_accessControl = accessControl;}
+    inline void detachRequest() {m_request = nullptr;}
+    inline void freeRequest() {
+        if (m_request != nullptr)
+            delete m_request;
+        m_request = nullptr;
+    }
 
 private:
     /*
      * Private Data Members
      */
-    KineticMessage      m_request;          //!< Request message
+    KineticMessage*     m_request;          //!< Request message
     KineticMessage      m_response;         //!< Response message (may not be used)
     bool                m_hasResponse;      //!< True if a response is to be sent
     AccessControlPtr    m_accessControl;    //!< Access allowed for transaction

@@ -25,9 +25,9 @@
  * Include Files
  */
 #include <stdint.h>
+#include <list>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 /**
  * Describes the attributes of a network interface.
@@ -58,9 +58,9 @@ private:
 };
 
 /*
- * Network Interface Shared Pointer and Unordered Map
+ * Network Interface Shared Pointer and List
  */
 typedef std::shared_ptr<NetworkInterface> NetworkInterfacePtr;
-typedef std::unordered_map<std::string, NetworkInterfacePtr> NetworkInterfaceMap;
+typedef std::list<NetworkInterfacePtr> NetworkInterfaceList;
 
 #endif

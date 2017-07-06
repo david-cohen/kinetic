@@ -53,10 +53,10 @@ public:
      */
     GlobalConfig();
 
+
     /*
      * Public Accessors
      */
-    inline bool runAsDaemon() const {return m_runAsDaemon;}
     inline bool debugEnabled() const {return m_debugEnabled;}
     inline const char* pidFileName() const {return m_pidFileName;}
     inline std::string databaseDirectory() const {return m_databaseDirectory;}
@@ -108,13 +108,12 @@ public:
     inline std::string accessScopeDefaultKeySubstring() const {return m_accessScopeDefaultKeySubstring;}
     inline uint32_t accessScopeDefaultKeySubstringOffset() const {return m_accessScopeDefaultKeySubstringOffset;}
     inline std::set<com::seagate::kinetic::proto::Command_GetLog_Type> defaultLogTypes() const {return m_defaultLogTypes;}
-    inline NetworkInterfaceMap networkInterfaceMap() const {return m_networkInterfaceMap;}
+    NetworkInterfaceList networkInterfaceList();
 
 private:
     /*
      * Private Data Members
      */
-    bool                 m_runAsDaemon;                             //!< True if the server is to run in the background as a daemon
     bool                 m_debugEnabled;                            //!< True if the server is to run in debug mode (provide additional output)
     const char*          m_pidFileName;                             //!< Name of the server's process ID file (used by the start/stop script)
     std::string          m_databaseDirectory;                       //!< Path to the location of the database files
@@ -166,7 +165,6 @@ private:
     std::string          m_accessScopeDefaultKeySubstring;          //!< Key substring value for the default access control
     uint32_t             m_accessScopeDefaultKeySubstringOffset;    //!< Key substring offset value for the default access control
     GetLogTypeSet        m_defaultLogTypes;                         //!< Log types returned when no type is specified for the get log request
-    NetworkInterfaceMap  m_networkInterfaceMap;                     //!< Describes the network interface for the server
 };
 
 extern GlobalConfig globalConfig;

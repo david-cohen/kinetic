@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <utility>
 #include "gtest/gtest.h"
 #include "Logger.hpp"
 #include "Kinetic.pb.hpp"
